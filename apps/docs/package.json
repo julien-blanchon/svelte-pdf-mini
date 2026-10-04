@@ -7,7 +7,7 @@
 		"dev": "bun run api && vite dev",
 		"build": "bun run api && vite build",
 		"preview": "vite preview",
-		"api": "bun scripts/generate-api.ts",
+		"api": "bun scripts/generate-api.ts && bun scripts/generate-changelog.ts",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run --passWithNoTests",

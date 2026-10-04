@@ -18,7 +18,8 @@
 <p align="center">
   <a href="https://julien-blanchon.github.io/svelte-pdf-mini/docs">Documentation</a> ·
   <a href="https://julien-blanchon.github.io/svelte-pdf-mini/components">Components</a> ·
-  <a href="https://julien-blanchon.github.io/svelte-pdf-mini/examples">Examples</a>
+  <a href="https://julien-blanchon.github.io/svelte-pdf-mini/examples">Examples</a> ·
+  <a href="https://julien-blanchon.github.io/svelte-pdf-mini/docs/changelog">Changelog</a>
 </p>
 
 ```sh
@@ -54,7 +55,6 @@ bun add svelte-pdf-mini   # or npm i / pnpm add
 | [`packages/svelte-pdf-mini`](packages/svelte-pdf-mini) | The library (`core/` plain TS, `state/` runes classes, `components/` compound parts) |
 | [`apps/docs`](apps/docs) | Docs (mdsvex), live feature demos and integrated apps (SvelteKit + Tailwind v4); demos live in `src/lib/demos`, full screen at `/demo/<name>` |
 | [`fixtures`](fixtures) | arXiv test papers (`bun run fixtures` downloads them) and evaluation scripts |
-| [`SPEC.md`](SPEC.md) | Feature spec and design notes |
 
 ## Development
 
@@ -75,9 +75,11 @@ bun run test:e2e:full  # every end-to-end test (~30 s)
 
 Releases use [Changesets](https://github.com/changesets/changesets):
 
-1. In a pull request, run `bun changeset` and describe the change (patch / minor / major).
+1. In a pull request that changes the library, run `bun changeset` and describe the change for users (patch / minor / major). CI reminds you when it's missing.
 2. Once merged into `main`, the **Release** workflow opens a "version packages" pull request with the new version and changelog.
 3. Merging that pull request publishes to npm (with provenance) and creates a GitHub release.
+
+The changelog lives in [`packages/svelte-pdf-mini/CHANGELOG.md`](packages/svelte-pdf-mini/CHANGELOG.md) (written by Changesets) and is published as the [Changelog page](https://julien-blanchon.github.io/svelte-pdf-mini/docs/changelog) of the docs.
 
 The docs are deployed to GitHub Pages by the **Docs** workflow on every push to `main`.
 

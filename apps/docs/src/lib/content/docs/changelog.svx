@@ -1,0 +1,10 @@
+---
+title: Changelog
+description: What changed in each release of svelte-pdf-mini.
+---
+
+<!-- Generated from packages/svelte-pdf-mini/CHANGELOG.md by scripts/generate-changelog.ts: do not edit. -->
+
+Every release is also on [GitHub Releases](https://github.com/julien-blanchon/svelte-pdf-mini/releases) and [npm](https://www.npmjs.com/package/svelte-pdf-mini?activeTab=versions). Releases follow [semantic versioning](https://semver.org); until 1.0, minor versions may include breaking changes.
+
+No release yet. Pending changes are listed in the [open "version packages" pull request](https://github.com/julien-blanchon/svelte-pdf-mini/pulls).

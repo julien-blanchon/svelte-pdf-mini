@@ -70,7 +70,8 @@ export const contentSections: ContentSectionConfig[] = [
 				items: [
 					{ slug: 'keyboard', name: 'Keyboard shortcuts' },
 					{ slug: 'data-attributes', name: 'Data attributes & CSS variables' },
-					{ slug: 'annotation-model', name: 'Annotation model' }
+					{ slug: 'annotation-model', name: 'Annotation model' },
+					{ slug: 'changelog', name: 'Changelog' }
 				]
 			}
 		]

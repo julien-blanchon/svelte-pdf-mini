@@ -70,3 +70,23 @@ jobs:
             apps/docs/test-results
             apps/docs/playwright-report
           retention-days: 7
+
+  changeset:
+    name: Changeset
+    # Library changes in a pull request should come with a changeset (`bun changeset`),
+    # so they end up in the changelog. Not needed for docs-only changes.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.actor != 'dependabot[bot]' &&
+      !startsWith(github.head_ref, 'changeset-release/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Library changes have a changeset
+        run: bunx changeset status --since=origin/${{ github.base_ref }}
