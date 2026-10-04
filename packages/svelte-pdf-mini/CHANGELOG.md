@@ -1,5 +1,34 @@
 # svelte-pdf-mini
 
+## 0.2.0
+
+### Minor Changes
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - - **Equations:** numbered display equations ("… (3)") are detected as figures of kind `equation` (box, label, caption), so they get previews, "Box it", "Copy as image" and backlinks. "Eq. (3)" references resolve to them. `Paper.Figures` lists them when `kinds` includes `'equation'`.
+  - **Backlinks:** `paper.mentions` maps every figure / table / equation / section to the cross-references pointing at it; `Paper.Layer` adds hover targets on labels ("Figure 3", "(2)", headings) and the new `Paper.Backlinks` card lists each mention with its sentence (click to jump). Figures get a "Mentions" submenu in `contextActions`. Figures have a new `labelRect`.
+  - Right-clicking a text selection no longer clears it.
+  - A wheel over a link preview scrolls the document (and closes the preview) instead of what is behind it.
+  - The annotation popover only offers the markup styles allowed by `tools`.
+  - Rounded page corners clip GPU-composited canvases in WebKit (`clip-path`).
+
+### Patch Changes
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - - `Annotations.Root` takes `tools`: the tools / text markups an app offers. Others get no shortcut, selection-menu or context-menu entry, and are left out of the shortcut list.
+  - Highlights are translucent (`--pdf-highlight-opacity`, default 0.45) as well as blended, so text stays readable where WebKit doesn't blend over a GPU canvas, and they cover the line slightly beyond the glyph box.
+  - Rounded page frames no longer show a white rim: the page box takes the page theme's colour.
+  - No more `binding_property_non_reactive` dev warnings.
+  - Off-screen text layers (and all of them while a zoom animates) use `content-visibility: hidden`, skipping their layout.
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - `contextActions` accepts `saveFile(blob, name)` so desktop webviews (which ignore `<a download>`) can route "Save as PNG" through a native save dialog. New `canvasToPng()` helper.
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - `Viewer.Root` takes `focusHighlight`: the effect used when a link lands on a figure, table or section (default `'pulse'`), including custom recipe names rendered through `Viewer.Focus`'s `child`.
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - Docs: `optimizeDeps: { exclude: ['pdfjs-dist'] }` is required in Vite apps; without it `vite dev` fails to load the pdf.js worker (`?url`) during dependency pre-bundling.
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - Fix: no text layer, selection or search in WKWebView (macOS 26 system webview, e.g. Tauri apps). pdf.js 6 iterates `ReadableStream`s with `for await`, which WKWebView doesn't ship yet; the standard iterator is now installed when missing, on the main thread and in the pdf.js worker.
+
+- [`2710500`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/2710500408dc7bcf66b0c35d3d288e57439ea453) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - Zoom performance: while a zoom animates, text layers leave rendering (`display: none` under `[data-zooming]`), so their spans aren't re-styled and re-laid out every frame (WebKit p95 frame time 31 → 24 ms, Chromium layout time ÷5).
+
 ## 0.1.1
 
 ### Patch Changes
