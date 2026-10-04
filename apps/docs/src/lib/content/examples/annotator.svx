@@ -1,0 +1,10 @@
+---
+title: Annotator
+description: An annotation workspace with every tool, a notes sidebar and export.
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="annotator" height={780} wide />

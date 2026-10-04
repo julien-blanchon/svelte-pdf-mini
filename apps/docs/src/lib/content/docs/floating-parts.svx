@@ -1,0 +1,52 @@
+---
+title: Floating parts & hooks
+description: One API for previews, cards, popovers and menus — placement, transitions and replacing click actions.
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+Six parts float above the pages: `Viewer.LinkPreview`, `Paper.CitationCard`, `Paper.CrossRefPreview`, `Annotations.Popover`, `Annotations.SelectionMenu` and `Annotations.HoverCard`. They share one API:
+
+| Prop | Meaning |
+| --- | --- |
+| `placement` | `'top'` · `'bottom'` · `'left'` · `'right'` (flips when there is no room) |
+| `onOpenChange(open)` | Called when the part opens or closes |
+| `forceMount` | Keep rendering the `child` snippet while closed (with `open: false`) so you can run exit transitions |
+| `child(…)` | Render your own element; spread `props` on it |
+
+They expose `data-state="open"` / `"closed"`; `styles.css` ships a short entry animation.
+
+## Transitions
+
+```svelte
+<Paper.CrossRefPreview forceMount>
+	{#snippet child({ props, open, label, canvasProps })}
+		{#if open}
+			<div {...props} transition:scale={{ start: 0.96, duration: 130 }} class="rounded-xl bg-white shadow-xl">
+				<div {...canvasProps}></div>
+				<p>{label}</p>
+			</div>
+		{/if}
+	{/snippet}
+</Paper.CrossRefPreview>
+```
+
+## Citation cards
+
+- `layout` — `'list'` shows every reference of a group like [1, 2, 3]; `'pager'` one at a time; `'auto'` (default) lists groups of up to four.
+- `reference` snippet — render each reference yourself (`{ reference, metadata, go, compact }`).
+- `actions` snippet — extra buttons in each reference's footer.
+
+## Click hooks
+
+Your app decides what a click does; return `false` to skip the default:
+
+```svelte
+<Viewer.LinkLayer onLinkClick={(link) => (link.url ? openExternally(link.url) : undefined)} />
+<Paper.Layer onCitationClick={(citation, references) => { openInMyApp(references[0]); return false; }} />
+<Paper.CitationCard onReferenceClick={(ref) => { if (ref.parsed.arxivId) { importPaper(ref.parsed.arxivId); return false; } }} />
+```
+
+<Demo example="links-previews" height={540} />

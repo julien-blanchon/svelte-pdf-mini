@@ -1,0 +1,10 @@
+---
+title: Stress test
+description: "GPT-3 (75 pages): only pages near the view are rendered; scroll fast or zoom to watch the scheduler cancel and re-prioritise work."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="stress" height={620} />

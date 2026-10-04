@@ -1,0 +1,10 @@
+---
+title: Zoom
+description: "Every zoom change is eased: the select, the slider (both bits-ui recipes calling viewer.zoomTo), fit-mode switches, steps and Ctrl/⌘ + wheel or pinch. Narrow pages stay centred; wide ones zoom under the cursor. Zoomed-out pages are rendered at up to 2× so zooming back in stays sharp."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="zoom" height={620} />

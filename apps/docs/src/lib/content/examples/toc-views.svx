@@ -1,0 +1,10 @@
+---
+title: Table of contents views
+description: "Sections extracted from the paper (outline when present, headings otherwise), shown five ways: tree, flat list, breadcrumb, progress bar and a margin rail. All follow the section you are reading."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="toc-views" height={620} />

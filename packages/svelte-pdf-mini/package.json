@@ -1,0 +1,122 @@
+{
+	"name": "svelte-pdf-mini",
+	"version": "0.0.1",
+	"description": "Headless, composable PDF viewer and research-paper reader components for Svelte 5, built on pdf.js.",
+	"license": "MIT",
+	"author": "Julien Blanchon",
+	"homepage": "https://julien-blanchon.github.io/svelte-pdf-mini",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/julien-blanchon/svelte-pdf-mini.git",
+		"directory": "packages/svelte-pdf-mini"
+	},
+	"bugs": {
+		"url": "https://github.com/julien-blanchon/svelte-pdf-mini/issues"
+	},
+	"keywords": [
+		"annotations",
+		"arxiv",
+		"headless",
+		"pdf",
+		"pdf-annotations",
+		"pdf-reader",
+		"pdf-viewer",
+		"pdfjs",
+		"research",
+		"runes",
+		"svelte",
+		"svelte-components",
+		"svelte5"
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build && bun run prepack",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"prepack": "svelte-kit sync && svelte-package && publint",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "eslint src && prettier --check .",
+		"format": "prettier --write .",
+		"test:unit": "vitest --project server --project client",
+		"test": "vitest --run --project server --project client",
+		"test:full": "vitest --run"
+	},
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*",
+		"!dist/**/*.helper.*",
+		"!dist/test",
+		"!dist/**/__snapshots__"
+	],
+	"sideEffects": [
+		"**/*.css"
+	],
+	"svelte": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"default": "./dist/core/index.js"
+		},
+		"./state": {
+			"types": "./dist/state/index.d.ts",
+			"svelte": "./dist/state/index.js",
+			"default": "./dist/state/index.js"
+		},
+		"./styles.css": "./dist/styles.css"
+	},
+	"peerDependencies": {
+		"svelte": "^5.57.0"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@napi-rs/canvas": "^1.0.10",
+		"@sveltejs/adapter-auto": "^8.0.0",
+		"@sveltejs/kit": "^3.0.0",
+		"@sveltejs/package": "^3.0.0",
+		"@sveltejs/vite-plugin-svelte": "^7.2.0",
+		"@types/dompurify": "^3.2.0",
+		"@vitest/browser-playwright": "^5.0.3",
+		"eslint": "^10.12.0",
+		"eslint-plugin-svelte": "^3.23.0",
+		"globals": "^17.13.0",
+		"playwright": "^1.60.0",
+		"prettier": "^3.8.3",
+		"prettier-plugin-svelte": "^4.1.0",
+		"publint": "^0.3.21",
+		"svelte": "^5.56.7",
+		"svelte-check": "^4.6.0",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.71.0",
+		"vite": "^8.3.0",
+		"vitest": "^5.0.3",
+		"vitest-browser-svelte": "^3.1.0"
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
+	},
+	"dependencies": {
+		"@cantoo/pdf-lib": "^2.11.1",
+		"@floating-ui/dom": "^1.8.0",
+		"dompurify": "^3.4.16",
+		"katex": "^0.19.0",
+		"marked": "^18.0.14",
+		"pdfjs-dist": "^6.4.299",
+		"perfect-freehand": "^1.2.3",
+		"runed": "^0.37.1",
+		"svelte-toolbelt": "^0.10.6"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	}
+}

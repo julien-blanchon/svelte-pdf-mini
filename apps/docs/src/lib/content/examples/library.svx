@@ -1,0 +1,10 @@
+---
+title: Paper library
+description: A library of papers as cards, with quick look and per-category colours.
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="library" height={780} wide />

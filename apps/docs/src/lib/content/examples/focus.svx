@@ -1,0 +1,10 @@
+---
+title: Focus & navigation
+description: "viewer.focus() on a page, a PDF-space rect or a named destination, with padding around the target and a short highlight. Targets come from the paper model (figures, tables, sections) and the text index (equations, paragraphs). Built-in effects are CSS; the \"recipe\" effects are a layer built on the headless Viewer.Focus with its child snippet."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="focus" height={620} />

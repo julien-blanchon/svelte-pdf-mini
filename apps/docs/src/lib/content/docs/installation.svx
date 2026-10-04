@@ -1,0 +1,42 @@
+---
+title: Installation
+description: Add svelte-pdf-mini to a SvelteKit or Vite app and configure the pdf.js worker and assets.
+---
+
+<script lang="ts">
+	import { InstallationTabs, Callout } from '#lib/index.ts';
+</script>
+
+## Install the package
+
+<InstallationTabs pkg="svelte-pdf-mini" />
+
+`svelte-pdf-mini` targets **Svelte 5.57+** (runes, attachments) and the latest evergreen browsers. It depends on `pdfjs-dist` 6, `runed`, `svelte-toolbelt` and `@floating-ui/dom`; `@cantoo/pdf-lib` is loaded lazily the first time you export a PDF.
+
+## Import the styles (optional)
+
+```ts
+import 'svelte-pdf-mini/styles.css';
+```
+
+The stylesheet holds the pdf.js text-layer rules, focus effects and calm defaults for the floating UI (menus, popovers, cards, side notes, tables of contents). Every value is a CSS variable; skip it entirely if you style the parts yourself.
+
+## Worker and assets
+
+pdf.js runs in a Web Worker. With Vite the worker is set up automatically and **shared by every document** on the page. Character maps, standard fonts and the WASM decoders load from jsDelivr by default; to self-host them, call `configurePdf` once, before the first document loads:
+
+```ts
+import { configurePdf } from 'svelte-pdf-mini';
+
+configurePdf({
+	cMapUrl: '/pdfjs/cmaps/',
+	standardFontDataUrl: '/pdfjs/standard_fonts/',
+	wasmUrl: '/pdfjs/wasm/'
+});
+```
+
+Copy the folders from `node_modules/pdfjs-dist/` into your `static/` directory. `configurePdf` also accepts `workerSrc`, `workerPort`, `documentOptions` (merged into every `getDocument()` call), `sharedWorker: false` and `bitmapCacheBytes` (memory for off-screen page bitmaps, default 192 MB).
+
+<Callout title="Server-side rendering">
+	pdf.js touches the DOM, so it is only ever imported in the browser. Components render their static shell on the server and start loading after hydration — no special setup is needed in SvelteKit.
+</Callout>

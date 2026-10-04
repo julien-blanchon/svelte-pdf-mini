@@ -1,0 +1,49 @@
+---
+title: Minimap
+description: A code-editor style overview of the document with a draggable viewport and markers.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+<Demo example="minimap" height={540} />
+
+## Anatomy
+
+```svelte
+<Minimap.Root width={110}>
+	<Minimap.Viewport />
+	<Minimap.Markers find annotations sections />
+</Minimap.Root>
+
+<Minimap.Root variant="heatmap" width={16}>
+	<Minimap.Heatmap find annotations />
+	<Minimap.Viewport />
+</Minimap.Root>
+```
+
+## Variants
+
+| `variant` | Strip shows |
+| --- | --- |
+| `'pages'` (default) | Bitmap previews; pages shorter than `minPreviewHeight` (36 px) become numbered blocks, since tiny previews are unreadable |
+| `'blocks'` | Plain page blocks with page numbers |
+| `'text'` | The document's structure drawn from the text index: lines, headings, figures |
+| `'spine'` | Coloured section bands with labels (needs `Paper.Root`) |
+| `'heatmap'` | No pages: only markers, or a density `Minimap.Heatmap` |
+
+`Minimap.Heatmap` bins find hits, annotations or your own `items` along the document (`bin`, `color`) — a quick way to see where a term or the notes cluster.
+
+## Usage
+
+- `mode="scroll"` (default): pages keep the strip width and the strip scrolls in proportion with the document. `mode="fit"`: the whole document shrinks to the strip.
+- `pages={false}`: no previews — a slim scrollbar with markers.
+- Click to jump; drag the viewport (or anywhere) to scrub. `wheel="document"` (default) scrolls the document from the strip; `wheel="strip"` scrolls the strip itself on long documents.
+- Keyboard: the strip is focusable — ↑ / ↓ step, PageUp / PageDown / Space move a screen, Home / End jump to the ends.
+- `Minimap.Markers` takes `items` (`{ page, y | fraction, height?, color?, kind?, label? }`) and adds find hits, annotations and section starts from the surrounding roots.
+- `MinimapState` exposes the geometry for fully custom renderings.
+
+## API reference
+
+<ApiReference namespace="Minimap" />

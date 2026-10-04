@@ -1,0 +1,32 @@
+---
+title: Introduction
+description: Headless, composable PDF viewer and research-paper reader components for Svelte 5.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+`svelte-pdf-mini` is a toolkit for building PDF experiences in **Svelte 5**: from a twenty-line viewer to a full research reader with highlights, side notes, citation cards and a table of contents. It is built on [pdf.js](https://mozilla.github.io/pdf.js/) and follows the conventions of [bits-ui](https://bits-ui.com): compound parts, `child` snippets, bindable state and `data-*` attributes instead of imposed styles.
+
+<Demo example="minimal" height={420} />
+
+## What you get
+
+- **A fast viewer.** Virtualised pages rendered by a cancellable priority scheduler, eased zoom that stays centred on narrow pages and follows the cursor on wide ones, fit modes, one to four pages per row, book spreads, rotation and pinch-zoom on touch.
+- **Text that works.** A selectable text layer and a shared text index (normalised text mapped back to PDF geometry) behind find, selection, copy and annotations.
+- **Annotations that survive.** Highlights, boxes, notes, ink, shapes and free text, with side notes, undo/redo and a calm creation workflow. Export writes standard PDF annotations that Apple Preview, Acrobat, Chrome and Firefox display, and importing the file gives back exactly what you exported.
+- **Research-paper aids.** From the PDF alone: sections, references, in-text citations with hover cards, figure and table previews, five table-of-contents views and reading progress. Online providers (OpenAlex, Semantic Scholar, Crossref) only enrich.
+- **Page themes.** A calm paper tint by day and a hue-preserving recolour at night, plus invert, smart invert (figures kept), sepia, dim and custom strategies.
+
+## Three layers
+
+| Layer | Import | Use it for |
+| --- | --- | --- |
+| Components | `svelte-pdf-mini` | Compound, unstyled parts: `Viewer.Page`, `Annotations.Layer`, `Toc.Rail`… |
+| State | `svelte-pdf-mini/state` | Runes classes (`ViewerState`, `AnnotationStore`, `PaperState`…) for headless use |
+| Core | `svelte-pdf-mini/core` | Plain TypeScript: text index, search, geometry, PDF codec, paper analysis |
+
+<Callout type="tip" title="Where next">
+	Install the package in <a href="/docs/installation">Installation</a>, build a reader in the <a href="/docs/quick-start">Quick start</a>, then browse the <a href="/components">components</a>.
+</Callout>

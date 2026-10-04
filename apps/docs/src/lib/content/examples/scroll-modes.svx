@@ -1,0 +1,10 @@
+---
+title: Scroll modes & rotation
+description: "Vertical, horizontal, wrapped (grid) and single-page layouts; rotate the whole document."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="scroll-modes" height={620} />

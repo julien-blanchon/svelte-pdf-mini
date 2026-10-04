@@ -1,0 +1,39 @@
+---
+title: Components
+description: Every namespace, its parts, and how they nest.
+---
+
+<script lang="ts">
+	import { Callout } from '#lib/index.ts';
+</script>
+
+Components are grouped in namespaces, imported from `svelte-pdf-mini`. Each page lists the namespace's anatomy, a live demo, usage and an API reference generated from the library's types.
+
+| Namespace | Parts | For |
+| --- | --- | --- |
+| [Document](/components/document) | `Root`, `Loading`, `Error`, `Password` | Loading a PDF and its states |
+| [Viewer](/components/viewer) | `Root`, `Viewport`, `Pages`, `Page`, `Canvas`, `TextLayer`, `LinkLayer`, `LinkPreview`, `Focus`, `BackButton` | Layout, rendering, links and navigation |
+| [Zoom](/components/zoom) | `In`, `Out`, `Mode`, `Select` | Zoom controls |
+| [PageNav](/components/page-nav) | `Prev`, `Next`, `Input` | Page controls |
+| [Find](/components/find) | `Root`, `Input`, `Next`, `Prev`, `Toggle`, `Count`, `Result`, `Layer` | Search |
+| [Outline](/components/outline) | `Root`, `Tree`, `Item` | PDF bookmarks |
+| [Thumbnails](/components/thumbnails) | `Root`, `Item` | Page previews |
+| [Minimap](/components/minimap) | `Root`, `Viewport`, `Markers` | A code-editor style overview |
+| [Annotations](/components/annotations) | `Root`, `Layer`, `SelectionMenu`, `Popover`, `HoverCard`, `Margin`, `LineMarkers`, `List`, `Crop`, `Comment`, `Tool`, `Color`, `Undo`, `Redo` | Highlights, boxes, drawings and notes |
+| [Paper](/components/paper) | `Root`, `Layer`, `Headings`, `CitationCard`, `CrossRefPreview`, `References`, `Figures` | Research-paper aids |
+| [Toc](/components/toc) | `Tree`, `Flat`, `Breadcrumb`, `Progress`, `Rail` | Tables of contents |
+
+## Common props
+
+Every part that renders an element also accepts:
+
+| Prop | Type | Meaning |
+| --- | --- | --- |
+| `ref` | `HTMLElement \| null` | The rendered element (bindable) |
+| `child` | `Snippet<[{ props, …snippetProps }]>` | Render your own element; spread `props` on it |
+| `children` | `Snippet<[snippetProps]>` | Content, receiving the part's snippet props |
+| HTML attributes | — | `class`, `style`, `aria-*`, handlers… merged with the part's own |
+
+These are not repeated in each API table.
+
+<Callout>Roots that create state (<code>Find.Root</code>, <code>Annotations.Root</code>, <code>Paper.Root</code>) render no element: wrap the pages and the parts that use them.</Callout>

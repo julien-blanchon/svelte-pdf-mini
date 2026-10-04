@@ -1,0 +1,50 @@
+name: Release
+
+# Changesets: pending changesets on main open (or update) a "Version packages"
+# pull request; merging it publishes the new version to npm with provenance.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # npm trusted publishing + provenance
+
+jobs:
+  release:
+    if: github.repository == 'julien-blanchon/svelte-pdf-mini'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      # npm ≥ 11.5 for trusted publishing (OIDC).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+
+      # Only needed until npm trusted publishing is configured for the package
+      # (first publish): add an NPM_TOKEN repository secret, remove it afterwards.
+      - name: npm token (fallback)
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - uses: changesets/action@v2
+        with:
+          version-script: bun run version
+          publish-script: bun run release
+          commit-message: 'chore: version packages'
+          pr-title: 'chore: version packages'
+          create-github-releases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

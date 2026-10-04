@@ -1,0 +1,10 @@
+---
+title: Context menu & shortcuts
+description: "Right-click (or Menu key / Shift+F10) on selected text, an annotation, a citation, a figure, a link or the page. The menu is built from viewer.lastContext + contextActions() and rendered with bits-ui; every entry shows its keyboard shortcut. Press ? for the full list."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="context-menu" height={620} />

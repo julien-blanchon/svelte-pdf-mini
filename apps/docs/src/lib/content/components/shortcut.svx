@@ -1,0 +1,21 @@
+---
+title: Shortcut
+description: Show the keys of any action as <kbd>, always in sync with the active keymap.
+---
+
+<script lang="ts">
+	import { ApiReference } from '#lib/index.ts';
+</script>
+
+`Shortcut.Root` renders the keyboard shortcut of a keymap action (`'markup.highlight'`, `'view.zoomIn'`, `'nav.back'`…). It reads the keymap from the nearest `Annotations.Root` or `Viewer.Root`, so overrides are reflected automatically.
+
+```svelte
+<button>Highlight <Shortcut.Root action="markup.highlight" /></button>
+<!-- <kbd data-pdf-shortcut="markup.highlight"><kbd data-pdf-key>H</kbd></kbd> -->
+```
+
+Use the `child` / `children` snippets (`{ label, keys }`) to render your own key caps. `comboLabel(keymap, action)` gives the same label as text.
+
+## API reference
+
+<ApiReference namespace="Shortcut" />

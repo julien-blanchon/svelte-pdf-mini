@@ -1,0 +1,42 @@
+---
+title: PDF export & import
+description: Write annotations into the PDF as standard annotations, read them back losslessly, and interoperate with Preview, Acrobat and browsers.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+```ts
+const bytes = await store.exportPdf(); // the original PDF + your annotations
+const markdown = store.toMarkdown({ title: 'Notes' });
+const json = store.toJSON();
+```
+
+Without components: `exportPdf(pdfBytes, annotations, options)`, `importAnnotations(pdfBytes, options)`, `annotationsToMarkdown`, `annotationsToJSON` / `annotationsFromJSON` from `svelte-pdf-mini/core`.
+
+## The contract
+
+1. **Standard annotations.** Every kind is written as its PDF counterpart (Highlight, Underline, StrikeOut, Squiggly with QuadPoints; Square, Circle, Line, PolyLine, Polygon, Ink, Text, FreeText, Stamp) **with an appearance stream**, plus `/Contents`, `/T` (author), dates, `/NM` (id), popups and reply links. Apple Preview, Acrobat, Chrome and Firefox show them.
+2. **Lossless round trip.** Fields PDF can't express (palette key, label, tags, quote, Markdown, `extra`) are stored in a private `/SPM_Data` key on each annotation and in an embedded `svelte-pdf-mini.json`. Opening the file again with `importFromPdf` gives back exactly what you exported.
+3. **Edits elsewhere win.** If someone recolours or moves an annotation in another app, the standard fields override the stored copy on import.
+4. **Foreign annotations** already in the PDF are kept; with `importFromPdf` they load as `origin: 'foreign'` (policy: the `foreign` prop — `'editable'`, `'readonly'` or `'hidden'`).
+
+## Options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `mode` | `'incremental'` | Append an update and keep the original bytes, or `'full'` rewrite |
+| `flatten` | `false` | Burn annotations into page content (no longer editable) |
+| `prune` | `'ours'` | `'all'` also removes foreign annotations you deleted |
+| `producer` | — | Producer string written into the update |
+
+<Demo example="export-import" height={540} />
+
+<Callout title="Apple Preview">
+	Preview re-saves the whole file: it keeps <code>/SPM_Data</code> and appearance streams but drops <code>/NM</code>, <code>/CA</code>, <code>/RC</code>, <code>/IRT</code> and the embedded JSON. Import rebuilds from <code>/SPM_Data</code> and merges field by field, so a recolour made in Preview is picked up while labels and notes survive. Incremental updates match the original file's cross-reference format, which Preview requires.
+</Callout>
+
+## Re-anchoring
+
+Highlights store their quote with a little context. When a different version of the paper is opened, `reanchor` (prop or `store.reanchor()`) finds each quote again and moves its quads, flagging the ones it cannot find as `extra.orphan`.

@@ -1,0 +1,30 @@
+---
+title: Core utilities
+description: Framework-agnostic TypeScript — text index, search, geometry, page themes, the PDF codec and paper analysis.
+---
+
+`svelte-pdf-mini/core` has no Svelte imports: use it in workers, on the server or in another framework.
+
+| Module | Exports |
+| --- | --- |
+| Text index | `PageText` (`raw`, `norm`, `quadsFor`, `rectFor`, `textOf`, `offsetAtPoint`), `normalizeWithMap`, `quadsBounds` |
+| Search | `searchPageText`, `compileQuery`, `matchSnippet` |
+| Geometry | `pdfRectToViewport`, `quadToSvgPoints`, `pdfRectToPercent`, `clamp` |
+| Destinations | `resolveDestination`, `listNamedDestinations`, `classifyDest` |
+| Zoom | `fitZoom`, `nextZoomStep`, `ZOOM_STEPS` |
+| Page themes | `pageThemes`, `paperColors`, `paperTheme`, `mixHex`, `invertLightness` |
+| Rendering | `RenderScheduler`, `renderPageToCanvas`, `renderRegionToCanvas`, `releaseCanvas` |
+| Annotations | the `Annotation` model, `defaultPalette`, `hitTest`, `reanchorAll`, `defaultKeymap`, `comboLabel` |
+| PDF codec | `exportPdf`, `importAnnotations`, `annotationsToMarkdown`, `annotationsToJSON` |
+| Papers | `analyzePaper`, `pdfjsPaperSource`, `parseReference`, `sectionAt` |
+| Providers | `defaultCitationProvider`, `openAlex`, `semanticScholar`, `crossref`, `arxiv`, `chainProviders` |
+| Messages | `defaultMessages`, `setMessages`, `formatMessage` |
+
+```ts
+import { analyzePaper, pdfjsPaperSource } from 'svelte-pdf-mini/core';
+import { getDocument } from 'pdfjs-dist';
+
+const doc = await getDocument(url).promise;
+const paper = await analyzePaper(pdfjsPaperSource(doc));
+console.log(paper.meta.title, paper.references.length);
+```

@@ -1,0 +1,45 @@
+---
+title: Keyboard shortcuts
+description: Every shortcut for viewing, finding and annotating — and how to remap them.
+---
+
+<script lang="ts">
+	import { KeymapTable, Callout } from '#lib/index.ts';
+</script>
+
+Shortcuts apply while the viewport, or something inside it, has focus. Turn the viewer's off with `keyboard={false}` on `Viewer.Root`.
+
+## Viewer
+
+| Keys | Action |
+| --- | --- |
+| Ctrl/⌘ `+` / `=` · `-` · `0` | Zoom in · out · fit width |
+| Ctrl/⌘ + wheel, trackpad pinch | Zoom (centred on narrow pages, under the cursor on wide ones) |
+| ← → (when the page fits) · Home · End | Previous / next page · first · last |
+| PageUp · PageDown · Space | Turn the page in single-page mode |
+| Ctrl/⌘ `[` · `]` | Rotate |
+| Alt + ← · → | Back / forward after a jump |
+
+## Find
+
+| Keys | Action |
+| --- | --- |
+| Ctrl/⌘ + F | Focus the find input (seeded with the selected text) |
+| Enter · Shift + Enter | Next · previous match |
+| Esc | Clear and return to the document |
+
+## Annotations
+
+Normal mode is **select**: read, select text, and double-click annotations to edit them. The table below is the live `defaultKeymap`:
+
+<KeymapTable />
+
+Remap any action through the `keymap` prop (merged over the defaults):
+
+```svelte
+<Annotations.Root keymap={{ 'tool.area': ['b'], undo: ['mod+z', 'alt+backspace'] }}>
+```
+
+Combos are written `mod+z` (Ctrl on Windows and Linux, ⌘ on macOS), `shift+mod+z`, `alt+1` or plain keys (`h`, `Delete`, `ArrowLeft`). `comboLabel(store.keymap, 'tool.area')` prints one for tooltips (`B`, `⌘Z`, `Ctrl+Z`).
+
+<Callout>While typing in a note, plain digits type; use <kbd>Alt</kbd> + 1–9 to recolour. Enter keeps a new annotation (Shift + Enter adds a line), Esc discards it.</Callout>

@@ -1,0 +1,26 @@
+---
+title: PageNav
+description: Previous, next and a page-number input.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+<Demo example="scroll-modes" height={460} />
+
+## Anatomy
+
+```svelte
+<PageNav.Prev />
+<PageNav.Input />
+<PageNav.Next />
+```
+
+## Usage
+
+`PageNav.Input` commits on Enter or blur, reverts on Escape and selects its content on focus. In single-page mode with several columns, Prev and Next move a whole spread. Page labels (roman numerals for front matter) come from `viewer.document.pageLabel(n)`.
+
+## API reference
+
+<ApiReference namespace="PageNav" />

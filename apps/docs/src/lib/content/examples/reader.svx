@@ -1,0 +1,10 @@
+---
+title: Paper reader
+description: A complete research reader built from the library parts.
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="reader" height={780} wide />

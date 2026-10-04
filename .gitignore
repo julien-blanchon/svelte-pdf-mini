@@ -1,0 +1,15 @@
+node_modules
+.svelte-kit
+dist
+build
+.DS_Store
+test-results
+playwright-report
+fixtures/cache
+fixtures/out
+
+# Packing / publishing
+*.tgz
+.npmrc
+.env
+.env.*

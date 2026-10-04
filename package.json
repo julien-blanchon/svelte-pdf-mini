@@ -1,0 +1,32 @@
+{
+	"name": "svelte-pdf-mini-monorepo",
+	"private": true,
+	"type": "module",
+	"workspaces": [
+		"packages/*",
+		"apps/*"
+	],
+	"scripts": {
+		"dev": "bun --filter docs dev",
+		"build": "bun --filter svelte-pdf-mini build && bun --filter docs build",
+		"check": "bun --filter '*' check",
+		"lint": "bun --filter svelte-pdf-mini lint",
+		"test": "bun --filter svelte-pdf-mini test",
+		"test:full": "bun --filter svelte-pdf-mini test:full",
+		"test:e2e": "bun --filter docs test:e2e",
+		"test:e2e:full": "bun --filter docs test:e2e:full",
+		"format": "bun --filter '*' format",
+		"fixtures": "bun fixtures/download.ts",
+		"changeset": "changeset",
+		"version": "changeset version && bun install",
+		"release": "bun --filter svelte-pdf-mini build && changeset publish"
+	},
+	"devDependencies": {
+		"@changesets/changelog-github": "^1.0.1",
+		"@changesets/cli": "^3.0.3"
+	},
+	"packageManager": "bun@1.3.14",
+	"engines": {
+		"node": ">=22"
+	}
+}

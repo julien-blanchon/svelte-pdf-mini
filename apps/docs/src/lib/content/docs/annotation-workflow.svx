@@ -1,0 +1,50 @@
+---
+title: Annotation workflow
+description: How creating, confirming, selecting and editing annotations works — designed so nothing is created by accident.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+The store implements one workflow that every annotation UI built on it shares. It is designed around one rule: **users never create or change something they didn't mean to.**
+
+<Demo example="annotations-markup" height={560} />
+
+## The rules
+
+1. **Normal mode is selection.** Reading, selecting text and scrolling never create anything. A text selection only opens the `SelectionMenu`; the menu or a shortcut (H, U, S, C, 1–9) creates the markup.
+2. **Every creation is pending.** A new annotation becomes `store.pendingId` and its note opens for typing. **Enter** keeps it, **Esc** discards it without leaving an undo step, clicking elsewhere keeps it.
+3. **Tools are one-shot.** After drawing a box, an arrow or a note, the tool returns to select. Hold Shift while creating to keep the tool once, or set `stickyTools` for highlighting sessions.
+4. **No double markups.** In highlighter mode, a double-click followed by a triple-click (word, then line) extends one markup instead of stacking a second.
+5. **Editing is deliberate.** Existing annotations are selected with a double-click (`selectOn: 'dblclick'`, the default; `'click'` is available). A selected annotation shows its popover; Delete removes it, Enter or F2 edits its note, arrows nudge shapes, corners resize (Shift keeps proportions).
+6. **One keymap.** Every shortcut comes from `defaultKeymap`, merged with your `keymap` prop. `comboLabel(store.keymap, action)` prints a combo for tooltips. See [Keyboard shortcuts](/docs/keyboard).
+
+## Store API
+
+```ts
+store.createFromSelection('highlight'); // markup from the text selection → pending
+store.create('area', { page, rect }); // any kind → pending
+store.commit(); // keep the pending annotation
+store.discard(); // drop it (no undo step)
+store.edit(id); // open its note
+store.update(id, { contents: 'Key result' });
+store.remove(id);
+store.undo();
+store.redo();
+store.batch(() => {
+	/* several changes, one undo step */
+});
+```
+
+## Showing notes
+
+- `Annotations.Margin` stacks notes beside the page without overlaps; `Annotations.LineMarkers` draws gutter bars; `Annotations.HoverCard` shows a note on hover.
+- `store.notesVisible = false` hides margin notes and markers in one go.
+- `forceMount` + the `child` snippet's `open` flag let you animate your own hover card (see [Floating parts](/docs/floating-parts)).
+
+<Demo example="annotations-draw" height={560} />
+
+<Callout title="Persisting">
+	The library stores nothing itself. Save in <code>onAnnotationsChange(list, ops)</code>, keyed by <code>viewer.document.fingerprint</code> (stable across mirrors of the same file), and restore with <code>store.load(list)</code> — which resets undo history.
+</Callout>

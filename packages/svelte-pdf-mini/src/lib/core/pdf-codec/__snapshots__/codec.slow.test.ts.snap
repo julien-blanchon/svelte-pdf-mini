@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`pdf annotation codec > (7) exports JSON and Markdown 1`] = `
+"# Attention Is All You Need
+
+## Front matter
+
+- p. 1 · Highlight · yellow · Julien
+  > Attention Is All You Need
+
+  The title — with **Markdown** and ünïcödé.
+  - ↳ **Ana:** I agree!
+
+- p. 1 · Note
+
+  Margin note
+  second line
+
+## Abstract
+
+- p. 1 · Underline · blue
+  > The dominant sequence transduction models
+
+- p. 1 · Strike-out · red
+  > complex recurrent or
+
+- p. 1 · Squiggly · green
+  > attention mechanism
+
+## 1 Introduction
+
+- p. 2 · Stamp
+
+- p. 2 · Drawing
+
+- p. 2 · Text
+  > Free text box
+  > with two lines – and a long sentence that wraps
+
+- p. 2 · Area · *Fig. 1*
+
+  The architecture figure
+
+- p. 2 · Polyline
+
+- p. 2 · Arrow
+
+- p. 2 · Polygon
+
+- p. 2 · Rectangle
+
+- p. 2 · Ellipse
+
+- p. 2 · Line
+"
+`;

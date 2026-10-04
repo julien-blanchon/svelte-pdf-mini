@@ -1,0 +1,32 @@
+---
+title: Accessibility
+description: Semantics, keyboard support, focus management and motion in svelte-pdf-mini.
+---
+
+<script lang="ts">
+	import { Callout } from '#lib/index.ts';
+</script>
+
+## Semantics
+
+- Pages are `role="region"` landmarks labelled "Page N"; the text layer keeps the PDF's reading order and is selectable and copyable.
+- `<Paper.Headings />` adds real `h2`–`h6` headings at every section, hidden visually but available to screen readers — the document gets a navigable heading structure.
+- Controls are buttons with labels (translatable through `messages`); toggles use `aria-pressed`, the current outline or TOC item `aria-current="location"`, find results `aria-current`, and `Find.Count` is a polite live region.
+- Thumbnails are a `listbox` of `option`s, the minimap a vertical `scrollbar` with value text, floating cards `dialog` or `tooltip`, the selection menu a `toolbar`.
+
+## Keyboard
+
+- The viewport is focusable and handles zoom, page and history keys; annotation and find shortcuts are scoped to the viewer so they never fire while typing elsewhere. See [Keyboard shortcuts](/docs/keyboard).
+- Text fields (find, notes, labels) keep their keys: plain digits type, Alt + digit recolours.
+- Escape always backs out one level: discard a new annotation, deselect, close a menu, clear find.
+
+## Motion
+
+- `prefers-reduced-motion` turns eased zoom, smooth scrolling, focus pulses and floating-part animations off.
+- Every animation is CSS you can override.
+
+## Language
+
+All visible and assistive strings come from `defaultMessages`. Translate them globally with `setMessages()` or per viewer with the `messages` prop.
+
+<Callout type="tip">When you render parts through <code>child</code>, spread <code>props</code> on a semantic element (a <code>button</code> for buttons, an <code>input</code> for inputs): the ARIA attributes the part provides assume it.</Callout>

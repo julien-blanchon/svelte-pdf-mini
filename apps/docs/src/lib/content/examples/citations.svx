@@ -1,0 +1,10 @@
+---
+title: Citations, references & figures
+description: "Every [12] / (Author, 2020) becomes a link: hover for the full reference (parsed from the paper, enriched online), click to jump, Back to return. Groups like [1, 2, 3] can show every reference at once or page through them. Clicks and actions are yours to override (open the cited paper, import it…), and the card can be fully restyled with its own transitions."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="citations" height={620} />

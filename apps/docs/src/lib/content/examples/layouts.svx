@@ -1,0 +1,10 @@
+---
+title: Page layouts (spreads)
+description: "One to four pages per row with vertical scrolling, or \"auto\": zoom out with Ctrl/⌘ + wheel or the − button and the layout flows 1 → 2 → 3 → 4 pages per row."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="layouts" height={620} />

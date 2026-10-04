@@ -1,0 +1,10 @@
+---
+title: Highlights & side notes
+description: "Normal mode is selection: select text and press H / U / S / C, a colour 1–9, or use the floating menu. The new annotation opens its note (Enter keeps; Esc — or Backspace before typing — discards; 1–9 recolour). Click an annotation to select it (click again to cycle overlaps), Delete removes it. Notes support Markdown and $\\LaTeX$; they sit in the margin, the gutter has one thin bar per annotation (in lanes when they overlap), and filters show only some colours."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="annotations-markup" height={620} />

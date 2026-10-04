@@ -1,0 +1,10 @@
+---
+title: Boxes, drawing & notes
+description: "Pick a tool (A box, P pen, L arrow, R rectangle, N note, T text): after one creation you are back in select mode with the new annotation’s note open (Enter keeps; Esc, or Backspace before typing, discards; 1–9 recolour). Click a shape to select it: drag to move, drag any corner or edge to resize (Shift keeps proportions, Alt resizes from the centre), arrows nudge, Delete removes. Overlapping shapes: the innermost wins, click again (or Alt+click) to reach the one below. The pen draws pressure-sensitive strokes (perfect-freehand); text boxes are typed right on the page."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="annotations-draw" height={620} />

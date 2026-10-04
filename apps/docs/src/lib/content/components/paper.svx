@@ -1,0 +1,39 @@
+---
+title: Paper
+description: Citations, references, figures and cross-references extracted from the PDF.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+`Paper.Root` analyses the document and creates the `PaperState`. `Paper.Layer` turns in-text citations and "Fig. 3"-style references into links; the cards and lists read the model.
+
+<Demo example="citations" height={580} />
+
+## Anatomy
+
+```svelte
+<Paper.Root provider={defaultCitationProvider()}>
+	<!-- inside each Viewer.Page -->
+	<Paper.Layer />
+	<Paper.Headings />
+	<!-- anywhere inside -->
+	<Paper.CitationCard />
+	<Paper.CrossRefPreview />
+	<Paper.References />
+	<Paper.Figures />
+</Paper.Root>
+```
+
+## Usage
+
+- Click hooks (`onCitationClick`, `onCrossRefClick`, `onReferenceClick`) let your app open or import cited papers instead of jumping.
+- `Paper.CitationCard layout="list"` shows every reference of a group like [1, 2, 3].
+- `Paper.Headings` adds hidden real headings for screen readers and DOM-based tables of contents.
+
+Guide: [Research papers](/docs/research-papers).
+
+## API reference
+
+<ApiReference namespace="Paper" />

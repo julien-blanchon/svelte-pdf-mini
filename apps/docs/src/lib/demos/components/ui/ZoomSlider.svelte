@@ -1,0 +1,29 @@
+<!-- Zoom slider recipe: bits-ui Slider driving ViewerState.zoomTo (animated), log scale. -->
+<script lang="ts">
+	import { Slider } from 'bits-ui';
+	import type { ViewerState } from 'svelte-pdf-mini';
+	import { cn } from './cn.ts';
+
+	let { viewer, min = 0.25, max = 4, class: className }: { viewer: ViewerState; min?: number; max?: number; class?: string } = $props();
+	// Slider in log space so 50%→100% feels like 100%→200%.
+	const toPos = (z: number) => Math.log(z / min) / Math.log(max / min);
+	const toZoom = (p: number) => min * Math.pow(max / min, p);
+</script>
+
+<Slider.Root
+	type="single"
+	min={0}
+	max={1}
+	step={0.005}
+	bind:value={() => toPos(viewer.zoom), (p) => {
+		// Ignore echoes of the current zoom (the slider rounds to its step while zoom animates).
+		if (Math.abs(p - toPos(viewer.zoom)) > 0.008) viewer.zoomTo(toZoom(p));
+	}}
+	aria-label="Zoom"
+	class={cn('relative flex h-5 w-36 touch-none items-center select-none', className)}
+>
+	<span class="relative h-1 w-full grow overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+		<Slider.Range class="absolute h-full bg-stone-500 dark:bg-stone-400" />
+	</span>
+	<Slider.Thumb index={0} class="block size-4 rounded-full border border-stone-300 bg-white shadow transition-transform outline-none hover:scale-110 focus-visible:ring-2 focus-visible:ring-blue-500/60 dark:border-stone-500" />
+</Slider.Root>

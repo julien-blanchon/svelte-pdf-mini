@@ -1,0 +1,56 @@
+---
+title: Annotation model
+description: The JSON shape of annotations, change operations and the colour palette.
+---
+
+Annotations are plain, JSON-serialisable objects in PDF user space. The store holds them, change events carry them and the PDF codec reads and writes them.
+
+## Common fields
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `id` | `string` | UUID, written as `/NM` |
+| `page` | `number` | 1-based page |
+| `kind` | `AnnotationKind` | See below |
+| `rect` | `[x1, y1, x2, y2]` | Bounding box in PDF points; contains all geometry |
+| `color` | `[r, g, b]` | Each 0–1, like PDF `/C` |
+| `opacity` | `number` | 0–1 |
+| `paletteKey` | `string?` | Palette entry (`'yellow'`…) so themes can remap colours |
+| `contents` | `string?` | The note; `contentsFormat` is `'plain'` or `'markdown'` |
+| `label` | `string?` | Short label, shown as a chip on boxes |
+| `tags` | `string[]?` | Free tags |
+| `author` | `{ name, id?, color? }?` | Written as `/T` |
+| `createdAt` · `modifiedAt` | ISO strings | Written as PDF dates |
+| `inReplyTo` | `string?` | Reply threading |
+| `locked` · `hidden` | `boolean?` | Protection and visibility |
+| `origin` | `'local'` · `'foreign'` | Foreign = found in a PDF not written by svelte-pdf-mini |
+| `extra` | `Record<string, unknown>?` | Your data, round-tripped losslessly |
+
+## Kinds
+
+| Kind | Extra fields |
+| --- | --- |
+| `highlight` · `underline` · `strikeout` · `squiggly` | `quads` (8 numbers per line: TL, TR, BL, BR) and `quote` (`exact`, `prefix`, `suffix`, offsets) |
+| `area` | `fill`, `fillOpacity`, `width`, optional `quote` — a box around a figure, equation or table |
+| `note` | `icon` (Comment, Note, Key…) |
+| `freetext` | `text`, `font` (`family`, `size`, `bold`, `italic`), `align`, `textColor`, `fill` |
+| `ink` | `paths` (`points`, optional `pressure`), `width` |
+| `rect` · `ellipse` · `line` · `arrow` · `polygon` · `polyline` | `width`, `fill`, `fillOpacity`, `dash`, `points`, `lineEndings` |
+| `stamp` | `name`, `image` (data URL) |
+
+## Change operations
+
+`onAnnotationsChange(list, ops)` receives the new list and the operations of one undo step:
+
+```ts
+type AnnotationOp =
+	| { type: 'add'; annotation: Annotation }
+	| { type: 'update'; id: string; before: Annotation; after: Annotation }
+	| { type: 'remove'; annotation: Annotation };
+```
+
+Persist the list, or apply `ops` to a server for collaborative or incremental saves.
+
+## Palette
+
+`defaultPalette` has eight entries (yellow, green, blue, pink, purple, orange, red, gray), each with `rgb` (stored on the annotation), `light` and `dark` CSS colours. Pass your own with the `palette` prop; `nearestPaletteKey(rgb)` recovers a key for annotations imported from other apps.

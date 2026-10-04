@@ -1,0 +1,10 @@
+---
+title: Mobile reader
+description: "Touch-first layout: full-bleed pages, a bottom toolbar with large targets, bottom sheets for contents and notes, highlight from a long-press selection. Best viewed at phone width."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="mobile" height={620} />

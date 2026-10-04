@@ -1,0 +1,10 @@
+---
+title: Find
+description: "Search ignoring case, accents, ligatures and line-break hyphens. Choose how matches are drawn (all, current only, or others styled differently through the match snippet), browse results grouped by section, and see every hit on a minimap scrollbar. Enter / Shift+Enter, Ctrl/⌘ + F."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="find" height={620} />

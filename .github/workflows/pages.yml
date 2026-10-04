@@ -1,0 +1,45 @@
+name: Docs
+
+# Builds the docs (with every demo) and deploys them to GitHub Pages:
+# https://julien-blanchon.github.io/svelte-pdf-mini
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - uses: actions/configure-pages@v6
+      - name: Build
+        run: bun --filter docs build
+        env:
+          BASE_PATH: /svelte-pdf-mini
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/docs/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

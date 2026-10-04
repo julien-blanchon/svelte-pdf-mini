@@ -1,0 +1,10 @@
+---
+title: Sources & states
+description: "Load from a URL, a local file or drag-and-drop; loading, error and password states."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="sources" height={620} />

@@ -1,0 +1,10 @@
+---
+title: Minimal
+description: "The smallest useful viewer: a document, a scroll viewport and the default pages."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="minimal" height={620} />

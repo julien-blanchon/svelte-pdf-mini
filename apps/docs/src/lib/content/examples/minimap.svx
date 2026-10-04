@@ -1,0 +1,10 @@
+---
+title: Minimap
+description: "A code-editor style minimap you can put anywhere, in five looks: bitmap pages, plain blocks, text structure, section spine and a marker heatmap. Drag the viewport, click to jump, wheel to scroll, or focus it and use the arrow / Page / Home / End keys."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="minimap" height={620} />

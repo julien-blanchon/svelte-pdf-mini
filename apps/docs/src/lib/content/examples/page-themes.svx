@@ -1,0 +1,10 @@
+---
+title: Page themes
+description: "pageThemes.paper is the recommended reading theme: by day a soft paper tint (multiply, like sepia), by night a tinted vector recolor (text and plots recoloured, photos untouched). Pick any colour and strength; the raw strategies are listed below for comparison. Page edges come from pageFrame."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="page-themes" height={620} />

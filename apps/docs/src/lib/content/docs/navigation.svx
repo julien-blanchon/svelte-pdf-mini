@@ -1,0 +1,49 @@
+---
+title: Navigation & focus
+description: Go to pages, regions and named destinations, highlight what you land on, and keep a back/forward history.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+```ts
+viewer.goToPage(5, { behavior: 'smooth' });
+viewer.focus({ page: 3, rect: [107, 430, 505, 720] }, { highlight: 'spotlight' });
+viewer.focus({ dest: 'section.3' }); // a hyperref named destination
+viewer.navigate({ dest: 'cite.vaswani2017' }); // like focus, but remembered: viewer.back()
+```
+
+## Targets
+
+| Target | Meaning |
+| --- | --- |
+| `{ page }` | The top of a page |
+| `{ page, rect }` | A region in PDF points (`[x1, y1, x2, y2]`, origin bottom-left) |
+| `{ page, point }` | A point; `y` aligns to the top of the view |
+| `{ dest }` | A named (`'section.3'`) or explicit destination |
+
+`listNamedDestinations(doc)` lists a document's named destinations; it falls back to link annotations when pdf.js returns none. Regions also come from the [paper analysis](/docs/research-papers): `paper.figures[i].rect`, `paper.flatSections[i].rect`, or any quote through the text index.
+
+## Options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `align` | `'start'` (`'center'` for rects) | `'start'` · `'center'` · `'end'` · `'nearest'` |
+| `behavior` | `'auto'` | Scroll behaviour (`'instant'` with reduced motion) |
+| `highlight` | `'pulse'` for rects | `'pulse'` · `'outline'` · `'spotlight'` · any string, exposed as `data-highlight` |
+| `duration` | `focusDuration` (1800 ms) | How long the effect stays |
+| `padding` | `focusPadding` (6 pt) | Grows the region so the highlight comfortably includes it |
+| `offset` | `16` | Pixels between the target and the viewport edge |
+
+Effects render in `<Viewer.Focus />` inside each page. The built-ins are plain CSS on `[data-pdf-focus][data-highlight]`; for your own, render through its `child` snippet (`{ props, highlight, duration }`).
+
+<Demo example="focus" height={560} />
+
+## History and reading position
+
+- `navigate()` pushes the current place; `back()` / `forward()` (Alt + ← / →), `canGoBack` and `<Viewer.BackButton />` ("← Back to page 2") use it. Links, citations and outline items navigate this way.
+- `viewer.position` (e.g. `3.42` = 42% into page 3) and `viewer.restorePosition(3.42)` save and restore where the reader was; put it in the URL hash.
+- `viewer.readingPoint` (`{ page, y, fraction }`) and `viewer.viewRange` describe what is on screen; they drive active sections, progress bars and the minimap.
+
+<Callout type="tip">Prefer <code>navigate()</code> for jumps the reader will want to undo (citations, figures), and <code>focus()</code> for programmatic positioning.</Callout>

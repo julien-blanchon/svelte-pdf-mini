@@ -1,0 +1,102 @@
+---
+title: Quick start
+description: From a minimal viewer to a reader with find, highlights and citation cards.
+---
+
+<script lang="ts">
+	import { Demo, Callout, Steps, Step } from '#lib/index.ts';
+</script>
+
+<Steps>
+	<Step title="Load and show a document">
+
+`Document.Root` loads the PDF; `Viewer.Root` owns zoom, layout and navigation; `Viewer.Viewport` scrolls; `Viewer.Pages` renders every page with a canvas and a text layer.
+
+```svelte
+<script>
+	import { Document, Viewer } from 'svelte-pdf-mini';
+	import 'svelte-pdf-mini/styles.css';
+</script>
+
+<Document.Root src="https://arxiv.org/pdf/1706.03762">
+	<Viewer.Root zoomMode="page-width" style="height: 100dvh">
+		<Viewer.Viewport style="height: 100%">
+			<Viewer.Pages />
+		</Viewer.Viewport>
+	</Viewer.Root>
+</Document.Root>
+```
+
+	</Step>
+	<Step title="Choose the page layers">
+
+Render pages yourself to pick their layers. Each layer is optional.
+
+```svelte
+<Viewer.Pages>
+	{#snippet children({ pageNumber })}
+		<Viewer.Page {pageNumber}>
+			<Viewer.Canvas />
+			<Viewer.TextLayer />
+			<Viewer.LinkLayer />
+			<Viewer.Focus />
+		</Viewer.Page>
+	{/snippet}
+</Viewer.Pages>
+```
+
+	</Step>
+	<Step title="Add a toolbar">
+
+Controls are parts too, so they read the viewer from context. Bind any state you need.
+
+```svelte
+<Viewer.Root bind:page bind:zoom>
+	<header>
+		<PageNav.Prev /> <PageNav.Input /> <PageNav.Next />
+		<Zoom.Out /> <Zoom.Select /> <Zoom.In />
+	</header>
+	<Viewer.Viewport>…</Viewer.Viewport>
+</Viewer.Root>
+```
+
+	</Step>
+	<Step title="Annotate and read like a researcher">
+
+Wrap the pages with `Find.Root`, `Annotations.Root` and `Paper.Root`, add their layers to each page and their floating parts anywhere inside.
+
+```svelte
+<Find.Root>
+	<Annotations.Root bind:annotations>
+		<Paper.Root>
+			<Viewer.Viewport>
+				<Viewer.Pages>
+					{#snippet children({ pageNumber })}
+						<Viewer.Page {pageNumber}>
+							<Viewer.Canvas />
+							<Viewer.TextLayer />
+							<Find.Layer />
+							<Paper.Layer />
+							<Annotations.Layer />
+						</Viewer.Page>
+					{/snippet}
+				</Viewer.Pages>
+			</Viewer.Viewport>
+			<Annotations.SelectionMenu />
+			<Annotations.Popover />
+			<Paper.CitationCard />
+		</Paper.Root>
+	</Annotations.Root>
+</Find.Root>
+```
+
+	</Step>
+</Steps>
+
+The full reader below combines everything on this site — open the source tabs to see how.
+
+<Demo example="reader" height={640} />
+
+<Callout type="tip">
+	Every root exposes its state class: <code>bind:viewer</code>, <code>bind:store</code>, <code>bind:paper</code>, <code>bind:find</code>. Use them for commands like <code>viewer.focus(&#123; dest: 'section.3' &#125;)</code> or <code>store.exportPdf()</code>.
+</Callout>

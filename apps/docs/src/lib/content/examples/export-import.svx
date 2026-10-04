@@ -1,0 +1,10 @@
+---
+title: Export & re-import (PDF)
+description: "Annotate, export a real PDF with standard annotations (open it in Preview, Acrobat or Chrome), then drop it back here: everything comes back exactly, including colours, labels and notes. Also Markdown and JSON export."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="export-import" height={620} />

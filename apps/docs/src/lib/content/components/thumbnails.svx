@@ -1,0 +1,28 @@
+---
+title: Thumbnails
+description: Lazy, cached page previews that follow the current page.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+<Demo example="outline-thumbnails" height={520} />
+
+## Anatomy
+
+```svelte
+<Thumbnails.Root width={140}>
+	{#each { length: viewer.document.numPages } as _, i}
+		<Thumbnails.Item pageNumber={i + 1} />
+	{/each}
+</Thumbnails.Root>
+```
+
+## Usage
+
+Thumbnails render when scrolled into view, at low priority, and are cached per document (other thumbnail lists and the minimap reuse them). The current page's item gets `data-current` and is kept in view.
+
+## API reference
+
+<ApiReference namespace="Thumbnails" />

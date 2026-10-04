@@ -1,0 +1,29 @@
+---
+title: Zoom
+description: Zoom in and out, pick a fit mode or a level, with eased transitions.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+Zoom controls read the viewer from context. Every change eases (unless `smoothZoom` is off) and keeps the page centred, or the point under the cursor once pages are wider than the view.
+
+<Demo example="zoom" height={460} />
+
+## Anatomy
+
+```svelte
+<Zoom.Out />
+<Zoom.Select />                <!-- fit modes + steps -->
+<Zoom.In />
+<Zoom.Mode mode="page-width">Width</Zoom.Mode>
+```
+
+## Usage
+
+`Zoom.In` and `Zoom.Out` are disabled at the ends of `zoomSteps`; `Zoom.Mode` exposes `data-active` and `aria-pressed`. For a slider, bind it to the viewer: `bind:value={() => viewer.zoom, (z) => viewer.zoomTo(z)}`.
+
+## API reference
+
+<ApiReference namespace="Zoom" />

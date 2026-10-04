@@ -1,0 +1,40 @@
+---
+title: Performance
+description: How rendering stays fast, what it costs, and the knobs to tune it.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+## What the viewer does for you
+
+- **One worker.** Every document shares a single pdf.js worker (set `configurePdf({ sharedWorker: false })` to opt out).
+- **Exact, cheap layout.** All page shells exist from the start with their real size, so scroll height and jumps are exact; only pages within `overscan` viewport heights get a bitmap.
+- **Priority scheduler.** Visible pages render first, nearby pages next, thumbnails last. Work for pages that scroll away is cancelled, and re-queuing a page replaces its pending job.
+- **Zoom without re-layout storms.** A zoom frame changes one CSS variable (`--pdf-scale`); the stretched bitmap stays until the sharp render lands. Text layers follow through CSS and are re-measured once zoom settles.
+- **Sharp zoom-ins.** Zoomed-out pages render at up to 2× (`oversampling`), and a page stretched past 1.35× during a long zoom is refreshed once.
+- **Bitmap cache.** Pages that scroll away keep their bitmap in a shared LRU cache (`configurePdf({ bitmapCacheBytes })`, default 192 MB, `0` disables), so scrolling back or changing columns redraws instantly.
+- **Level of detail.** Pages narrower than `detailMinWidth` (260 CSS px) — thumbnail-sized spreads when zoomed out — skip their text layer and text indexing, so four-per-row layouts stay smooth.
+- **Cached analysis.** `PaperState` accepts a `cache` (`KeyValueStore`, e.g. `indexedDbStore('papers')`): analysis results are stored by document fingerprint and reopened papers skip analysis.
+- **Capped bitmaps.** `maxCanvasPixels` (16M device pixels) bounds memory per page at high zoom.
+- **Shared text.** Page text is extracted and indexed once, then shared by the text layer, find, selection, annotations and paper analysis.
+- **Thumbnails** are rendered lazily, at low priority, and cached per document.
+
+<Demo example="stress" height={480} />
+
+## Tuning
+
+| Knob | Effect |
+| --- | --- |
+| `overscan` | Fewer pages pre-rendered around the view (lower memory) or more (smoother fast scrolling) |
+| `maxCanvasPixels` | Lower on memory-constrained devices |
+| `oversampling={false}` | Saves memory when users rarely zoom |
+| `detailMinWidth` | Width below which pages skip text layers (raise it for faster zoomed-out layouts) |
+| `configurePdf({ bitmapCacheBytes })` | Memory for bitmaps of off-screen pages |
+| `smoothZoom={false}` | Jump instead of easing |
+| `columns="auto"` + `maxColumns` | Limit how many pages share a row when zooming out |
+
+<Callout title="Research-paper analysis">
+	<code>Paper.Root</code> analyses typical papers in 0.2–0.5 s; plot-heavy papers whose operator lists are expensive can take several seconds. Pass <code>auto=&#123;false&#125;</code> and call <code>paper.analyze()</code> when the user opens a paper panel if you want to defer it.
+</Callout>

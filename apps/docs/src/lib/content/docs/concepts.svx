@@ -1,0 +1,73 @@
+---
+title: Concepts
+description: Roots and parts, coordinates, controlled state, the text index and the render pipeline.
+---
+
+<script lang="ts">
+	import { Callout } from '#lib/index.ts';
+</script>
+
+## Roots and parts
+
+Root components create a state class and put it in context; the parts below read it. Nest them in this order:
+
+```text
+Document.Root            loads the PDF            → PdfDocument
+└─ Viewer.Root           zoom, layout, navigation  → ViewerState
+   ├─ Find.Root          search                    → FindState
+   ├─ Outline.Root       PDF bookmarks             → OutlineState
+   ├─ Annotations.Root   annotations, tools, undo  → AnnotationStore
+   ├─ Paper.Root         paper analysis            → PaperState
+   └─ Viewer.Viewport
+      └─ Viewer.Pages
+         └─ Viewer.Page  (per page)                → PageState
+            ├─ Viewer.Canvas · Viewer.TextLayer · Viewer.LinkLayer · Viewer.Focus
+            ├─ Find.Layer · Annotations.Layer · Annotations.Margin · Paper.Layer
+            └─ Paper.Headings
+```
+
+Find, Annotations and Paper roots render no element; the order between them does not matter as long as they wrap the pages and the floating parts that use them.
+
+## Every part, the same contract
+
+- **`class`, `style` and any HTML attribute** are merged with the part's own; event handlers are chained, not replaced.
+- **`ref`** (bindable) gives you the DOM element.
+- **`child`** renders your own element instead: `{#snippet child({ props })}<MyButton {...props} />{/snippet}` — spread `props`, which carry ARIA attributes, handlers and the internal attachment.
+- **`children`** receives the part's snippet props (for example `Viewer.Page` passes `pageNumber`, `width`, `height`, `isVisible`…).
+- **Data attributes** describe state for styling: `data-current`, `data-active`, `data-state="open"`, `data-selected`… See [Data attributes & CSS variables](/docs/data-attributes).
+
+## Controlled and uncontrolled state
+
+Every piece of view state works both ways:
+
+```svelte
+<!-- uncontrolled: the viewer owns it -->
+<Viewer.Root zoomMode="page-width">…</Viewer.Root>
+
+<!-- bound -->
+<Viewer.Root bind:zoom bind:page>…</Viewer.Root>
+
+<!-- value + callback (e.g. to persist) -->
+<Viewer.Root {page} onPageChange={(p) => save(p)}>…</Viewer.Root>
+
+<!-- function binding: validate or transform -->
+<Viewer.Root bind:page={() => page, (p) => (page = Math.min(p, 10))}>…</Viewer.Root>
+```
+
+With the state classes, pass a getter to control a value: `new ViewerState({ document, zoom: () => z, onZoomChange: (v) => (z = v) })`.
+
+## Coordinates
+
+Everything stored — focus rects, annotations, citations, figures — is in **PDF user space**: points (1/72 inch), origin at the bottom-left, unrotated, pages numbered from 1. Zoom and rotation are view concerns, so stored geometry never changes. Overlays use a scale-1 pdf.js viewport as their SVG `viewBox`, so they follow zoom for free.
+
+## The text index
+
+Each page's text is indexed once (`document.getPageText(n)`): the raw text with item offsets, a search-normalised form (case, accents, ligatures and line-break hyphens folded) and `quadsFor(start, end)` to turn any character range into PDF quads. Find, selection, copy, annotations and the paper analysis all share it.
+
+## The render pipeline
+
+Pages are laid out from their sizes (all page shells exist, so scroll height is exact), and only pages near the view are drawn. A priority scheduler renders visible pages first and cancels work that scrolls away. Zoom changes one CSS variable (`--pdf-scale`) per frame; the old bitmap stays, stretched, until the sharp one lands. See [Performance](/docs/performance).
+
+<Callout>
+	Root order and the parts contract are the same everywhere, so once you know the <a href="/components/viewer">Viewer</a> page, every other component reads the same way.
+</Callout>

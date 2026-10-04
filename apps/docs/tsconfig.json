@@ -1,0 +1,24 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": false,
+		"strict": true,
+		"skipLibCheck": true,
+		"resolveJsonModule": true,
+		"paths": {
+			"svelte-pdf-mini": [
+				"../../packages/svelte-pdf-mini/src/lib/index.ts"
+			],
+			"svelte-pdf-mini/*": [
+				"../../packages/svelte-pdf-mini/src/lib/*"
+			]
+		}
+	},
+	"include": [
+		"src",
+		"scripts",
+		"vite.config.ts",
+		"tests"
+	]
+}

@@ -1,0 +1,42 @@
+---
+title: Annotations
+description: Highlights, boxes, notes, ink, shapes and free text — with side notes, undo and PDF round trips.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+`Annotations.Root` creates the `AnnotationStore`: the list (controlled or not), tools, colours, selection, undo/redo, keyboard shortcuts and PDF import/export. Layers render per page; floating parts and toolbars go anywhere inside.
+
+<Demo example="annotations-draw" height={560} />
+
+## Anatomy
+
+```svelte
+<Annotations.Root bind:annotations author={{ name: 'Ada' }}>
+	<!-- toolbar -->
+	<Annotations.Tool tool="highlight" /> <Annotations.Color color="green" />
+	<Annotations.Undo /> <Annotations.Redo />
+	<!-- inside each Viewer.Page -->
+	<Annotations.Layer />
+	<Annotations.Margin />      <!-- side notes -->
+	<Annotations.LineMarkers /> <!-- gutter bars -->
+	<!-- anywhere inside -->
+	<Annotations.SelectionMenu />
+	<Annotations.Popover />
+	<Annotations.HoverCard />
+	<Annotations.List />
+</Annotations.Root>
+```
+
+## Usage
+
+- **Workflow:** text selection opens the menu; every creation is pending (Enter keeps, Esc discards); tools are one-shot; editing needs a double-click. See [Annotation workflow](/docs/annotation-workflow).
+- **Read-only:** `readonly`, per-annotation `locked`, and `foreign` (`'editable'` · `'readonly'` · `'hidden'`) for annotations found in the PDF.
+- **Export:** `store.exportPdf()`, `toMarkdown()`, `toJSON()`; `importFromPdf` loads annotations stored in the file. See [PDF export & import](/docs/pdf-export-import).
+- **Model:** see [Annotation model](/docs/annotation-model).
+
+## API reference
+
+<ApiReference namespace="Annotations" />

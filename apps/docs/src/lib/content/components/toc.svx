@@ -1,0 +1,32 @@
+---
+title: Toc
+description: Five table-of-contents views that follow the section being read.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+The `Toc` parts read the sections found by [Paper](/components/paper) — from the PDF outline when present, otherwise from headings in the text — and highlight the one being read.
+
+<Demo example="toc-views" height={520} />
+
+## Anatomy
+
+```svelte
+<Paper.Root>
+	<Toc.Tree />       <!-- nested -->
+	<Toc.Flat />       <!-- numbered, with pages -->
+	<Toc.Breadcrumb /> <!-- current path -->
+	<Toc.Progress />   <!-- reading progress -->
+	<Toc.Rail />       <!-- dots along the document -->
+</Paper.Root>
+```
+
+## Usage
+
+Items expose `data-active` and `data-in-path`; every view accepts an `item` snippet to render items yourself. Clicking navigates with history.
+
+## API reference
+
+<ApiReference namespace="Toc" />

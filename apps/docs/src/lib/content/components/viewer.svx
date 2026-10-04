@@ -1,0 +1,49 @@
+---
+title: Viewer
+description: Layout, rendering, zoom, navigation, links and focus effects.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+`Viewer.Root` creates the `ViewerState`: zoom and fit modes, scroll mode and columns, rotation, page theme, navigation and the text selection. `Viewer.Viewport` scrolls, `Viewer.Pages` lays the pages out and each `Viewer.Page` hosts its layers.
+
+<Demo example="layouts" height={520} />
+
+## Anatomy
+
+```svelte
+<Viewer.Root>
+	<Viewer.Viewport>
+		<Viewer.Pages>
+			{#snippet children({ pageNumber })}
+				<Viewer.Page {pageNumber}>
+					<Viewer.Canvas />    <!-- the page bitmap -->
+					<Viewer.TextLayer /> <!-- selectable text -->
+					<Viewer.LinkLayer /> <!-- the PDF's own links -->
+					<Viewer.Focus />     <!-- focus effects -->
+				</Viewer.Page>
+			{/snippet}
+		</Viewer.Pages>
+	</Viewer.Viewport>
+	<Viewer.LinkPreview /> <!-- hover preview of link targets -->
+	<Viewer.BackButton />  <!-- after a jump -->
+</Viewer.Root>
+```
+
+## Usage
+
+```svelte
+<Viewer.Root bind:viewer bind:page zoomMode="page-width" columns="auto" pageTheme={pageThemes.paper({ dark })}>
+	…
+</Viewer.Root>
+
+<button onclick={() => viewer.navigate({ dest: 'section.3' })}>Section 3</button>
+```
+
+Guides: [Viewer & layout](/docs/viewer-layout), [Navigation & focus](/docs/navigation), [Page themes](/docs/page-themes).
+
+## API reference
+
+<ApiReference namespace="Viewer" />

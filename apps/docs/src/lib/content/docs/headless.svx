@@ -1,0 +1,63 @@
+---
+title: Headless & state classes
+description: Use the runes state classes directly and spread their prop getters on your own markup.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+Every component is a thin layer over a runes class. Use the classes directly when you want full control of the markup — construct them during component initialisation (they own effects) and spread their prop getters.
+
+```svelte
+<script>
+	import { PdfDocument, ViewerState } from 'svelte-pdf-mini';
+	import MyPage from './MyPage.svelte';
+
+	const doc = new PdfDocument({ src: () => url });
+	const viewer = new ViewerState({ document: doc, zoomMode: 'page-width' });
+</script>
+
+<div {...viewer.viewportProps} class="h-full">
+	<div {...viewer.contentProps}>
+		{#each viewer.mountedPages as n (n)}
+			<MyPage {viewer} pageNumber={n} />
+		{/each}
+	</div>
+</div>
+```
+
+```svelte
+<!-- MyPage.svelte -->
+<script>
+	import { PageState, PageCanvasState, PageTextLayerState } from 'svelte-pdf-mini';
+
+	let { viewer, pageNumber } = $props();
+	const page = new PageState(viewer, () => pageNumber);
+	const canvas = new PageCanvasState(page);
+	const text = new PageTextLayerState(page);
+</script>
+
+<div {...page.props}>
+	<div {...canvas.props}></div>
+	<div {...text.props}></div>
+</div>
+```
+
+<Demo example="headless" height={460} />
+
+## The classes
+
+| Class | Created by | Highlights |
+| --- | --- | --- |
+| `PdfDocument` | `Document.Root` | `status`, `proxy`, `numPages`, `getPage`, `getPageText`, `getProperties`, `download`, `print` |
+| `ViewerState` | `Viewer.Root` | `zoom`, `zoomTo`, `focus`, `navigate`, `back`, `goToPage`, `position`, `readingPoint`, `selection` |
+| `PageState` | `Viewer.Page` | `isNear`, `isVisible`, `viewport`, `props` |
+| `FindState` | `Find.Root` | `query`, `matches`, `current`, `next`, `prev` |
+| `OutlineState` | `Outline.Root` | `items`, `active`, `activePath`, `go` |
+| `AnnotationStore` | `Annotations.Root` | `annotations`, `tool`, `create`, `commit`, `undo`, `exportPdf` |
+| `PaperState` | `Paper.Root` | `model`, `sections`, `references`, `goToReference` |
+| `MinimapState` | `Minimap.Root` | page boxes, `indicator`, `locationAt`, `scrollTo` |
+| `TextSelectionState` | `viewer.selection` | `ranges`, `text`, `select`, `clear` |
+
+<Callout>Pass getters to control values: <code>zoom: () => z, onZoomChange: (v) => (z = v)</code>. A plain value is the initial, uncontrolled value.</Callout>

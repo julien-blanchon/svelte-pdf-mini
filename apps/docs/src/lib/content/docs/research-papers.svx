@@ -1,0 +1,59 @@
+---
+title: Research papers
+description: Sections, references, citations, figures and cross-references extracted from the PDF, with optional online enrichment.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+`Paper.Root` analyses the document from the PDF alone — typically in 0.2–0.5 s — and exposes a `PaperState` (`bind:paper`):
+
+| Field | Contents |
+| --- | --- |
+| `meta` | Title, authors, abstract, arXiv id, DOI |
+| `sections` / `flatSections` | Section tree from the outline, or from headings in the text |
+| `references` | Parsed bibliography entries (authors, year, title, venue, DOI, arXiv id) |
+| `citations` | In-text citations (`[12]`, `[3–5]`, `(Vaswani et al., 2017)`) mapped to references |
+| `figures` | Figures, tables and algorithms with caption and region |
+| `crossRefs` | "Fig. 3", "Table 2", "Section 4.1", "Eq. (5)" mapped to their target |
+| `activeSection`, `activePath`, `readingProgress` | Where the reader is |
+
+```svelte
+<Paper.Root provider={defaultCitationProvider()}>
+	<!-- in each Viewer.Page -->
+	<Paper.Layer />
+	<Paper.Headings />
+	<!-- anywhere inside -->
+	<Paper.CitationCard />
+	<Paper.CrossRefPreview />
+	<Paper.References />
+	<Paper.Figures />
+</Paper.Root>
+```
+
+<Demo example="citations" height={600} />
+
+## Tables of contents
+
+| Part | Shows |
+| --- | --- |
+| `Toc.Tree` | Nested sections, active one highlighted |
+| `Toc.Flat` | Numbered list with page numbers |
+| `Toc.Breadcrumb` | Current section path, for a toolbar |
+| `Toc.Progress` | Reading progress bar with one segment per section |
+| `Toc.Rail` | Dots along the document height; hover for titles |
+
+<Demo example="toc-views" height={520} />
+
+## Metadata providers
+
+Everything works offline; a provider only enriches references (abstract, TL;DR, citation count, links). `defaultCitationProvider(options)` chains OpenAlex and Semantic Scholar behind an in-memory cache, with an optional persistent `cache` adapter. Also available: `openAlex()`, `semanticScholar()`, `crossref()`, `arxiv({ proxy })` (arXiv's API has no CORS) and `chainProviders()` to build your own.
+
+<Callout type="warning" title="Rate limits">
+	Without keys, public limits apply: Semantic Scholar is then only used for arXiv-only references and the chain stops once an abstract is found. Pass <code>semanticScholarKey</code> / <code>openAlexKey</code> for production use.
+</Callout>
+
+## Analysis quality
+
+The analysis is tested on a corpus of 47 papers (recent Hugging Face daily papers plus ACL, ICML, ICLR, CVPR, IEEE, Springer and ACM templates): 99.6% of captioned figures and tables are found with a region that includes their body. Known weak spots are text-only figures and algorithm boxes (their region stops at the caption).

@@ -1,0 +1,10 @@
+---
+title: Read-only & foreign annotations
+description: "The same annotations shown editable, read-only, or with only foreign ones locked. \"Foreign\" means they came from someone else’s PDF; ours are always editable unless readonly is set."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="annotations-readonly" height={620} />

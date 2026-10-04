@@ -1,0 +1,10 @@
+---
+title: Compare versions
+description: Two versions of an arXiv paper side by side.
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="compare" height={780} wide />

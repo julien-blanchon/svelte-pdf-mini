@@ -1,0 +1,58 @@
+---
+title: Viewer & layout
+description: Zoom and fit modes, eased transitions, scroll modes, columns and spreads, rotation and rendering budget.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+`Viewer.Root` owns zoom, rotation, scroll mode, columns and the page theme. All of them are bindable.
+
+```svelte
+<Viewer.Root bind:zoom bind:zoomMode bind:page bind:columns scrollMode="vertical">
+	<Viewer.Viewport class="h-full"><Viewer.Pages /></Viewer.Viewport>
+</Viewer.Root>
+```
+
+## Zoom
+
+| Prop | Values |
+| --- | --- |
+| `zoom` | `1` = 100%. Assigning it jumps and switches `zoomMode` to `'manual'` |
+| `zoomMode` | `'auto'` · `'page-width'` · `'page-height'` · `'page-fit'` · `'manual'` |
+| `zoomSteps` | Steps used by `Zoom.In` / `Zoom.Out` and the keyboard |
+| `smoothZoom` | Ease zoom changes (default `true`; off with reduced motion) |
+| `wheelZoom` | Ctrl/⌘ + wheel and trackpad pinch (default `true`) |
+
+- **Eased transitions.** `viewer.zoomTo(z)`, the zoom steps, `Zoom.Select` and fit-mode switches animate. Drive a slider with `bind:value={() => viewer.zoom, (z) => viewer.zoomTo(z)}`.
+- **Anchored zoom.** While pages are narrower than the view they stay centred; once wider, Ctrl/⌘ + wheel and pinch zoom around the cursor.
+- **Sharp zoom-ins.** Below 100% pages render at up to twice the resolution (`oversampling`), and during a long zoom a badly stretched page is refreshed once, so quick zoom-ins rarely look blurry.
+
+<Demo example="zoom" height={520} />
+
+## Scroll modes, columns and spreads
+
+| Prop | Values |
+| --- | --- |
+| `scrollMode` | `'vertical'` · `'horizontal'` · `'wrapped'` · `'page'` (one page or spread at a time) |
+| `columns` | `1`–`4` pages per row, or `'auto'`: more pages per row as you zoom out, up to `maxColumns` |
+| `firstPageAlone` | Book spreads with the cover on its own |
+| `rotation` | `0` · `90` · `180` · `270` |
+
+When the column count changes, pages slide to their new place instead of jumping.
+
+<Demo example="layouts" height={520} />
+
+## Rendering budget
+
+| Prop | Purpose |
+| --- | --- |
+| `overscan` | Pages within this many viewport heights are rendered (default `1`) |
+| `maxCanvasPixels` | Cap on a page bitmap's area in device pixels (default 16M) |
+| `oversampling` | Render zoomed-out pages at up to 2× (default `true`) |
+| `detailMinWidth` | Pages narrower than this (default 260 px) skip text layers |
+
+<Callout title="Room for side notes">
+	Pages always stay centred and side notes never add a scrollbar. <a href="/components/annotations">Annotations.Margin</a> sizes itself from <code>viewer.sideRoom</code> (the free width beside the centred pages): full notes when they fit, narrower ones when space is tight, and compact markers below <code>minWidth</code> (160 px by default). Hovering a marker shows the note, and clicking it opens the note in the popover. With fit-to-width, set <code>--pdf-pages-aside: 272px</code> on the viewport to keep that much room on each side for the notes (pages shrink by at most a quarter for it).
+</Callout>

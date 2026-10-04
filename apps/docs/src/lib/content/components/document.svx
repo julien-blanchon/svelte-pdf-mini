@@ -1,0 +1,41 @@
+---
+title: Document
+description: Load a PDF from a URL, bytes or a file, with loading, error and password states.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+`Document.Root` loads a PDF and provides a `PdfDocument` to everything inside. `src` is reactive: changing it cancels the previous load and destroys the old document.
+
+<Demo example="sources" height={480} />
+
+## Anatomy
+
+```svelte
+<Document.Root {src}>
+	<Document.Loading />  <!-- while loading: progress -->
+	<Document.Error />    <!-- on failure: the error -->
+	<Document.Password /> <!-- for protected PDFs -->
+	<Viewer.Root>…</Viewer.Root>
+</Document.Root>
+```
+
+## Usage
+
+- **Sources:** a URL string or `URL`, an `ArrayBuffer`/`Uint8Array`, a `Blob`/`File`, `{ url, httpHeaders, withCredentials }`, or an already-loaded pdf.js document.
+- **States:** `document.status` is `idle` · `loading` · `password` · `ready` · `error`; `error.kind` is `invalid`, `missing`, `network`, `password` or `unknown`.
+- **Utilities on the state:** `getPage(n)`, `getPageText(n)`, `getProperties()` (metadata, paper size, file size), `download(name?, bytes?)`, `print(bytes?)`, `fingerprint` (a stable key for saving notes).
+
+```svelte
+<Document.Root src={file} onLoad={(doc) => console.log(doc.numPages)}>
+	{#snippet children({ status, progress, numPages })}
+		<p>{status} · {numPages} pages</p>
+	{/snippet}
+</Document.Root>
+```
+
+## API reference
+
+<ApiReference namespace="Document" />

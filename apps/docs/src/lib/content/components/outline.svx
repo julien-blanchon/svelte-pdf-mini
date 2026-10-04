@@ -1,0 +1,28 @@
+---
+title: Outline
+description: The PDF's bookmarks as a collapsible tree that follows the reader.
+---
+
+<script lang="ts">
+	import { Demo, ApiReference, Callout } from '#lib/index.ts';
+</script>
+
+<Demo example="outline-thumbnails" height={520} />
+
+## Anatomy
+
+```svelte
+<Outline.Root>
+	<Outline.Tree>
+		{#snippet empty()}No bookmarks{/snippet}
+	</Outline.Tree>
+</Outline.Root>
+```
+
+## Usage
+
+Items get `data-active` (the section being read) and `data-contains-active`; `outline.activePath` gives a breadcrumb. Clicking navigates with history, so Back returns. For papers without bookmarks, use [Toc](/components/toc), which falls back to headings found in the text.
+
+## API reference
+
+<ApiReference namespace="Outline" />

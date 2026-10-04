@@ -1,0 +1,10 @@
+---
+title: Links & previews
+description: "The PDF’s own links are clickable; hovering one previews its target (here restyled, with enter/exit transitions via forceMount + child). After a jump, Back (or Alt + ←) returns. onLinkClick lets the app take over: external links can ask first."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="links-previews" height={620} />

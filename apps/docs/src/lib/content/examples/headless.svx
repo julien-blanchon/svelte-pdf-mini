@@ -1,0 +1,10 @@
+---
+title: Headless (no components)
+description: "The state classes on their own: PdfDocument + ViewerState + per-page states, spread onto your own markup."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="headless" height={620} />

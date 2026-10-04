@@ -1,0 +1,46 @@
+---
+title: Styling & theming
+description: Unstyled parts, data attributes, CSS variables, the optional stylesheet and shadcn-style wrappers.
+---
+
+<script lang="ts">
+	import { Callout } from '#lib/index.ts';
+</script>
+
+Parts ship unstyled except for layout. Style them three ways, mixing freely:
+
+1. **Classes and attributes** passed to any part (`class`, `style`, `data-*`), merged with the part's own.
+2. **Data attributes** describing state: `[data-pdf-page][data-current]`, `[data-pdf-annotation][data-selected]`, `[data-state='open']`… With Tailwind: `data-[current]:ring-2`, `group-data-[theme=dark]:…`, `[&_[data-part=title]]:font-medium`.
+3. **CSS variables** read by `styles.css` (the optional default theme): page frame, accent, floating UI colours, side-note sizes. The full list is in [Data attributes & CSS variables](/docs/data-attributes).
+
+```css
+[data-pdf-viewer] {
+	--pdf-accent: oklch(0.62 0.17 255);
+	--pdf-page-gap: 24px;
+	--pdf-ui-radius: 12px;
+}
+[data-pdf-viewer][data-theme='dark'] {
+	--pdf-ui-bg: #1b1b1f;
+}
+```
+
+## Inner parts
+
+Default UIs (the selection menu, popover, citation card…) mark their pieces with `data-part="…"` — `title`, `label`, `swatch`, `footer`, `hint`… — so you can restyle without replacing them. Replace them entirely through `children` or `child` when you need different markup.
+
+## Wrap once, reuse everywhere
+
+Build your design system's versions of the parts once (shadcn-style), using `child` to render your own components:
+
+```svelte
+<!-- ZoomInButton.svelte -->
+<Zoom.In>
+	{#snippet child({ props })}
+		<Button {...props} variant="ghost" size="icon" aria-label="Zoom in">
+			<span class="icon-[lucide--zoom-in]"></span>
+		</Button>
+	{/snippet}
+</Zoom.In>
+```
+
+<Callout>Annotation colours set <code>--annotation-color</code> on each annotation element (shapes, margin notes, markers, hover card), so your own styles can follow the annotation's colour.</Callout>

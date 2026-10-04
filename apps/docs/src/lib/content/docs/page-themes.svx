@@ -1,0 +1,59 @@
+---
+title: Page themes
+description: Calm paper tints by day, hue-preserving recolour at night, and every other strategy.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+The **UI theme** (`theme="light" | "dark" | "system"`, exposed as `data-theme`) is separate from the **page theme**, which decides how page content looks.
+
+## The recommended theme
+
+```svelte
+<Viewer.Root pageTheme={pageThemes.paper({ color: '#efe4cf', dark: isNight, strength: 0.5 })}>
+```
+
+- **Day** — a soft paper tint (multiply, like sepia). Ink stays crisp and figures keep their colours.
+- **Night** — a tinted *vector recolour*: text and plot lines are redrawn light-on-dark with their hues kept, neutral ink takes the paper's hue, photos and raster figures are untouched.
+- **`strength`** (0–1) — how much of the colour shows. Keep it low for calm, matte pages.
+
+`paperColors` is a matte palette (sage, lavender, sand, sky, clay, rose, mint, stone) with `light`, `dark` and `accent` values; `paperTheme(paperColors[i], dark)` gives a category its own page colour.
+
+<Demo example="page-themes" height={560} />
+
+## All strategies
+
+| Strategy | Cost | Result |
+| --- | --- | --- |
+| `pageThemes.paper(…)` | instant by day, re-render at night | Recommended |
+| `pageThemes.none()` | — | Original |
+| `pageThemes.sepia({ amount })` | instant (CSS) | Paper-like light reading |
+| `pageThemes.dim({ brightness, sepia })` | instant | Darker and warmer, colours kept |
+| `pageThemes.invert({ brightness, contrast, saturate, keepHue })` | instant | Classic night mode; photos invert too |
+| `pageThemes.smartInvert({ background, foreground })` | re-render | Night mode that keeps figures |
+| `pageThemes.vectorRecolor({ background, lightness })` | re-render | Text and lines recoloured, hues kept |
+| `pageThemes.tint({ color })` / `tintDark({ color })` | instant | Raw tint building blocks |
+| `pageThemes.recolor({ background, foreground })` | re-render | pdf.js duotone (images too) |
+
+## Page frames
+
+`pageFrame` sets how page edges look: `'shadow'` (default), `'border'`, `'rounded'`, `'flat'` or `'none'` (no frame and no page background — for pages inside cards). Fine-tune with `--pdf-page-radius`, `--pdf-page-shadow` and `--pdf-page-border`.
+
+## Custom strategies
+
+A strategy is a plain object:
+
+```ts
+const warmNight: PageThemeStrategy = {
+	id: 'warm-night',
+	filter: 'invert(0.88) hue-rotate(180deg) sepia(0.2)', // CSS filter on the bitmap: instant
+	blend: 'normal', // mix-blend-mode over `background`
+	background: '#111',
+	dark: true // annotations switch to their dark palette
+	// re-render hooks: pageColors, wrapContext(ctx) or postProcess(ctx, info)
+};
+```
+
+<Callout>Annotations are drawn in their own layer, never on the canvas: on dark themes they use each palette colour's dark variant and a <code>screen</code> blend, so they stay readable on every strategy.</Callout>

@@ -1,0 +1,16 @@
+---
+title: Examples
+description: Complete apps built with svelte-pdf-mini — open any of them and read its source.
+---
+
+Every app and feature demo below runs live with its source (`apps/docs/src/lib/demos`). They use Tailwind, Iconify icons and a small bits-ui recipe kit on top of the headless parts.
+
+| App | Shows |
+| --- | --- |
+| [Paper reader](/examples/reader) | A Scholar-style reader: contents, figures, references and notes panels, citation cards, find, side notes, page themes, export |
+| [Annotator](/examples/annotator) | Every annotation tool, a notes sidebar with crops and filters, PDF / Markdown / JSON export and import |
+| [Paper library](/examples/library) | Cards with equal-size covers per category colour, quick look, open in the reader |
+| [Compare versions](/examples/compare) | Two versions of a paper side by side, synchronised by section |
+| [Embedded viewer](/examples/embed) | A single-page viewer inside an article, with citation cards |
+
+Single-feature demos are embedded throughout the [docs](/docs) and [component pages](/components).

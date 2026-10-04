@@ -1,0 +1,8 @@
+[
+	{ "id": "1706.03762", "file": "attention.pdf", "why": "one column, hyperref (cite.*, section.*, figure.*), outline" },
+	{ "id": "1512.03385", "file": "resnet.pdf", "why": "two columns, numeric citations, many figures/tables" },
+	{ "id": "2601.05637", "file": "2601.05637.pdf", "why": "recent paper" },
+	{ "id": "1312.6114", "file": "vae.pdf", "why": "equations, appendix" },
+	{ "id": "2005.14165", "file": "gpt3.pdf", "why": "75 pages, author-year citations" },
+	{ "id": "hep-th/9711200", "file": "maldacena.pdf", "why": "old TeX, no hyperref links" }
+]

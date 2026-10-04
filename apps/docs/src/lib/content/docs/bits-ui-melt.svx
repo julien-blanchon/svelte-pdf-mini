@@ -1,0 +1,69 @@
+---
+title: bits-ui & melt recipes
+description: Compose svelte-pdf-mini parts with bits-ui and melt-ui primitives, and build a shadcn-style kit.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+svelte-pdf-mini follows bits-ui's conventions — compound parts, `child` snippets, `ref`, `data-*` attributes, controlled and uncontrolled props — so both compose without adapters.
+
+<Demo example="bits-ui" height={520} />
+
+## A bits trigger rendering one of our parts
+
+bits passes its trigger `props` (ARIA attributes, handlers, the ref attachment); our part merges them with its own and chains the handlers.
+
+```svelte
+<Tooltip.Trigger>
+	{#snippet child({ props })}
+		<Zoom.In {...props}><span class="icon-[lucide--zoom-in]"></span></Zoom.In>
+	{/snippet}
+</Tooltip.Trigger>
+```
+
+## Our part rendering your component
+
+```svelte
+<PageNav.Next>
+	{#snippet child({ props })}
+		<Button {...props} size="icon" aria-label="Next page"><span class="icon-[lucide--chevron-right]"></span></Button>
+	{/snippet}
+</PageNav.Next>
+```
+
+## Controlled state
+
+Viewer state is bindable, so bits primitives can drive it:
+
+```svelte
+<Select.Root type="single" bind:value={scrollMode}>…</Select.Root>
+<Slider.Root type="single" bind:value={() => viewer.zoom, (z) => viewer.zoomTo(z)}>…</Slider.Root>
+```
+
+Use `viewer.zoomTo()` rather than assigning `zoom` when you want the eased transition.
+
+## Transitions
+
+Both libraries use the same pattern: `forceMount`, the `child` snippet's `open` flag, and a Svelte transition on your element. See [Floating parts](/docs/floating-parts).
+
+## melt-ui table of contents
+
+melt's `createTableOfContents` (from `@melt-ui/svelte`) observes real headings. Add `<Paper.Headings />` to each page — hidden `h2`–`h6` at every section, with ids `section-<id>` — and point the builder at the pages container:
+
+```ts
+const {
+	elements: { item },
+	states: { headingsTree, activeHeadingIdxs }
+} = createTableOfContents({
+	selector: '#pages',
+	scrollFn: (id) => paper.goToSection(paper.flatSections.find((s) => `section-${s.id}` === id)!),
+	pushStateFn: () => {}
+});
+// <a {...$item(id)} use:item> — no preprocessor needed
+```
+
+<Callout title="A recipe kit">
+	The docs keep styled recipes in <code>apps/docs/src/lib/demos/components/ui/</code>: <code>Button</code>, <code>Tip</code> (tooltip with shortcut), <code>ToggleGroup</code>, <code>Menu</code>, <code>ZoomSelect</code>, <code>ZoomSlider</code>, <code>Tabs</code>, <code>Dialog</code>, <code>Kbd</code> and an accessible <code>ColorPicker</code>. Copy them into your app and restyle.
+</Callout>

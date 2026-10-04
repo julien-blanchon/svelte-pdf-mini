@@ -1,0 +1,10 @@
+---
+title: Text selection
+description: "The browser selection mapped to the text index: per-page ranges, PDF-space quads and clean text (lines joined, hyphens removed). Copy gets the clean text too."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="text-selection" height={620} />

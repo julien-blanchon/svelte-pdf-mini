@@ -1,0 +1,71 @@
+---
+title: Context menus & actions
+description: Know what is under the pointer, offer the right actions, and show their shortcuts everywhere.
+---
+
+<script lang="ts">
+	import { Demo, Callout } from '#lib/index.ts';
+</script>
+
+Right-click (or the Menu key / Shift+F10) on selected text, an annotation, a citation, a figure, a link or the page. The library does not draw the menu: it tells you **what is there** and **what can be done**, and you render it with any menu component (bits-ui, melt, your own).
+
+<Demo example="context-menu" height={560} />
+
+## 1. What is here: `viewer.contextAt`
+
+```ts
+const ctx = await viewer.contextAt({ clientX, clientY, target });
+// { page, point, selection, selectedText, annotations, link?, citation?, references?, crossRef?, figure?, section?, source }
+```
+
+`Viewer.Viewport` records the context of every `contextmenu` event in `viewer.lastContext` (keyboard-opened menus use the selection or the focused element). Stores add their facts through resolvers: `Annotations.Root` adds the annotations under the point (innermost first), `Paper.Root` the citation, cross-reference, figure and section. Add your own:
+
+```ts
+const off = viewer.addContextResolver((ctx) => (ctx.page === 1 ? { section: myCoverSection } : undefined));
+```
+
+`contextKind(ctx)` returns the most specific target: `selection` › `annotation` › `citation` › `link` › `figure` › `page`.
+
+## 2. What can be done: `contextActions`
+
+```ts
+const groups = contextActions(viewer.lastContext, { viewer, annotations: store, paper, extractor, onOpenReference });
+// [{ kind: 'selection', actions: [{ id, label, keys: 'H', shortcut: 'markup.highlight', run, items?, color?, checked?, danger?, disabled? }] }]
+```
+
+| Target | Actions |
+| --- | --- |
+| Selected text | Highlight `H` · Highlight in colour `1–9` · Underline `U` · Strike out `S` · Copy `⌘C` · Copy with formatting `⇧⌘C` |
+| Annotation | Edit note `↵` · Colour · Change type · Copy text · Delete `⌫` |
+| Citation | Go to reference · Open cited paper (`onOpenReference` to import it in your app) · Copy BibTeX |
+| Figure / table | Copy as image · Save as PNG · Box it `A` · Copy as Markdown (with an `extractor`) |
+| Link | Open · Open in new tab · Copy URL |
+| Page | Add note here `N` · Draw box `A` · Back `⌥←` · Fit width `⌘0` |
+
+Labels come from the viewer's messages (`setMessages` / `messages` prop) and **`keys` from the active keymap**, so remapped shortcuts show up in the menu.
+
+## 3. Rendering with bits-ui
+
+The site's `PdfContextMenu` recipe wraps `Viewer.Viewport` as the `ContextMenu.Trigger` (through the `child` snippet) and renders the groups, submenus and `<kbd>` hints:
+
+```svelte
+<PdfContextMenu>
+	{#snippet trigger({ props })}
+		<Viewer.Viewport {...props}>…</Viewer.Viewport>
+	{/snippet}
+</PdfContextMenu>
+```
+
+## Shortcuts everywhere
+
+- `<Shortcut.Root action="markup.highlight" />` renders the keys of an action as `<kbd>` (reflecting user overrides) — put it in tooltips, toolbars and menus so people learn them.
+- `shortcutGroups(viewer, store)` returns the full, labelled reference — the site's `ShortcutsDialog` opens it with `?`.
+- One keymap drives everything: `<Viewer.Root keymap={{ 'view.zoomIn': ['mod+='], 'markup.highlight': ['y'] }}>`; `Annotations.Root keymap` can add to it.
+
+## Copy with formatting & extraction
+
+- `viewer.document.richText(page, start, end)` → `{ plain, markdown, html }` keeps bold / italic (inferred from the PDF's font names) and fixes line-end hyphenation; `copyRich(plain, html, markdown)` puts both flavours on the clipboard.
+- `referenceToBibtex(reference, metadata?)` builds a BibTeX entry from a parsed reference.
+- Region extraction is pluggable (`RegionExtractor`): `layoutExtractor` rebuilds tables from the text layout (no dependencies); `pdfOxideExtractor({ load: () => import('pdf-oxide-wasm'), getData })` adapts the pdf_oxide WASM build.
+
+<Callout type="note">In our tests on academic papers, pdf_oxide's table detector misses tables without ruling lines, so the built-in layout extractor is the default. Complex tables (merged cells, brackets) are the next target — the extractor interface is where a stronger engine plugs in.</Callout>

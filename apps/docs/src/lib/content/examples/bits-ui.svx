@@ -1,0 +1,10 @@
+---
+title: bits-ui & melt composition
+description: "Our parts and bits-ui primitives compose both ways through the `child` snippet: a bits Tooltip.Trigger renders Zoom.In, our PageNav.Next renders our Button recipe, a bits Popover hosts Toc.Tree, bits Select / Slider are controlled by the viewer state, and floating parts (ours and bits) animate with forceMount + Svelte transitions."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="bits-ui" height={620} />

@@ -1,0 +1,222 @@
+[
+ {
+  "id": "2609.22753",
+  "title": "Replacing Large Language Models with Jev Decision Models for Low-Latency Edge Service Orch",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.01092",
+  "title": "Ego2Act: Evaluating Goal-Directed Manipulation in Egocentric Video Generation",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.36435",
+  "title": "MemFold: Learning Compact Soft Memory for Long-Context Personalization via On-Policy Optim",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.00812",
+  "title": "Video Generation Models: A Survey of Post-Training and Alignment",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.36388",
+  "title": "Persona Dosing: Calibrated Activation Steering for Graded Trait Control",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.36585",
+  "title": "Transformers Stop Thinking Too Early, and a Tiny LoRA Fixes It",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.37690",
+  "title": "Honeycomb: Constant-Size Scene Memory Representation for Video World Models",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.32993",
+  "title": "X-Tree: Tokenizing Reusable Experience for Efficient Agent Generalization",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.32810",
+  "title": "OpenTumorBoard: A Real-World Benchmark of Multidisciplinary Tumor Board Discussion Traject",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.02142",
+  "title": "Keyword Harnesses Fail Open: A Cheap Diagnostic Ladder for Tool-Use Claims in Small Langua",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.02202",
+  "title": "ScholarCatalyst: A Benchmark for Retrieving Papers That Inspire New Research",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.35259",
+  "title": "On-Policy or Off-Policy Learning? A Systematic Study of Distillation Dynamics",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.34210",
+  "title": "RLE-Bench: A Qualifying Exam for Coding Agents as Robot Learning Engineers",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.00686",
+  "title": "SemanTok: Predictable Semantic Tokens for Efficient Autoregressive Video Generation",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.02117",
+  "title": "Where-OPD: Spatially Guided On-Policy Self-Distillation of MLLMs with Synthetic Scenes",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.02185",
+  "title": "Decoding Looped Transformers Better for (Almost) Free",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.36602",
+  "title": "OTRetarget: Joint Robot and Object Motion Retargeting via Optimal Transport",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.00437",
+  "title": "JevSpawn: Adaptive Agentic Inference through Compositional Action Spaces",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2606.10953",
+  "title": "Architect-Ant: Editable Automatic Furnishing of Architectural Floor Plans",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.36138",
+  "title": "When Does Correction Become Repair? Mechanistic Auditing of Internal Interventions in Tool",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2609.40222",
+  "title": "LOCI: Spatial Linear Memory for Streaming World Models",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.00559",
+  "title": "PhysVista: Benchmarking Physical Intelligence in VLMs via a Perception-Reasoning-Assessmen",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.01942",
+  "title": "Latent-Foresight: End-to-End Learning Predictable Representations for Latent World Models",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.01428",
+  "title": "Generalization Is Stability, Not Accuracy: Multi-Axis Evaluation of LLMs",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.00348",
+  "title": "Removing the NEEDLE in the Haystack: Backdoor Removal in LLMs via Weight Orthogonalisation",
+  "source": "hf-daily"
+ },
+ {
+  "id": "2610.01595",
+  "title": "Before It Fades: Reinforcing Temporal Representations at Inference Time in VideoLLMs",
+  "source": "hf-daily"
+ },
+ {
+  "id": "1810.04805",
+  "title": "BERT",
+  "source": "classic",
+  "why": "ACL two-column, author-year"
+ },
+ {
+  "id": "2010.11929",
+  "title": "ViT",
+  "source": "classic",
+  "why": "ICLR, author-year"
+ },
+ {
+  "id": "1406.2661",
+  "title": "GAN",
+  "source": "classic",
+  "why": "NIPS numeric"
+ },
+ {
+  "id": "1409.0473",
+  "title": "Bahdanau attention",
+  "source": "classic",
+  "why": "ICLR author-year, old"
+ },
+ {
+  "id": "1502.03167",
+  "title": "Batch Normalization",
+  "source": "classic",
+  "why": "ICML two-column"
+ },
+ {
+  "id": "2103.00020",
+  "title": "CLIP",
+  "source": "classic",
+  "why": "long single column, author-year"
+ },
+ {
+  "id": "1505.04597",
+  "title": "U-Net",
+  "source": "classic",
+  "why": "Springer LNCS"
+ },
+ {
+  "id": "2112.10752",
+  "title": "Latent Diffusion",
+  "source": "classic",
+  "why": "CVPR two-column, numeric"
+ },
+ {
+  "id": "1608.06993",
+  "title": "DenseNet",
+  "source": "classic",
+  "why": "CVPR numeric, tables"
+ },
+ {
+  "id": "1606.00915",
+  "title": "DeepLab",
+  "source": "classic",
+  "why": "IEEE TPAMI"
+ },
+ {
+  "id": "1602.04938",
+  "title": "LIME",
+  "source": "classic",
+  "why": "ACM KDD"
+ },
+ {
+  "id": "1707.06347",
+  "title": "PPO",
+  "source": "classic",
+  "why": "single column, author-year"
+ },
+ {
+  "id": "2302.13971",
+  "title": "LLaMA",
+  "source": "classic",
+  "why": "tables-heavy"
+ },
+ {
+  "id": "1301.3781",
+  "title": "word2vec",
+  "source": "classic",
+  "why": "old arXiv"
+ },
+ {
+  "id": "1703.06870",
+  "title": "Mask R-CNN",
+  "source": "classic",
+  "why": "ICCV two-column"
+ }
+]

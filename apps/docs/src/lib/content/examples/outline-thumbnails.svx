@@ -1,0 +1,10 @@
+---
+title: Outline & thumbnails
+description: "Three navigators side by side: the PDF outline (Outline.Tree), our table of contents from the paper analysis (Toc.Tree), and melt-ui’s createTableOfContents driven by the hidden headings Paper.Headings adds to every page. Plus lazy thumbnails and a breadcrumb."
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="outline-thumbnails" height={620} />

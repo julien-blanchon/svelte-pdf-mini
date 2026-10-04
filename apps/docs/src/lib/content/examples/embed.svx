@@ -1,0 +1,10 @@
+---
+title: Embedded viewer
+description: A single-page viewer inside a blog-style article.
+---
+
+<script lang="ts">
+	import { Demo } from '#lib/index.ts';
+</script>
+
+<Demo example="embed" height={780} wide />
