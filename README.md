@@ -83,6 +83,10 @@ The changelog lives in [`packages/svelte-pdf-mini/CHANGELOG.md`](packages/svelte
 
 The docs are deployed to GitHub Pages by the **Docs** workflow on every push to `main`.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.md).
+
 ## License
 
 [MIT](LICENSE) © Julien Blanchon

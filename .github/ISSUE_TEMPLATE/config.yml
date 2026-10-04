@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://julien-blanchon.github.io/svelte-pdf-mini/docs
+    about: Guides, component API and live demos.
+  - name: Security issue
+    url: https://github.com/julien-blanchon/svelte-pdf-mini/security/advisories/new
+    about: Report vulnerabilities privately.
