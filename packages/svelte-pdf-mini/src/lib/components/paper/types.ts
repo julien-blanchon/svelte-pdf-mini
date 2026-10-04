@@ -23,6 +23,8 @@ export interface PaperRootProps {
 export type PaperLayerProps = DivPartProps<{
 	citations?: boolean;
 	crossRefs?: boolean;
+	/** Hover targets on labels mentioned elsewhere ("Figure 3", "(2)", headings) for `Paper.Backlinks`. Default true. */
+	backlinks?: boolean;
 	/** Replace the click action on an in-text citation. Return false to skip the default jump. */
 	onCitationClick?: (
 		citation: InTextCitation,
@@ -84,6 +86,28 @@ export type PaperCitationCardProps = DivPartProps<
 export type PaperCrossRefPreviewProps = DivPartProps<
 	FloatingProps & { width?: number; delay?: number },
 	{ label: string; open: boolean; canvasProps?: Record<string | symbol, unknown> }
+>;
+
+export interface BacklinkMention {
+	crossRef: CrossRef;
+	page: number;
+	/** Page label ("3", "iv"). */
+	pageLabel: string;
+	/** Sentence context around the mention (loads asynchronously). */
+	before: string;
+	text: string;
+	after: string;
+	go: () => void;
+}
+export interface BacklinksSnippetProps {
+	open: boolean;
+	/** What is mentioned ("Figure 3", "Equation 2", a section title). */
+	label: string;
+	mentions: BacklinkMention[];
+}
+export type PaperBacklinksProps = DivPartProps<
+	FloatingProps & { delay?: number; width?: number },
+	BacklinksSnippetProps
 >;
 
 export interface ReferenceItemSnippetProps {

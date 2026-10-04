@@ -15,6 +15,9 @@
 		toView
 	} from '../../core/annotations/geometry.js';
 	import type { Annotation } from '../../core/annotations/model.js';
+
+	/** Highlights cover the line, a bit beyond the glyph box (fraction of its height, each side). */
+	const HIGHLIGHT_PAD = 0.1;
 	import { dataAttr } from '../../internal/types.js';
 
 	interface Props {
@@ -45,7 +48,7 @@
 	{#if a.kind === 'highlight'}
 		{#each a.quads as q, i (i)}<polygon
 				data-part="highlight"
-				points={quadPoints(vp, q)}
+				points={quadPoints(vp, q, HIGHLIGHT_PAD)}
 				fill={c}
 			/>{/each}
 	{:else if a.kind === 'underline' || a.kind === 'strikeout'}

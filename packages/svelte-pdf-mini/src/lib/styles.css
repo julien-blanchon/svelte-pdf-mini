@@ -14,6 +14,8 @@
 
 [data-pdf-page] [data-pdf-canvas] {
 	border-radius: inherit;
+	/* WebKit doesn't clip GPU-composited canvases to border-radius + overflow; clip-path does. */
+	clip-path: inset(0 round var(--pdf-page-radius, 0));
 }
 /* Page frame presets (Viewer.Root pageFrame) */
 [data-page-frame='border'] [data-pdf-page] {
@@ -99,6 +101,15 @@
 }
 
 /* ── Text layer (from pdf.js) ────────────────────────────────────────────── */
+/*
+ * Performance: while a zoom animates, text layers leave rendering, so their
+ * spans (sized from --pdf-scale) aren't re-styled and re-laid out every frame.
+ * They come back once the zoom settles.
+ */
+[data-pdf-viewport][data-zooming] [data-pdf-text-layer] {
+	display: none;
+}
+
 [data-pdf-text-layer].textLayer {
 	color-scheme: only light;
 	position: absolute;
@@ -470,7 +481,22 @@
 [data-pdf-crossref]:hover {
 	background: var(--pdf-crossref-hover, rgb(59 130 246 / 0.16));
 }
-:is([data-pdf-citation-card], [data-pdf-crossref-preview], [data-pdf-link-preview]) {
+/* A label mentioned elsewhere (backlinks): a subtle dotted underline on hover. */
+[data-pdf-backlink-target] {
+	cursor: pointer;
+	border-radius: 2px;
+}
+[data-pdf-backlink-target]:hover,
+[data-pdf-backlink-target][data-hovered] {
+	background: var(--pdf-backlink-hover, rgb(139 92 246 / 0.12));
+	box-shadow: inset 0 -1.5px 0 var(--pdf-backlink-line, rgb(139 92 246 / 0.6));
+}
+:is(
+	[data-pdf-citation-card],
+	[data-pdf-crossref-preview],
+	[data-pdf-link-preview],
+	[data-pdf-backlinks]
+) {
 	background: var(--pdf-ui-bg, #fff);
 	color: var(--pdf-ui-fg, #1c1917);
 	border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
@@ -480,6 +506,50 @@
 		13px/1.45 system-ui,
 		sans-serif;
 	overflow: hidden;
+}
+[data-pdf-backlinks] {
+	padding: 8px;
+}
+[data-pdf-backlinks] [data-part='title'] {
+	margin: 0;
+	padding: 2px 6px 6px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: var(--pdf-ui-muted, #78716c);
+}
+[data-pdf-backlinks] [data-part='list'] {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	max-height: 320px;
+	overflow-y: auto;
+}
+[data-pdf-backlinks] [data-part='mention'] {
+	all: unset;
+	box-sizing: border-box;
+	display: flex;
+	gap: 8px;
+	width: 100%;
+	padding: 6px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+[data-pdf-backlinks] [data-part='mention']:is(:hover, :focus-visible) {
+	background: color-mix(in srgb, currentColor 7%, transparent);
+}
+[data-pdf-backlinks] [data-part='page'] {
+	flex: none;
+	min-width: 32px;
+	font-size: 11px;
+	color: var(--pdf-ui-muted, #78716c);
+}
+[data-pdf-backlinks] mark {
+	background: var(--pdf-backlink-hover, rgb(139 92 246 / 0.18));
+	color: inherit;
+	border-radius: 2px;
+	padding: 0 1px;
 }
 [data-pdf-citation-card] {
 	width: 380px;
@@ -660,6 +730,7 @@
 	[data-pdf-citation-card],
 	[data-pdf-crossref-preview],
 	[data-pdf-link-preview],
+	[data-pdf-backlinks],
 	[data-pdf-annotation-popover],
 	[data-pdf-selection-menu],
 	[data-pdf-annotation-hover-card]

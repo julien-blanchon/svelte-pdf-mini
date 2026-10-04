@@ -47,9 +47,9 @@ Keep the copied worker on the **same version** as the installed `pdfjs-dist`, be
 	Pass a ready <code>Worker</code> with <code>configurePdf(&#123; workerPort &#125;)</code>: every document shares it. Paper analysis normally runs on a second worker so it doesn't delay rendering; with a <code>workerPort</code> it runs on yours instead.
 </Callout>
 
-### Vite: `optimizeDeps.exclude`
+### Vite: `optimizeDeps.exclude` (required)
 
-The docs site sets:
+Add this to your Vite config:
 
 ```ts
 // vite.config.ts
@@ -59,7 +59,7 @@ export default defineConfig({
 });
 ```
 
-You don't need this. It only affects the **dev server**, not builds. `pdfjs-dist` already ships as one self-contained ES module, so pre-bundling it gains nothing. Without the exclude, Vite may only discover pdf.js when the first PDF opens, then re-optimise its dependencies and reload the page. Excluding it skips that reload.
+It only affects the **dev server**. Vite pre-bundles Svelte libraries from `node_modules`, and its pre-bundler can't load the worker's `?url` import, so `vite dev` stops with `Could not load …/pdf.worker.min.mjs?url`. Excluding `pdfjs-dist` keeps that import out of pre-bundling, and Vite's normal pipeline handles it. `pdfjs-dist` ships as one self-contained ES module, so pre-bundling it gains nothing anyway. Production builds work with or without the exclude.
 
 ## Other bundlers
 

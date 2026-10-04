@@ -5,6 +5,11 @@
  * dynamically from the browser.
  */
 import type * as PdfJs from 'pdfjs-dist';
+import {
+	installStreamIteration,
+	needsStreamIteration,
+	workerWithStreamIteration
+} from './stream-iteration.js';
 
 export type PdfJsModule = typeof PdfJs;
 
@@ -59,12 +64,17 @@ export function loadPdfJs(): Promise<PdfJsModule> {
 		return Promise.reject(new Error('svelte-pdf-mini: pdf.js can only be loaded in the browser'));
 	}
 	modulePromise ??= (async () => {
+		// WKWebView lacks ReadableStream async iteration, which pdf.js uses for
+		// text content: shim it here and in the worker (see stream-iteration.ts).
+		const shim = needsStreamIteration();
+		installStreamIteration();
 		const pdfjs = await import('pdfjs-dist');
 		if (config.workerPort) {
 			pdfjs.GlobalWorkerOptions.workerPort = config.workerPort;
 		} else if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-			pdfjs.GlobalWorkerOptions.workerSrc =
+			const src =
 				config.workerSrc ?? (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+			pdfjs.GlobalWorkerOptions.workerSrc = shim ? workerWithStreamIteration(src) : src;
 		}
 		return pdfjs;
 	})();

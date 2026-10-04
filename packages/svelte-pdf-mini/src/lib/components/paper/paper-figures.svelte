@@ -6,6 +6,9 @@
 	import type { Figure } from '../../core/paper/types.js';
 	import type { PaperFiguresProps } from './types.js';
 
+	/** Equations are opt-in (`kinds`): most figure lists are figures, tables and algorithms. */
+	const DEFAULT_KINDS: Figure['kind'][] = ['figure', 'table', 'algorithm'];
+
 	let {
 		kinds,
 		thumbnails = true,
@@ -17,9 +20,7 @@
 		...rest
 	}: PaperFiguresProps = $props();
 	const paper = PaperContext.get();
-	const figures = $derived(
-		kinds ? paper.figures.filter((f) => kinds.includes(f.kind)) : paper.figures
-	);
+	const figures = $derived(paper.figures.filter((f) => (kinds ?? DEFAULT_KINDS).includes(f.kind)));
 
 	/** Lazy crop thumbnail: rendered once the element scrolls near the view. */
 	const thumbnail =

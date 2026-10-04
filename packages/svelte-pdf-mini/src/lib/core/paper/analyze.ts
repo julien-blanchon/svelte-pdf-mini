@@ -2,7 +2,7 @@
 import { extractCitations } from './citations.js';
 import { buildContext } from './context.js';
 import { extractCrossRefs } from './crossrefs.js';
-import { extractFigures } from './figures.js';
+import { extractEquations, extractFigures } from './figures.js';
 import { classifyLinks } from './links.js';
 import { extractMeta } from './meta.js';
 import { extractReferences } from './references.js';
@@ -30,7 +30,14 @@ export async function analyzePaper(
 	const citations = await extractCitations(ctx, refs);
 	progress(0.85, 'citations');
 	signal?.throwIfAborted();
-	const figures = await extractFigures(ctx, opts.imageBoxes ?? true, opts.imageBoxBudgetMs);
+	const inBibliography = (page: number, offset: number) =>
+		refs.references.some((r) =>
+			r.ranges.some((g) => g.page === page && offset >= g.start && offset < g.end)
+		);
+	const figures = [
+		...(await extractFigures(ctx, opts.imageBoxes ?? true, opts.imageBoxBudgetMs)),
+		...extractEquations(ctx, inBibliography)
+	];
 	progress(0.95, 'figures');
 	// Cross-references never overlap the bibliography or citations.
 	const excluded = (page: number, offset: number) =>

@@ -87,6 +87,11 @@ export interface AnnotationStoreOptions {
 	 * Default false: every creation returns to 'select' (hold Shift while creating to keep the tool once).
 	 */
 	stickyTools?: MaybeGetter<boolean | undefined>;
+	/**
+	 * Tools (and text markups) this app offers. Default: all. Others get no
+	 * shortcut and no menu entry (selection menu, context menu, shortcut list).
+	 */
+	tools?: MaybeGetter<readonly AnnotationTool[] | undefined>;
 	/** How an existing annotation is selected for editing. Default 'click'. */
 	selectOn?: MaybeGetter<'click' | 'dblclick' | undefined>;
 	/** New annotations open their note for typing (Enter keeps, Esc discards). Default true. */
@@ -840,6 +845,12 @@ export class AnnotationStore {
 		if (notify) this.#opts.onAnnotationsChange?.(list, ops);
 	}
 
+	/** Whether a tool / text markup is offered (see the `tools` option). */
+	allows(tool: AnnotationTool): boolean {
+		const tools = this.#opt('tools');
+		return !tools || tools.includes(tool);
+	}
+
 	#onKeydown(e: KeyboardEvent) {
 		this.#shiftHeld = e.shiftKey;
 		if (e.defaultPrevented || this.readonly) return;
@@ -876,8 +887,10 @@ export class AnnotationStore {
 		} else if (has('delete') && this.selectedIds.length) this.remove(this.selectedIds);
 		else if (has('edit') && this.selectedIds.length === 1) this.edit();
 		else if (!sel.isEmpty && has('markup.highlight')) this.createFromSelection('highlight');
-		else if (!sel.isEmpty && has('markup.underline')) this.createFromSelection('underline');
-		else if (!sel.isEmpty && has('markup.strikeout')) this.createFromSelection('strikeout');
+		else if (!sel.isEmpty && this.allows('underline') && has('markup.underline'))
+			this.createFromSelection('underline');
+		else if (!sel.isEmpty && this.allows('strikeout') && has('markup.strikeout'))
+			this.createFromSelection('strikeout');
 		else if (!sel.isEmpty && has('markup.comment')) this.createFromSelection('highlight');
 		else {
 			// Only shapes nudge: text markups stay on their text.
@@ -888,7 +901,7 @@ export class AnnotationStore {
 				const step = e.shiftKey ? 10 : 1;
 				const [, dx, dy] = nudge;
 				this.batch(() => this.selectedIds.forEach((id) => this.move(id, dx * step, dy * step)));
-			} else if (tool) this.tool = TOOL_SHORTCUTS[tool];
+			} else if (tool && this.allows(TOOL_SHORTCUTS[tool])) this.tool = TOOL_SHORTCUTS[tool];
 			else handled = false;
 		}
 		if (handled) e.preventDefault();

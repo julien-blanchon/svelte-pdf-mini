@@ -251,6 +251,13 @@
 							"bindable": false
 						},
 						{
+							"name": "focusHighlight",
+							"type": "FocusHighlight",
+							"description": "Effect when a link lands on a figure, table, section…: 'pulse' (default), 'outline', 'spotlight' or a custom name for `Viewer.Focus`'s `child`.",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "focusPadding",
 							"type": "number | [number, number]",
 							"description": "Padding (PDF points) around focused rects. Default 6.",
@@ -1383,6 +1390,13 @@
 							"bindable": false
 						},
 						{
+							"name": "tools",
+							"type": "readonly AnnotationTool[]",
+							"description": "Tools (and text markups) offered. Default: all. Others get no shortcut or menu entry.",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "selectOn",
 							"type": "SelectOn",
 							"description": "How existing annotations are picked for editing. Default 'dblclick'.",
@@ -2103,6 +2117,14 @@
 							"default": "true"
 						},
 						{
+							"name": "backlinks",
+							"type": "boolean",
+							"description": "Hover targets on labels mentioned elsewhere (\"Figure 3\", \"(2)\", headings) for `Paper.Backlinks`. Default true.",
+							"required": false,
+							"bindable": false,
+							"default": "true"
+						},
+						{
 							"name": "onCitationClick",
 							"type": "( citation: InTextCitation, references: Reference[], event: MouseEvent ) => void | false",
 							"description": "Replace the click action on an in-text citation. Return false to skip the default jump.",
@@ -2121,6 +2143,7 @@
 					"dataAttributes": [
 						"data-hovered",
 						"data-kind",
+						"data-pdf-backlink-target",
 						"data-pdf-citation",
 						"data-pdf-crossref",
 						"data-pdf-paper-layer"
@@ -2327,6 +2350,75 @@
 						"data-kind",
 						"data-part",
 						"data-pdf-crossref-preview",
+						"data-state"
+					]
+				},
+				{
+					"name": "Backlinks",
+					"component": "Paper.Backlinks",
+					"file": "components/paper/paper-backlinks.svelte",
+					"element": "div",
+					"props": [
+						{
+							"name": "forceMount",
+							"type": "boolean",
+							"description": "Keep rendering the `child` snippet while closed (with `open: false`) so you can run exit transitions.",
+							"required": false,
+							"bindable": false,
+							"default": "false"
+						},
+						{
+							"name": "onOpenChange",
+							"type": "(open: boolean) => void",
+							"required": false,
+							"bindable": false
+						},
+						{
+							"name": "placement",
+							"type": "'top' | 'bottom' | 'left' | 'right'",
+							"required": false,
+							"bindable": false,
+							"default": "'top'"
+						},
+						{
+							"name": "delay",
+							"type": "number",
+							"required": false,
+							"bindable": false,
+							"default": "300"
+						},
+						{
+							"name": "width",
+							"type": "number",
+							"required": false,
+							"bindable": false,
+							"default": "380"
+						}
+					],
+					"snippetProps": [
+						{
+							"name": "open",
+							"type": "boolean",
+							"required": true,
+							"bindable": false
+						},
+						{
+							"name": "label",
+							"type": "string",
+							"description": "What is mentioned (\"Figure 3\", \"Equation 2\", a section title).",
+							"required": true,
+							"bindable": false
+						},
+						{
+							"name": "mentions",
+							"type": "BacklinkMention[]",
+							"required": true,
+							"bindable": false
+						}
+					],
+					"dataAttributes": [
+						"data-part",
+						"data-pdf-backlinks",
 						"data-state"
 					]
 				},
@@ -5500,6 +5592,14 @@
 		{
 			"name": "--pdf-accent",
 			"default": "rgb(37 99 235)"
+		},
+		{
+			"name": "--pdf-backlink-hover",
+			"default": "rgb(139 92 246 / 0.12)"
+		},
+		{
+			"name": "--pdf-backlink-line",
+			"default": "rgb(139 92 246 / 0.6)"
 		},
 		{
 			"name": "--pdf-citation-hover",

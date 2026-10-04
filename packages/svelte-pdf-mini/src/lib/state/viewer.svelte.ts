@@ -6,6 +6,7 @@ import { PDF_TO_CSS } from '../core/document/pdfjs.js';
 import { RenderScheduler } from '../core/document/scheduler.js';
 import { resolvePageTheme, type PageThemeInput } from '../core/view/theme.js';
 import type {
+	FocusHighlight,
 	Columns,
 	FocusOptions,
 	FocusRegion,
@@ -100,6 +101,8 @@ export interface ViewerOptions {
 	keyboard?: MaybeGetter<boolean | undefined>;
 	/** How long a focus highlight stays, in ms. Default 1800. */
 	focusDuration?: MaybeGetter<number | undefined>;
+	/** Default effect when a link (or `focus()` without `highlight`) lands on a region. Default 'pulse'. */
+	focusHighlight?: MaybeGetter<FocusHighlight | undefined>;
 	/** Padding (PDF points) added around focused rects. Default 6. */
 	focusPadding?: MaybeGetter<number | [number, number] | undefined>;
 	/** UI strings for this viewer (merged over `setMessages()` / the English defaults). */
@@ -509,6 +512,7 @@ export class ViewerState {
 		}
 		this.#anim.start(clamp(target, MIN_ZOOM, MAX_ZOOM), anchor, keepMode);
 	}
+
 	rotateClockwise() {
 		this.rotation = ((this.rotation + 90) % 360) as Rotation;
 	}
@@ -632,7 +636,7 @@ export class ViewerState {
 					)
 				: scroller.scrollLeft;
 
-		const highlight = opts.highlight ?? (rect ? 'pulse' : false);
+		const highlight = opts.highlight ?? (rect ? (this.#opt('focusHighlight') ?? 'pulse') : false);
 		if (highlight) {
 			clearTimeout(this.#focusTimer);
 			const duration = opts.duration ?? this.#opt('focusDuration') ?? 1800;
@@ -803,7 +807,9 @@ export class ViewerState {
 			'data-columns': cols,
 			style:
 				`position:relative;${layout}gap:var(--pdf-page-gap,16px);padding:var(--pdf-pages-padding,16px);box-sizing:border-box;` +
-				`--pdf-scale:${this.scale};`,
+				`--pdf-scale:${this.scale};` +
+				// Page box = themed page colour, so rounded corners don't show a white rim.
+				(this.pageTheme.background ? `--pdf-page-bg:${this.pageTheme.background};` : ''),
 			[this.#contentKey]: this.#contentAttach
 		} as const;
 	}
@@ -1056,8 +1062,21 @@ export class ViewerState {
 			destination: () => this.#anim.destination,
 			zoomTo: (z, opts) => this.zoomTo(z, opts)
 		});
+		let domRange: Range | null = null;
 		// Remember what a context menu was opened on (pointer, or keyboard: Menu key / Shift+F10).
 		const onContextMenu = (e: MouseEvent) => {
+			// Re-apply now and once the menu has opened (opening moves focus, which can collapse it).
+			const range = domRange;
+			domRange = null;
+			const restore = () => {
+				const sel = getSelection();
+				if (range && sel?.isCollapsed) {
+					sel.removeAllRanges();
+					sel.addRange(range);
+				}
+			};
+			restore();
+			requestAnimationFrame(() => requestAnimationFrame(restore));
 			const keyboard = e.button !== 2 && e.clientX === 0 && e.clientY === 0;
 			let clientX = e.clientX;
 			let clientY = e.clientY;
@@ -1077,6 +1096,10 @@ export class ViewerState {
 		};
 		const onRightDown = (e: PointerEvent) => {
 			if (e.button !== 2) return;
+			// Browsers clear the selection on a right mousedown: keep it to restore once the
+			// menu opens, so what the menu acts on stays highlighted.
+			const sel = getSelection();
+			domRange = sel && sel.rangeCount && !sel.isCollapsed ? sel.getRangeAt(0).cloneRange() : null;
 			this.selection.refresh();
 			this.#selectionAtRightClick = {
 				ranges: this.selection.ranges,

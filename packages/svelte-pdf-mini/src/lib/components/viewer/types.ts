@@ -46,6 +46,8 @@ export type ViewerRootProps = DivPartProps<
 		detailMinWidth?: number;
 		/** Focus highlight duration in ms. Default 1800. */
 		focusDuration?: number;
+		/** Effect when a link lands on a figure, table, section…: 'pulse' (default), 'outline', 'spotlight' or a custom name for `Viewer.Focus`'s `child`. */
+		focusHighlight?: FocusHighlight;
 		/** Padding (PDF points) around focused rects. Default 6. */
 		focusPadding?: number | [number, number];
 		/** UI strings (e.g. a translation); merged over setMessages() and the English defaults. */

@@ -535,6 +535,13 @@
 	[data-pdf-annotation-svg][data-theme='dark'] {
 		mix-blend-mode: screen;
 	}
+	/*
+	 * Translucent as well as blended: WebKit (Safari, WKWebView) doesn't always
+	 * blend over a GPU-composited canvas, and an opaque fill hides the text.
+	 */
+	[data-pdf-annotation-svg] :global([data-part='highlight']) {
+		fill-opacity: var(--pdf-highlight-opacity, 0.45);
+	}
 	[data-pdf-annotation-overlay] {
 		position: absolute;
 		inset: 0;

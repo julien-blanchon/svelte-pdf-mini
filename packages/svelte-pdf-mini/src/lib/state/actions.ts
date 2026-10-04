@@ -11,7 +11,12 @@ import {
 	type Annotation,
 	type TextMarkupKind
 } from '../core/annotations/model.js';
-import { copyCanvasImage, copyRich, downloadCanvas } from '../core/document/clipboard.js';
+import {
+	canvasToPng,
+	copyCanvasImage,
+	copyRich,
+	downloadCanvas
+} from '../core/document/clipboard.js';
 import type { RegionExtractor } from '../core/extract/types.js';
 import { comboLabel, type KeymapAction } from '../core/i18n/keymap.js';
 import { referenceToBibtex } from '../core/paper/bibtex.js';
@@ -52,6 +57,11 @@ export interface ContextActionsOptions {
 	extractor?: RegionExtractor | null;
 	/** Replace the default "Open cited paper" (e.g. import it into your app). */
 	onOpenReference?: (reference: Reference) => void;
+	/**
+	 * Save a file (e.g. "Save as PNG"). Default: a browser download, which
+	 * desktop webviews (Tauri, Electron) ignore; pass a native save dialog there.
+	 */
+	saveFile?: (file: Blob, name: string) => unknown;
 }
 
 /** Actions for a context, grouped by what the context is about (most specific first). */
@@ -100,18 +110,26 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 						store.createFromSelection('highlight');
 					}, store.color)
 				}),
-				a(
-					'selection.underline',
-					t('underline'),
-					() => store.createFromSelection('underline'),
-					'markup.underline'
-				),
-				a(
-					'selection.strikeout',
-					t('strikeout'),
-					() => store.createFromSelection('strikeout'),
-					'markup.strikeout'
-				)
+				...(store.allows('underline')
+					? [
+							a(
+								'selection.underline',
+								t('underline'),
+								() => store.createFromSelection('underline'),
+								'markup.underline'
+							)
+						]
+					: []),
+				...(store.allows('strikeout')
+					? [
+							a(
+								'selection.strikeout',
+								t('strikeout'),
+								() => store.createFromSelection('strikeout'),
+								'markup.strikeout'
+							)
+						]
+					: [])
 			);
 		}
 		actions.push(
@@ -213,9 +231,11 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 			a('figure.copyImage', t('copyImage'), async () =>
 				copyCanvasImage(await viewer.document.renderRegion(f.page, f.rect, 1600))
 			),
-			a('figure.saveImage', t('saveImage'), async () =>
-				downloadCanvas(await viewer.document.renderRegion(f.page, f.rect, 1600), name)
-			)
+			a('figure.saveImage', t('saveImage'), async () => {
+				const canvas = await viewer.document.renderRegion(f.page, f.rect, 1600);
+				if (opts.saveFile) await opts.saveFile(await canvasToPng(canvas), name);
+				else downloadCanvas(canvas, name);
+			})
 		];
 		if (store && !store.readonly)
 			actions.push(
@@ -225,6 +245,17 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 					() => store.create('area', { page: f.page, rect: f.rect, label: f.label }),
 					'tool.area'
 				)
+			);
+		const mentions = paper?.mentions.get(f.id) ?? [];
+		if (mentions.length)
+			actions.push(
+				a('figure.mentions', `${t('mentions')} (${mentions.length})`, undefined, undefined, {
+					items: mentions.map((x, i) =>
+						a(`figure.mention.${i}`, `p. ${viewer.document.pageLabel(x.page)} · ${x.text}`, () =>
+							paper!.goToMention(x)
+						)
+					)
+				})
 			);
 		if (opts.extractor)
 			actions.push(
@@ -323,8 +354,8 @@ export function shortcutGroups(viewer: ViewerState, store?: AnnotationStore | nu
 				title: 'Annotate selected text',
 				items: [
 					item('markup.highlight', t('highlight')),
-					item('markup.underline', t('underline')),
-					item('markup.strikeout', t('strikeout')),
+					...(store.allows('underline') ? [item('markup.underline', t('underline'))] : []),
+					...(store.allows('strikeout') ? [item('markup.strikeout', t('strikeout'))] : []),
 					item('markup.comment', t('comment')),
 					item('color.1', `${t('color')} 1–9`)
 				]
@@ -343,7 +374,9 @@ export function shortcutGroups(viewer: ViewerState, store?: AnnotationStore | nu
 						'freetext',
 						'eraser'
 					] as const
-				).map((tool) => item(`tool.${tool}` as KeymapAction, t(`tool_${tool}`)))
+				)
+					.filter((tool) => store.allows(tool))
+					.map((tool) => item(`tool.${tool}` as KeymapAction, t(`tool_${tool}`)))
 			},
 			{
 				title: 'Edit',

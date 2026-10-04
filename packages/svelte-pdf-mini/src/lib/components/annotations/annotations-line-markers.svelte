@@ -44,7 +44,7 @@
 	// Roving focus: one tab stop, arrows move between markers in page order.
 	let focusIndex = $state(0);
 	const tabStop = $derived(Math.min(focusIndex, marks.length - 1));
-	const items: HTMLButtonElement[] = [];
+	const items = $state<HTMLButtonElement[]>([]);
 	function onKeydown(e: KeyboardEvent, i: number, a: Annotation) {
 		handleRovingKey(e, i, marks.length, {
 			focus: (next) => {

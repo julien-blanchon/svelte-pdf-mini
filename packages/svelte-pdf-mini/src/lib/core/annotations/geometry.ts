@@ -160,8 +160,16 @@ const fmt = (p: Pt) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
 const lerp = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
 /** Polygon points for a quad (TL, TR, BR, BL). */
-export function quadPoints(vp: PageViewport, q: Quad): string {
-	const { tl, tr, bl, br } = quadToView(vp, q);
+/**
+ * Polygon points for a quad. `pad` grows it across the line by that fraction
+ * of its height on each side (highlights cover the line, not just the glyphs).
+ */
+export function quadPoints(vp: PageViewport, q: Quad, pad = 0): string {
+	let { tl, tr, bl, br } = quadToView(vp, q);
+	if (pad) {
+		[tl, bl] = [lerp(tl, bl, -pad), lerp(tl, bl, 1 + pad)];
+		[tr, br] = [lerp(tr, br, -pad), lerp(tr, br, 1 + pad)];
+	}
 	return [tl, tr, br, bl].map(fmt).join(' ');
 }
 

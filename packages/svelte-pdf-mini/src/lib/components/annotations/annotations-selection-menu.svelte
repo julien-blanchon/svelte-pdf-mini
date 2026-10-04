@@ -67,24 +67,36 @@
 	};
 	const close = () => (dismissed = true);
 	/** Default content: the markup actions after the colour swatches. */
-	const actions = $derived([
-		{
-			part: 'underline',
-			icon: 'underline',
-			label: store.viewer.t('underline'),
-			key: 'U',
-			run: () => markup('underline')
-		},
-		{
-			part: 'strikeout',
-			icon: 'strikeout',
-			label: store.viewer.t('strikeout'),
-			key: 'S',
-			run: () => markup('strikeout')
-		},
-		{ part: 'comment', icon: 'comment', label: store.viewer.t('comment'), key: 'C', run: comment },
-		{ part: 'copy', icon: 'copy', label: store.viewer.t('copy'), key: undefined, run: copy }
-	] satisfies { part: string; icon: IconName; label: string; key?: string; run: () => void }[]);
+	const actions = $derived(
+		(
+			[
+				{
+					part: 'underline',
+					icon: 'underline',
+					label: store.viewer.t('underline'),
+					key: 'U',
+					run: () => markup('underline')
+				},
+				{
+					part: 'strikeout',
+					icon: 'strikeout',
+					label: store.viewer.t('strikeout'),
+					key: 'S',
+					run: () => markup('strikeout')
+				},
+				{
+					part: 'comment',
+					icon: 'comment',
+					label: store.viewer.t('comment'),
+					key: 'C',
+					run: comment
+				},
+				{ part: 'copy', icon: 'copy', label: store.viewer.t('copy'), key: undefined, run: copy }
+			] satisfies { part: string; icon: IconName; label: string; key?: string; run: () => void }[]
+		).filter((a) =>
+			a.part === 'underline' || a.part === 'strikeout' ? store.allows(a.part) : true
+		)
+	);
 
 	// Toolbar pattern: arrows move between the enabled buttons (also in custom content), Esc closes.
 	function onKeydown(e: KeyboardEvent) {

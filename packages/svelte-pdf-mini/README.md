@@ -15,6 +15,13 @@ Headless, composable PDF viewer and **research-paper reader** components for **S
 bun add svelte-pdf-mini   # or npm i / pnpm add
 ```
 
+```ts
+// vite.config.ts: required for `vite dev` (the pdf.js worker can't be pre-bundled)
+optimizeDeps: {
+	exclude: ['pdfjs-dist'];
+}
+```
+
 ```svelte
 <script>
 	import { Document, Viewer, Annotations, Paper } from 'svelte-pdf-mini';

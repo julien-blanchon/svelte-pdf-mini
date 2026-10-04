@@ -38,11 +38,11 @@ export interface PaperStateOptions {
 /** Results of recent analyses, by document fingerprint + analyser version. */
 const memoryCache = new LruCache<string, PaperModel>(12);
 /** Bump when the analyser output changes shape, to ignore stale persisted results. */
-export const PAPER_ANALYSIS_VERSION = 2;
+export const PAPER_ANALYSIS_VERSION = 3;
 
-/** What the pointer is over (citation or cross-reference hotspot). */
+/** What the pointer is over: a citation, a cross-reference, or a label with backlinks. */
 export interface PaperHover {
-	kind: 'citation' | 'crossref';
+	kind: 'citation' | 'crossref' | 'backlinks';
 	id: string;
 	anchor: Element;
 }
@@ -81,6 +81,20 @@ export class PaperState {
 	readonly figureById = $derived(new Map(this.figures.map((f) => [f.id, f])));
 	readonly citationsByPage = $derived(groupByPage(this.citations));
 	readonly crossRefsByPage = $derived(groupByPage(this.crossRefs));
+	/**
+	 * Backlinks: the cross-references pointing at each figure, table,
+	 * equation or section (by target id), in reading order.
+	 */
+	readonly mentions = $derived.by(() => {
+		const map = new Map<string, CrossRef[]>();
+		for (const x of this.crossRefs) {
+			if (!x.targetId) continue;
+			let list = map.get(x.targetId);
+			if (!list) map.set(x.targetId, (list = []));
+			list.push(x);
+		}
+		return map;
+	});
 	/** In-text citations pointing at each reference, in reading order. */
 	readonly citationsByReference = $derived.by(() => {
 		const map = new Map<string, InTextCitation[]>();
@@ -281,6 +295,11 @@ export class PaperState {
 			{ page: f.page, rect: f.rect },
 			{ highlight: 'outline', align: 'center' }
 		);
+	}
+
+	/** Jump to where a cross-reference is written (a backlink), not to its target. */
+	goToMention(x: CrossRef) {
+		return this.viewer.navigate({ page: x.page, rect: x.rect }, { align: 'center' });
 	}
 
 	goToCrossRef(x: CrossRef) {

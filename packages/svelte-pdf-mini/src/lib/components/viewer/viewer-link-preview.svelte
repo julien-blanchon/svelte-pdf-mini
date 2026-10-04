@@ -99,6 +99,20 @@
 		ref = node;
 		el = node;
 	});
+	// The preview floats over the page: a wheel over it scrolls the document
+	// (and closes it), instead of scrolling whatever is behind it.
+	const wheelAttachment = {
+		[createAttachmentKey()]: (node: HTMLElement) => {
+			const onWheel = (e: WheelEvent) => {
+				if (e.ctrlKey || e.metaKey) return;
+				e.preventDefault();
+				viewer.hoveredLink = null;
+				viewer.scrollEl?.scrollBy({ left: e.deltaX, top: e.deltaY });
+			};
+			node.addEventListener('wheel', onWheel, { passive: false });
+			return () => node.removeEventListener('wheel', onWheel);
+		}
+	};
 	const mergedProps = $derived(
 		mergeProps(rest, {
 			'data-pdf-link-preview': '',
@@ -108,7 +122,8 @@
 			role: 'tooltip',
 			style: cssVars({ '--pdf-preview-width': `${width}px` }),
 			onpointerleave: () => (viewer.hoveredLink = null),
-			...refAttachment
+			...refAttachment,
+			...wheelAttachment
 		})
 	);
 	const canvasProps = {

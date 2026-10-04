@@ -52,6 +52,8 @@ export interface AnnotationsRootProps {
 	foreign?: ForeignPolicy;
 	/** Keep the tool after creating (highlighter sessions). Default false: back to select (Shift keeps it once). */
 	stickyTools?: boolean;
+	/** Tools (and text markups) offered. Default: all. Others get no shortcut or menu entry. */
+	tools?: readonly AnnotationTool[];
 	/** How existing annotations are picked for editing. Default 'dblclick'. */
 	selectOn?: SelectOn;
 	/** Open the note of a new annotation for typing (Enter keeps, Esc discards). Default true. */

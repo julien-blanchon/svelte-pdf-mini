@@ -15,11 +15,16 @@ export async function copyRich(plain: string, html?: string, markdown?: string):
 	await navigator.clipboard.writeText(text);
 }
 
-/** Copy a canvas as a PNG image. */
-export async function copyCanvasImage(canvas: HTMLCanvasElement): Promise<void> {
+/** Encode a canvas as a PNG blob. */
+export async function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
 	const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
 	if (!blob) throw new Error('svelte-pdf-mini: could not encode image');
-	await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+	return blob;
+}
+
+/** Copy a canvas as a PNG image. */
+export async function copyCanvasImage(canvas: HTMLCanvasElement): Promise<void> {
+	await navigator.clipboard.write([new ClipboardItem({ 'image/png': await canvasToPng(canvas) })]);
 }
 
 /** Download a canvas as a PNG file. */

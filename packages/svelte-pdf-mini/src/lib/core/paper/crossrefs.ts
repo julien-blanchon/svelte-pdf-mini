@@ -42,7 +42,7 @@ function textRefKind(word: string): CrossRefKind {
 }
 
 const isFigureKind = (kind: CrossRefKind): kind is FigureKind =>
-	kind === 'figure' || kind === 'table' || kind === 'algorithm';
+	kind === 'figure' || kind === 'table' || kind === 'algorithm' || kind === 'equation';
 
 export function extractCrossRefs(
 	ctx: DocContext,

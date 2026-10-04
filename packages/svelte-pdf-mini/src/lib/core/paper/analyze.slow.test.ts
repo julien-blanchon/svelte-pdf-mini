@@ -19,6 +19,24 @@ const refIds = (m: PaperModel) => new Set(m.references.map((r) => r.id));
 describe('attention.pdf (hyperref, numeric)', async () => {
 	const m = await analyze('attention.pdf');
 
+	it('finds numbered display equations, fractions included', () => {
+		const eqs = m.figures.filter((f) => f.kind === 'equation');
+		expect(eqs.map((e) => e.number)).toEqual(['1', '2', '3']);
+		const eq1 = eqs[0];
+		expect(eq1.caption).toContain('softmax');
+		expect(eq1.caption).toContain('dk');
+		// The box spans the fraction (numerator above, √dk below the baseline).
+		expect(eq1.rect[3] - eq1.rect[1]).toBeGreaterThan(20);
+		expect(eq1.labelRect).toBeDefined();
+	});
+
+	it('indexes backlinks (mentions) of figures and tables', () => {
+		const fig1 = m.figures.find((f) => f.id === 'figure-1')!;
+		const mentions = m.crossRefs.filter((x) => x.targetId === fig1.id);
+		expect(mentions.length).toBeGreaterThan(0);
+		expect(fig1.labelRect).toBeDefined();
+	});
+
 	it('extracts metadata', () => {
 		expect(m.meta.title).toBe('Attention Is All You Need');
 		expect(m.meta.authors).toContain('Ashish Vaswani');

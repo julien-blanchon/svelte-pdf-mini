@@ -116,7 +116,8 @@ export interface InTextCitation {
 	source: 'link' | 'text';
 }
 
-export type FigureKind = 'figure' | 'table' | 'algorithm';
+/** `equation`: a numbered display equation ("… (3)"). */
+export type FigureKind = 'figure' | 'table' | 'algorithm' | 'equation';
 
 export interface Figure {
 	id: string;
@@ -127,6 +128,8 @@ export interface Figure {
 	caption: string;
 	page: number;
 	captionRect: PdfRect;
+	/** Box of the label itself ("Figure 3", or an equation's "(3)"), for hover targets. */
+	labelRect?: PdfRect;
 	/** Box of the figure/table body (best effort), including the caption. */
 	rect: PdfRect;
 	dest?: string;

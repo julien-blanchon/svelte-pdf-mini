@@ -78,13 +78,15 @@
 		strikeout: 'S',
 		squiggly: '~'
 	};
-	const kindButtons: HTMLButtonElement[] = [];
+	const kindButtons = $state<HTMLButtonElement[]>([]);
+	/** Markup styles offered (see Annotations.Root `tools`). */
+	const kinds = $derived(TEXT_MARKUP_KINDS.filter((k) => store.allows(k)));
 	// Radio pattern: arrows move focus and switch the style.
 	function onKindKey(e: KeyboardEvent, i: number, a: Annotation) {
-		handleRovingKey(e, i, TEXT_MARKUP_KINDS.length, {
+		handleRovingKey(e, i, kinds.length, {
 			orientation: 'both',
 			focus: (next) => {
-				store.update(a.id, { kind: TEXT_MARKUP_KINDS[next] });
+				store.update(a.id, { kind: kinds[next] });
 				kindButtons[next]?.focus();
 			}
 		});
@@ -128,11 +130,11 @@
 				{#if snippetProps.editable}
 					<div data-part="toolbar">
 						<ColorRadio value={a.paletteKey} onSelect={(key) => store.recolor([a.id], key)} />
-						{#if isTextMarkup(a)}
-							{@const current = Math.max(0, TEXT_MARKUP_KINDS.indexOf(a.kind))}
+						{#if isTextMarkup(a) && kinds.length > 1}
+							{@const current = Math.max(0, kinds.indexOf(a.kind))}
 							<span data-part="sep" aria-hidden="true"></span>
 							<div role="radiogroup" aria-label={store.viewer.t('markupStyle')} data-part="kinds">
-								{#each TEXT_MARKUP_KINDS as k, i (k)}
+								{#each kinds as k, i (k)}
 									<button
 										type="button"
 										role="radio"

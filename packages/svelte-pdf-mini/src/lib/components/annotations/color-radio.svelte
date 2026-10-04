@@ -27,7 +27,7 @@
 			swatches.findIndex((c) => c.key === value)
 		)
 	);
-	const buttons: HTMLButtonElement[] = [];
+	const buttons = $state<HTMLButtonElement[]>([]);
 
 	function onKeydown(e: KeyboardEvent, i: number) {
 		// Radio pattern: moving focus also checks.

@@ -16,7 +16,8 @@ const CAPTION =
 const FIGURE_LABELS: Record<FigureKind, string> = {
 	figure: 'Figure',
 	table: 'Table',
-	algorithm: 'Algorithm'
+	algorithm: 'Algorithm',
+	equation: 'Equation'
 };
 
 /** Kind from a caption word ("Tab.", "Algorithm") or destination name ("table.3"). */
@@ -38,7 +39,7 @@ export async function extractFigures(
 	const seen = new Set<string>();
 	for (let p = 1; p <= ctx.numPages; p++) {
 		const lines = ctx.lines[p - 1];
-		const captions: { line: number; kind: FigureKind; number: string }[] = [];
+		const captions: { line: number; kind: FigureKind; number: string; labelRect?: PdfRect }[] = [];
 		const text = ctx.texts[p - 1];
 		lines.forEach((l, i) => {
 			if (l.rotated) return;
@@ -68,7 +69,14 @@ export async function extractFigures(
 				const gap = prev.bottom - l.top;
 				if (gap > -2 && gap < h * 0.6 && !/[.:;!?)\]]$/.test(prev.text.trim())) return;
 			}
-			captions.push({ line: i, kind: figureKindOf(m[1]), number: m[2] });
+			const lead = l.text.length - l.text.trimStart().length;
+			const labelEnd = l.start + lead + m[0].replace(/[\s:.|–—-]+$/, '').length;
+			captions.push({
+				line: i,
+				kind: figureKindOf(m[1]),
+				number: m[2],
+				labelRect: text.rectFor(l.start + lead, labelEnd) ?? undefined
+			});
 		});
 		if (!captions.length) continue;
 		let graphics: Graphics = { images: [], rules: [], drawings: [] };
@@ -115,6 +123,7 @@ export async function extractFigures(
 				caption,
 				page: p,
 				captionRect,
+				labelRect: c.labelRect,
 				rect: unionRect([captionRect, ...(body ? [body] : [])])!,
 				source
 			});
@@ -122,6 +131,117 @@ export async function extractFigures(
 	}
 	await attachDests(ctx, figures);
 	return figures;
+}
+
+/** Equation number at the end of a line: "(3)", "(2.1)", "(4a)" — not years or table values. */
+const EQ_NUMBER = /\((\d{1,3}(?:\.\d{1,3})?[a-z]?)\)\s*$/;
+const isEqNumber = (n: string) => !/^0\.|\.0$/.test(n);
+
+function median(values: number[]): number {
+	const v = [...values].sort((a, b) => a - b);
+	return v.length ? v[Math.floor(v.length / 2)] : 0;
+}
+
+/**
+ * Numbered display equations (LaTeX `equation`): a line ending in "(3)" where
+ * the number sits well apart from the formula (the right-margin number, not
+ * "… in Eq. (3)" prose). The box grows over the formula's other lines:
+ * fraction / sub- and superscript lines overlapping it, and adjacent
+ * narrow, centred lines (multi-line equations).
+ */
+export function extractEquations(
+	ctx: DocContext,
+	excluded: (page: number, offset: number) => boolean
+): Figure[] {
+	const out: Figure[] = [];
+	const seen = new Set<string>();
+	for (let p = 1; p <= ctx.numPages; p++) {
+		const lines = ctx.lines[p - 1];
+		const text = ctx.texts[p - 1];
+		const size = ctx.src.pageSize(p);
+		const used = new Set<Line>();
+		lines.forEach((l) => {
+			if (l.rotated || used.has(l)) return;
+			const m = EQ_NUMBER.exec(l.text);
+			if (!m || !isEqNumber(m[1]) || seen.has(m[1]) || excluded(p, l.start)) return;
+			const numStart = l.start + m.index;
+			const numRect = text.rectFor(numStart, numStart + m[0].trimEnd().length);
+			if (!numRect) return;
+			const bodyText = l.text.slice(0, m.index).trimEnd();
+			// Table rows: several parenthesised values on the line.
+			if (/\(\d+(?:\.\d+)?\)/.test(bodyText)) return;
+			const bodyRect = bodyText ? text.rectFor(l.start, l.start + bodyText.length) : null;
+			// Set apart: a wide gap before the number (or the number alone on its line).
+			if (bodyRect && numRect[0] - bodyRect[2] < l.size * 1.5) return;
+			// Prose ending a sentence right before the number is a reference, not an equation.
+			if (/\b[a-z]{3,}[.,;:]?$/.test(bodyText) && !/[=+\-−·×<>≤≥∈)\]}]/.test(bodyText)) return;
+
+			// The text column: median width / centre of body lines around the number.
+			// Single-column page (many lines span over half the width), else the number's column.
+			const singleColumn =
+				lines.filter((x) => x.right - x.x > size.width * 0.5).length > lines.length * 0.3;
+			const [colL, colR] = singleColumn ? [0, size.width] : columnOf(numRect, size.width);
+			const inColumn = lines.filter(
+				(x) =>
+					!x.rotated && x.x >= colL - 4 && x.right <= colR + 4 && Math.abs(x.size - l.size) < 1.5
+			);
+			const widths = inColumn.map((x) => x.right - x.x);
+			const textWidth = median(widths.filter((w) => w > median(widths) * 0.8)) || colR - colL;
+			const textCentre =
+				median(
+					inColumn.filter((x) => x.right - x.x > textWidth * 0.9).map((x) => (x.x + x.right) / 2)
+				) || (colL + colR) / 2;
+
+			let box: PdfRect = bodyRect ? unionRect([bodyRect, numRect])! : numRect;
+			// Vertical gap between the line and the box (0 when they overlap, e.g. same baseline).
+			const near = (x: Line, r: PdfRect) =>
+				Math.max(0, x.bottom - r[3], r[1] - x.top) < l.size * 1.1;
+			// Formula pieces (fraction parts, scripts) sit beside or over the formula, never at the
+			// column's left margin like prose.
+			const textLeft = textCentre - textWidth / 2;
+			const overlapsX = (x: Line, r: PdfRect) =>
+				x.x < numRect[0] && x.right > r[0] - l.size * 2 && x.x > textLeft + l.size;
+			// Narrow and centred like display math (punctuation can't tell: "… = b.").
+			const isDisplay = (x: Line) =>
+				x.right - x.x < textWidth * 0.8 &&
+				Math.abs((x.x + x.right) / 2 - textCentre) < textWidth * 0.15;
+			// Grow to a fixpoint over the lines around it (fragments of one equation are not
+			// neighbours in reading order: "softmax(", "QKᵀ", "√dₖ", ")V" share a baseline).
+			const body: Line[] = [l];
+			const window = lines.filter(
+				(x) => x !== l && !x.rotated && !used.has(x) && Math.abs(x.y - l.y) < l.size * 5
+			);
+			for (let grew = true, n = 0; grew && n < 8; n++) {
+				grew = false;
+				for (const x of window) {
+					if (body.includes(x) || EQ_NUMBER.test(x.text) || CAPTION.test(x.text.trim())) continue;
+					// Prose split by inline math: math pieces rarely hold three words.
+					if ((x.text.match(/\b[a-z]{3,}\b/g)?.length ?? 0) >= 3) continue;
+					const piece = overlapsX(x, box) && near(x, box) && x.right - x.x < textWidth * 0.8;
+					if (!piece && !(isDisplay(x) && near(x, box))) continue;
+					body.push(x);
+					box = unionRect([box, lineRect(x)])!;
+					grew = true;
+				}
+			}
+			body.forEach((x) => used.add(x));
+			body.sort((a, b) => b.top - a.top);
+			seen.add(m[1]);
+			out.push({
+				id: `equation-${m[1]}`,
+				kind: 'equation',
+				number: m[1],
+				label: `Equation ${m[1]}`,
+				caption: cleanQuote(body.map((x) => (x === l ? bodyText : x.text)).join('\n')),
+				page: p,
+				captionRect: numRect,
+				labelRect: numRect,
+				rect: box,
+				source: 'layout'
+			});
+		});
+	}
+	return out;
 }
 
 /** The caption's lines: the label line plus following lines of the same block. */

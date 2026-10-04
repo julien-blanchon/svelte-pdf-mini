@@ -26,6 +26,13 @@
 bun add svelte-pdf-mini   # or npm i / pnpm add
 ```
 
+```ts
+// vite.config.ts: required for `vite dev` (the pdf.js worker can't be pre-bundled)
+optimizeDeps: {
+  exclude: ["pdfjs-dist"];
+}
+```
+
 ```svelte
 <script>
 	import { Document, Viewer } from 'svelte-pdf-mini';
@@ -50,11 +57,11 @@ bun add svelte-pdf-mini   # or npm i / pnpm add
 
 ## Repository
 
-| Path | What |
-|---|---|
-| [`packages/svelte-pdf-mini`](packages/svelte-pdf-mini) | The library (`core/` plain TS, `state/` runes classes, `components/` compound parts) |
-| [`apps/docs`](apps/docs) | Docs (mdsvex), live feature demos and integrated apps (SvelteKit + Tailwind v4); demos live in `src/lib/demos`, full screen at `/demo/<name>` |
-| [`fixtures`](fixtures) | arXiv test papers (`bun run fixtures` downloads them) and evaluation scripts |
+| Path                                                   | What                                                                                                                                          |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`packages/svelte-pdf-mini`](packages/svelte-pdf-mini) | The library (`core/` plain TS, `state/` runes classes, `components/` compound parts)                                                          |
+| [`apps/docs`](apps/docs)                               | Docs (mdsvex), live feature demos and integrated apps (SvelteKit + Tailwind v4); demos live in `src/lib/demos`, full screen at `/demo/<name>` |
+| [`fixtures`](fixtures)                                 | arXiv test papers (`bun run fixtures` downloads them) and evaluation scripts                                                                  |
 
 ## Development
 
