@@ -8,6 +8,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # svelte-check, @sveltejs/package and typescript-eslint support TypeScript ≤ 6 for now.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
     groups:
       svelte:
         patterns: ['svelte', 'svelte-check', '@sveltejs/*']
