@@ -1,0 +1,150 @@
+---
+title: Bundlers & deployment
+description: Supported versions, how the pdf.js worker is loaded, other bundlers, SSR and prerendering, lazy dependencies, CORS and CSP.
+---
+
+<script lang="ts">
+	import { Callout } from '#lib/index.ts';
+</script>
+
+## Requirements
+
+| | |
+| --- | --- |
+| Svelte | `^5.57.0` (peer dependency) |
+| Framework | SvelteKit, or plain Vite + `@sveltejs/vite-plugin-svelte` |
+| Browsers | Current Chrome, Edge, Firefox and Safari |
+| Server (SSR / prerender) | Node 22.13+ (the `engines` range of `pdfjs-dist` 6) |
+
+The browser floor is set by pdf.js 6. Its modern build calls recent built-ins without polyfills: `Promise.withResolvers`, `Promise.try`, `URL.parse`, iterator helpers, `Map.prototype.getOrInsertComputed`, `Math.sumPrecise` and `Uint8Array.fromBase64`. The library loads that modern build, not pdf.js's `legacy/` build, so older browsers are not supported.
+
+The library itself relies on `ResizeObserver`, `IntersectionObserver`, module Web Workers and the `scrollend` event. `createImageBitmap` (bitmap cache, thumbnails) and `OffscreenCanvas` (text measuring) are feature-detected and skipped when missing. Copy actions use the async Clipboard API, which browsers only allow in secure contexts (HTTPS or `localhost`).
+
+## The pdf.js worker
+
+pdf.js parses PDFs in a Web Worker. The first time a document loads, `loadPdfJs()` (in `core/document/pdfjs.ts`) does the following:
+
+1. It imports `pdfjs-dist` and checks `configurePdf`. A `workerPort` you passed is used as is. Otherwise `workerSrc` is set to your URL, or to `pdfjs-dist/build/pdf.worker.min.mjs?url`. That `?url` import tells Vite to emit the worker as a hashed asset.
+2. It starts **one** `PDFWorker` and shares it across every document (`sharedWorker`, on by default).
+
+The worker is about **1.26 MB** minified, or about 375 KB gzipped. In a production build it is a separate file (`_app/immutable/assets/pdf.worker.min.<hash>.mjs` in SvelteKit). It is only fetched when the first document loads.
+
+`Paper.Root` / `PaperState` starts **a second pdf.js worker** while it analyses a paper. It loads a copy of the document there, so reading operator lists for every page never delays page rendering. The worker comes from the same `workerSrc` and is destroyed when analysis ends. With `new PaperState({ isolate: false })`, analysis runs on the shared worker instead.
+
+### Self-hosting the worker
+
+With Vite you can leave this alone. To serve the worker from a fixed path, copy `node_modules/pdfjs-dist/build/pdf.worker.min.mjs` into `static/` and point to it before the first document loads:
+
+```ts
+import { configurePdf } from 'svelte-pdf-mini';
+
+configurePdf({ workerSrc: '/pdfjs/pdf.worker.min.mjs' });
+```
+
+Keep the copied worker on the **same version** as the installed `pdfjs-dist`, because pdf.js refuses a worker from another version. A cross-origin `workerSrc` (a CDN, for example) still works: pdf.js wraps it in a `blob:` module that imports the URL.
+
+<Callout title="Your own worker">
+	Pass a ready <code>Worker</code> with <code>configurePdf(&#123; workerPort &#125;)</code>: every document shares it. Paper analysis normally runs on a second worker so it doesn't delay rendering; with a <code>workerPort</code> it runs on yours instead.
+</Callout>
+
+### Vite: `optimizeDeps.exclude`
+
+The docs site sets:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+	plugins: [sveltekit()],
+	optimizeDeps: { exclude: ['pdfjs-dist'] }
+});
+```
+
+You don't need this. It only affects the **dev server**, not builds. `pdfjs-dist` already ships as one self-contained ES module, so pre-bundling it gains nothing. Without the exclude, Vite may only discover pdf.js when the first PDF opens, then re-optimise its dependencies and reload the page. Excluding it skips that reload.
+
+## Other bundlers
+
+Webpack, Rollup, esbuild and similar bundlers work if they can:
+
+- **Compile Svelte from `node_modules`.** `dist/` ships `.svelte` components and `.svelte.js` rune modules. Every entry except `svelte-pdf-mini/core` needs the Svelte compiler, through `svelte-loader`, `rollup-plugin-svelte` or `esbuild-svelte`. Resolving with the `svelte` export condition is recommended. `svelte-pdf-mini/core` is plain TypeScript output.
+- **Handle the worker's `?url` import.** It is Vite syntax, and it is reached from both `svelte-pdf-mini` and `svelte-pdf-mini/core`. Map it to an emitted asset, or set `workerSrc` yourself so the import never runs. In webpack 5:
+
+```js
+// webpack.config.js: emit `…?url` imports as files and return their URL
+module.exports = {
+	module: {
+		rules: [{ resourceQuery: /url/, type: 'asset/resource' }]
+	}
+};
+```
+
+```ts
+// or point at the worker directly (webpack 5 and Vite understand this pattern)
+configurePdf({
+	workerSrc: new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
+});
+```
+
+- **Handle the stylesheet the notes renderer imports.** It lazily imports `katex/dist/katex.min.css`, so your bundler needs a CSS loader for dynamic CSS imports. At runtime a failed import is ignored and maths renders without KaTeX styles, but the bundler still has to resolve the import at build time.
+
+## SSR and prerendering
+
+No setup is needed in SvelteKit, including `adapter-static`. This site is fully prerendered.
+
+- On the server, components render their **static shell**: the root elements, data attributes and your snippets, with `status` set to `'idle'`.
+- Loading starts in an `$effect`, which only runs in the browser. `loadPdfJs()` rejects outside a browser (`typeof window === 'undefined'`), and the worker, rendering, observers and paper analysis are all started from effects.
+- `pdfjs-dist` is only imported dynamically, from the browser: its main module (~430 KB minified, ~130 KB gzipped) is a lazy chunk fetched when the first document loads, and the worker is fetched on demand too.
+
+## Lazy-loaded dependencies
+
+| Dependency | Loaded | When |
+| --- | --- | --- |
+| `pdfjs-dist` worker | dynamic (`?url` asset) | first document load |
+| `@cantoo/pdf-lib` | dynamic `import()` | first `exportPdf` / `importAnnotations` call |
+| `marked`, `katex` (+ CSS), `dompurify` | dynamic `import()` | first annotation comment that contains Markdown or `$…$` maths |
+| `@floating-ui/dom`, `perfect-freehand`, `runed`, `svelte-toolbelt` | static | always (small) |
+
+A plain viewer never downloads pdf-lib (~580 KB minified) or KaTeX (~260 KB minified). Your bundler splits them into their own chunks.
+
+## Remote PDFs and CORS
+
+pdf.js fetches URLs from the browser, so the PDF host has to allow your origin through CORS. You can pass a string or URL as `src`, or `{ url, httpHeaders, withCredentials }` for authenticated requests.
+
+- **Range requests.** pdf.js loads large files in chunks only when it can read the `Accept-Ranges: bytes` and `Content-Length` response headers. Cross-origin, `Accept-Ranges` has to be listed in `Access-Control-Expose-Headers`. Otherwise pdf.js streams the whole file, which still renders progressively.
+- **arXiv** sends `Access-Control-Allow-Origin: *` but does not expose `Accept-Ranges`, so arXiv PDFs are streamed in full. That's why the examples on this site can load them directly.
+- **Hosts without CORS** need a same-origin proxy. Nothing is built in for PDFs. Pass the proxied URL as `src`:
+
+```ts
+// src/routes/api/pdf/+server.ts (SvelteKit): restrict the hosts you forward to
+import { error } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+
+const ALLOWED = new Set(['example.org']);
+
+export const GET: RequestHandler = async ({ url, request, fetch }) => {
+	const target = new URL(url.searchParams.get('url') ?? '');
+	if (!ALLOWED.has(target.hostname)) error(400, 'host not allowed');
+	const range = request.headers.get('range');
+	const res = await fetch(target, { headers: range ? { range } : {} });
+	const headers = new Headers();
+	for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) {
+		const v = res.headers.get(h);
+		if (v) headers.set(h, v);
+	}
+	return new Response(res.body, { status: res.status, headers });
+};
+```
+
+```svelte
+<Document.Root src={`/api/pdf?url=${encodeURIComponent(pdfUrl)}`}>…</Document.Root>
+```
+
+To skip range requests entirely, for example behind a proxy that mishandles them, pass pdf.js options: `documentOptions={{ disableRange: true, disableStream: true }}` on `Document.Root`, or `configurePdf({ documentOptions })` for every document.
+
+The citation **metadata providers** are separate from PDF loading. OpenAlex, Semantic Scholar and Crossref send CORS headers. The arXiv API does not, so `arxiv({ proxy })` takes a URL prefix or a `(url) => string` rewrite. Every provider also accepts a custom `fetch`. See [Research papers](/docs/research-papers).
+
+## Content Security Policy
+
+If your site sends a CSP, allow:
+
+- `worker-src 'self'` for the bundled or self-hosted worker. Add `blob:` if `workerSrc` is cross-origin, because pdf.js wraps it in a `blob:` module.
+- `connect-src` for the hosts your PDFs come from, plus `https://cdn.jsdelivr.net`. Character maps, standard fonts and WASM decoders load from jsDelivr by default. To keep everything same-origin, self-host them with `configurePdf({ cMapUrl, standardFontDataUrl, wasmUrl, iccUrl })`; see [Installation](/docs/installation#worker-and-assets). Also add the citation provider APIs if you use them.

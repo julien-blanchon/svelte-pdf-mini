@@ -1,4 +1,5 @@
 import { untrack } from 'svelte';
+import { on } from 'svelte/events';
 import {
 	baseFields,
 	createId,
@@ -38,6 +39,7 @@ import {
 	type ExportOptions,
 	type ImportResult
 } from '../core/pdf-codec/index.js';
+import { isMessageKey } from '../core/i18n/messages.js';
 import { Synced } from '../internal/synced.svelte.js';
 import { readOption, type Getter, type MaybeGetter, type Resolved } from '../internal/types.js';
 import type { ViewerState } from './viewer.svelte.js';
@@ -227,6 +229,13 @@ export class AnnotationStore {
 			return () => scroller.removeEventListener('keydown', onKey, true);
 		});
 
+		// Hand tool: drag the pages to scroll (mouse and pen; touch already scrolls).
+		$effect(() => {
+			const scroller = this.viewer.scrollEl;
+			if (this.tool !== 'hand' || !scroller) return;
+			return attachPan(scroller);
+		});
+
 		// Highlighter mode (a markup tool is active): the settled text selection becomes
 		// a markup. Waits briefly so a double-click followed by a triple-click (word ->
 		// line) produces one annotation, and extends a markup made a moment ago instead
@@ -349,6 +358,12 @@ export class AnnotationStore {
 		this.colorFilter = next.length ? next : null;
 	}
 
+	/** Translated name of an annotation kind (announcements). */
+	#kindLabel(kind: AnnotationKind): string {
+		const key = `kind_${kind}`;
+		return this.viewer.t(isMessageKey(key) ? key : 'kind_other');
+	}
+
 	announce(message: string) {
 		// Re-set so repeated messages are announced again.
 		this.announcement = '';
@@ -403,7 +418,11 @@ export class AnnotationStore {
 		for (const a of list) for (const r of this.replies.get(a.id) ?? []) all.set(r.id, r);
 		if (!all.size) return;
 		this.#apply([...all.values()].map((annotation) => ({ type: 'remove' as const, annotation })));
-		this.announce(all.size === 1 ? 'Annotation deleted' : `${all.size} annotations deleted`);
+		this.announce(
+			all.size === 1
+				? this.viewer.t('announceDeleted')
+				: this.viewer.t('announceDeletedMany', { count: all.size })
+		);
 	}
 
 	/** Replace the whole list (e.g. after importing a PDF). Recorded as one undo step. */
@@ -615,9 +634,7 @@ export class AnnotationStore {
 		if (this.pendingId && this.pendingId !== a.id) this.commit();
 		this.pendingId = a.id;
 		this.pendingTyped = false;
-		this.announce(
-			`${KIND_LABELS[a.kind] ?? 'Annotation'} created. Type a note, Enter to keep, Escape to discard.`
-		);
+		this.announce(this.viewer.t('announceCreated', { kind: this.#kindLabel(a.kind) }));
 		this.selectedIds = [a.id];
 		if (this.#opt('editOnCreate') ?? true) this.editingId = a.id;
 		if (!this.#shiftHeld && !(this.#opt('stickyTools') ?? false)) this.#tool.current = 'select';
@@ -647,7 +664,7 @@ export class AnnotationStore {
 		this.#undo = this.#undo.filter((ops) => !ops.some(touches));
 		this.#write([{ type: 'remove', annotation: a }]);
 		this.selectedIds = [];
-		this.announce('Discarded');
+		this.announce(this.viewer.t('announceDiscarded'));
 		this.viewer.scrollEl?.focus({ preventScroll: true });
 	}
 
@@ -737,7 +754,8 @@ export class AnnotationStore {
 			index = (ids.indexOf(this.selectedIds[0]) + 1) % ids.length;
 		this.#lastPick = { ...at, ids, index };
 		this.select(ids[index], { additive });
-		if (ids.length > 1) this.announce(`${index + 1} of ${ids.length} overlapping annotations`);
+		if (ids.length > 1)
+			this.announce(this.viewer.t('announceOverlap', { index: index + 1, count: ids.length }));
 		return stack[index];
 	}
 
@@ -966,21 +984,6 @@ function opTargetId(op: AnnotationOp): string {
 	return op.type === 'update' ? op.id : op.annotation.id;
 }
 
-const KIND_LABELS: Partial<Record<AnnotationKind, string>> = {
-	highlight: 'Highlight',
-	underline: 'Underline',
-	strikeout: 'Strike-out',
-	squiggly: 'Squiggly underline',
-	area: 'Box',
-	note: 'Note',
-	ink: 'Drawing',
-	rect: 'Rectangle',
-	ellipse: 'Ellipse',
-	line: 'Line',
-	arrow: 'Arrow',
-	freetext: 'Text box'
-};
-
 function invert(ops: AnnotationOp[]): AnnotationOp[] {
 	return ops
 		.map((op): AnnotationOp => {
@@ -1003,3 +1006,44 @@ export function quoteFor(text: PageText, start: number, end: number): TextQuote 
 }
 
 export { createId };
+
+/** Interactive UI inside the pages that keeps its own click behaviour while panning. */
+const PAN_IGNORE =
+	'a, button, input, textarea, select, [contenteditable], [data-pdf-annotation-ui]';
+
+/**
+ * Drag-to-scroll on `scroller`. Sets `data-pan` while active and `data-panning`
+ * during a drag (the cursors live in Annotations.Layer's styles).
+ */
+function attachPan(scroller: HTMLElement): () => void {
+	let last: { x: number; y: number } | null = null;
+	const onDown = (e: PointerEvent) => {
+		if (e.button !== 0 || e.pointerType === 'touch') return;
+		if (e.target instanceof Element && e.target.closest(PAN_IGNORE)) return;
+		e.preventDefault(); // no text selection
+		last = { x: e.clientX, y: e.clientY };
+		scroller.setPointerCapture(e.pointerId);
+		scroller.dataset.panning = '';
+	};
+	const onMove = (e: PointerEvent) => {
+		if (!last) return;
+		scroller.scrollBy({ left: last.x - e.clientX, top: last.y - e.clientY, behavior: 'instant' });
+		last = { x: e.clientX, y: e.clientY };
+	};
+	const onUp = () => {
+		last = null;
+		delete scroller.dataset.panning;
+	};
+	scroller.dataset.pan = '';
+	const off = [
+		on(scroller, 'pointerdown', onDown),
+		on(scroller, 'pointermove', onMove),
+		on(scroller, 'pointerup', onUp),
+		on(scroller, 'pointercancel', onUp)
+	];
+	return () => {
+		off.forEach((fn) => fn());
+		onUp();
+		delete scroller.dataset.pan;
+	};
+}

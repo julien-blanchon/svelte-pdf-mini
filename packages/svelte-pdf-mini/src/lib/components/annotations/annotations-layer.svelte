@@ -359,8 +359,9 @@
 	// Reactive so `bind:this={hotspots[i]}` binds to a tracked slot.
 	const hotspots = $state<HTMLElement[]>([]);
 	function onHotspotKey(e: KeyboardEvent, i: number, a: Annotation) {
-		// Arrows nudge a selected shape (handled by the store); otherwise they move focus.
-		if (store.isSelected(a.id) && !isTextMarkup(a) && e.key.startsWith('Arrow')) return;
+		// Arrows nudge a selected, editable shape (handled by the store); otherwise they move focus.
+		const nudges = store.isSelected(a.id) && store.canEdit(a) && !isTextMarkup(a);
+		if (nudges && e.key.startsWith('Arrow')) return;
 		handleRovingKey(e, i, reading.length, {
 			orientation: 'both',
 			focus: (next) => {
@@ -415,7 +416,7 @@
 		<div
 			data-pdf-annotation-overlay=""
 			role="group"
-			aria-label="Annotations, page {page.pageNumber}"
+			aria-label={viewer.t('annotationsOnPage', { page: page.pageNumber })}
 		>
 			{#each annots as a (a.id)}
 				{@const box = pdfRectToPercent(vp, a.rect)}
@@ -470,7 +471,7 @@
 					data-pdf-annotation-focus=""
 					data-pdf-annotation-ui=""
 					tabindex={i === tabStop ? 0 : -1}
-					aria-label={describeAnnotation(a)}
+					aria-label={describeAnnotation(a, 80, (note) => viewer.t('annotationNote', { note }))}
 					aria-pressed={store.isSelected(a.id)}
 					style:--pdf-left="{box.left}%"
 					style:--pdf-top="{box.top}%"
@@ -578,5 +579,13 @@
 	}
 	[data-pdf-draw-surface][data-tool='note'] {
 		cursor: copy;
+	}
+	/* Hand tool (set on the viewport by the store): drag to scroll. */
+	:global(:where([data-pdf-viewport][data-pan])) {
+		cursor: grab;
+		user-select: none;
+	}
+	:global(:where([data-pdf-viewport][data-panning])) {
+		cursor: grabbing;
 	}
 </style>

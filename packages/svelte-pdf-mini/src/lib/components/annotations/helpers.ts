@@ -19,11 +19,16 @@ export function quoteOf(a: Annotation): string {
 }
 
 /** Short accessible description: `highlight: Label "quoted text", note: comment`. */
-export function describeAnnotation(a: Annotation, max = 80): string {
+export function describeAnnotation(
+	a: Annotation,
+	max = 80,
+	/** Formats the comment part (the `annotationNote` message). */
+	note: (text: string) => string = (text) => `note: ${text}`
+): string {
 	let out: string = a.kind;
 	if (a.label) out += `: ${a.label}`;
 	if ('quote' in a && a.quote?.exact) out += ` "${a.quote.exact.slice(0, max)}"`;
-	if (a.contents) out += `, note: ${a.contents.slice(0, max)}`;
+	if (a.contents) out += `, ${note(a.contents.slice(0, max))}`;
 	return out;
 }
 

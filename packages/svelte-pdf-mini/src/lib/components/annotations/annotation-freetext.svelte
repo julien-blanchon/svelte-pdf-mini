@@ -65,9 +65,9 @@
 	{#if editing}
 		<textarea
 			{@attach focusAtEnd}
-			aria-label="Text box"
+			aria-label={store.viewer.t('textBox')}
 			value={a.text}
-			placeholder="Type…"
+			placeholder={store.viewer.t('typeText')}
 			oninput={(e) => {
 				store.markTyped(a.id);
 				store.update(a.id, { text: e.currentTarget.value });

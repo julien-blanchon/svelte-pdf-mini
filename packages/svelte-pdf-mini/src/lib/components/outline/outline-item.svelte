@@ -31,8 +31,12 @@
 			'data-active': dataAttr(active),
 			'data-contains-active': dataAttr(containsActive),
 			'aria-current': active ? ('location' as const) : undefined,
-			disabled: unreachable,
-			onclick: () => outline.go(item),
+			// Still focusable (tree keyboard navigation passes through it), but inert.
+			'aria-disabled': unreachable || undefined,
+			'data-disabled': dataAttr(unreachable),
+			onclick: () => {
+				if (!unreachable) outline.go(item);
+			},
 			...refAttachment
 		})
 	);

@@ -17,7 +17,7 @@
 		label?: string;
 	}
 
-	let { value, onSelect, limit = 9, label = 'Colour' }: Props = $props();
+	let { value, onSelect, limit = 9, label }: Props = $props();
 	const store = AnnotationsContext.get();
 	const swatches = $derived(store.palette.slice(0, limit));
 	/** The tab stop: the checked swatch, else the first. */
@@ -41,7 +41,7 @@
 	}
 </script>
 
-<div role="radiogroup" aria-label={label} data-part="swatches">
+<div role="radiogroup" aria-label={label ?? store.viewer.t('color')} data-part="swatches">
 	{#each swatches as c, i (c.key)}
 		<button
 			type="button"

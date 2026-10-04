@@ -298,6 +298,10 @@
 		user-select: none;
 		cursor: pointer;
 	}
+	/* Click jumps there; dragging scrubs the document. */
+	:global(:where([data-pdf-minimap][data-dragging])) {
+		cursor: grabbing;
+	}
 	/* --pdf-minimap-offset scrolls the strip (updated while the document scrolls). */
 	:global(:where([data-pdf-minimap-track])) {
 		position: absolute;

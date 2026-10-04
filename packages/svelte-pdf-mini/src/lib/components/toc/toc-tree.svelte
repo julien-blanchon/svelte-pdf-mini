@@ -70,7 +70,14 @@
 	<ul role={depth === 1 ? 'tree' : 'group'} data-pdf-toc-group="">
 		{#each list as s (s.id)}
 			{@const p = itemProps(paper, s, depth)}
-			<li role="treeitem" aria-level={depth} aria-selected={p.active} data-depth={depth}>
+			<!-- Toc.Tree is always fully open: parents are expanded. -->
+			<li
+				role="treeitem"
+				aria-level={depth}
+				aria-selected={p.active}
+				aria-expanded={s.children.length ? true : undefined}
+				data-depth={depth}
+			>
 				{#if item}
 					{@render item(p)}
 				{:else}

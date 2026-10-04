@@ -47,7 +47,7 @@
 							<span data-part="title">{r.parsed.title ?? r.raw}</span>
 						</button>
 						{#if p.citedCount}<button type="button" data-part="cited" onclick={p.nextCitation}
-								>cited {p.citedCount}×</button
+								>{paper.viewer.t('citedTimes', { count: p.citedCount })}</button
 							>{/if}
 					{/if}
 				</div>

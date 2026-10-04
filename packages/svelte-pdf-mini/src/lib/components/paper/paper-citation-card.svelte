@@ -158,12 +158,16 @@
 					<span data-part="label">{reference.label}</span>
 					{#if references.length > 1}
 						<span data-part="pager">
-							<button type="button" onclick={snippetProps.prev} aria-label="Previous reference"
-								>‹</button
+							<button
+								type="button"
+								onclick={snippetProps.prev}
+								aria-label={paper.viewer.t('prevReference')}>‹</button
 							>
 							{index + 1}/{references.length}
-							<button type="button" onclick={snippetProps.next} aria-label="Next reference"
-								>›</button
+							<button
+								type="button"
+								onclick={snippetProps.next}
+								aria-label={paper.viewer.t('nextReference')}>›</button
 							>
 						</span>
 					{/if}

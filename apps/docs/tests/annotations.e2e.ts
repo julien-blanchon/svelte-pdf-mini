@@ -230,3 +230,29 @@ test('side notes adapt to the room beside the page @smoke', async ({ page }) => 
 	await expect(page.locator('[data-pdf-annotation-popover]')).toBeVisible();
 	await shot('notes-narrow');
 });
+
+test('the hand tool drags the pages, with grab cursors', async ({ page }) => {
+	await page.setViewportSize({ width: 1400, height: 900 });
+	await page.goto('/demo/annotator');
+	await ready(page);
+	const viewport = page.locator('[data-pdf-viewport]').first();
+	await page.locator('[data-pdf-annotation-tool="hand"]').first().click();
+	await expect(viewport).toHaveAttribute('data-pan', '');
+	expect(await viewport.evaluate((el) => getComputedStyle(el).cursor)).toBe('grab');
+
+	const box = (await viewport.boundingBox())!;
+	const before = await viewport.evaluate((el) => el.scrollTop);
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.7);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.4, { steps: 8 });
+	await expect(viewport).toHaveAttribute('data-panning', '');
+	expect(await viewport.evaluate((el) => getComputedStyle(el).cursor)).toBe('grabbing');
+	await page.mouse.up();
+	await expect(viewport).not.toHaveAttribute('data-panning');
+	expect(await viewport.evaluate((el) => el.scrollTop)).toBeGreaterThan(before + 100);
+	// Dragging doesn't select text.
+	expect(await page.evaluate(() => getSelection()?.toString() ?? '')).toBe('');
+
+	await page.locator('[data-pdf-annotation-tool="select"]').first().click();
+	await expect(viewport).not.toHaveAttribute('data-pan');
+});

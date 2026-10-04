@@ -99,8 +99,10 @@
 		<div {...mergedProps}>
 			<div data-part="canvas" {...canvasProps}></div>
 			{#if children}{@render children({ label, open })}{:else}<span data-part="caption"
-					>{label}{#if figure}
-						· page {paper.viewer.document.pageLabel(figure.page)}{/if}</span
+					>{#if figure}{paper.viewer.t('figureOnPage', {
+							label,
+							page: paper.viewer.document.pageLabel(figure.page)
+						})}{:else}{label}{/if}</span
 				>{/if}
 		</div>
 	{/if}

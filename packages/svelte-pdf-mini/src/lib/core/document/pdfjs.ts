@@ -33,8 +33,15 @@ let sharedWorker: InstanceType<PdfJsModule['PDFWorker']> | null = null;
 /** One pdf.js worker shared by every document (a library grid opens many). */
 export async function getSharedWorker() {
 	const pdfjs = await loadPdfJs();
-	if (!sharedWorker || sharedWorker.destroyed) sharedWorker = new pdfjs.PDFWorker();
+	if (!sharedWorker || sharedWorker.destroyed) sharedWorker = createWorker(pdfjs);
 	return sharedWorker;
+}
+
+/** A pdf.js worker on the configured `workerPort`, or a new one from `workerSrc`. */
+export function createWorker(pdfjs: PdfJsModule): InstanceType<PdfJsModule['PDFWorker']> {
+	return config.workerPort
+		? pdfjs.PDFWorker.create({ port: config.workerPort })
+		: new pdfjs.PDFWorker();
 }
 
 /** Configure pdf.js once, before the first document loads. */

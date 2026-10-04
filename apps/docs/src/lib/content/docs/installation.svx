@@ -11,7 +11,7 @@ description: Add svelte-pdf-mini to a SvelteKit or Vite app and configure the pd
 
 <InstallationTabs pkg="svelte-pdf-mini" />
 
-`svelte-pdf-mini` targets **Svelte 5.57+** (runes, attachments) and the latest evergreen browsers. It depends on `pdfjs-dist` 6, `runed`, `svelte-toolbelt` and `@floating-ui/dom`; `@cantoo/pdf-lib` is loaded lazily the first time you export a PDF.
+`svelte-pdf-mini` targets **Svelte 5.57+** (runes, attachments) and the latest evergreen browsers. It depends on `pdfjs-dist` 6, `runed`, `svelte-toolbelt` and `@floating-ui/dom`. `@cantoo/pdf-lib` (PDF export) and KaTeX / marked (Markdown notes) are loaded lazily on first use. See [Bundlers & deployment](/docs/deployment) for exact requirements, non-Vite bundlers, CORS and CSP.
 
 ## Import the styles (optional)
 
@@ -35,8 +35,8 @@ configurePdf({
 });
 ```
 
-Copy the folders from `node_modules/pdfjs-dist/` into your `static/` directory. `configurePdf` also accepts `workerSrc`, `workerPort`, `documentOptions` (merged into every `getDocument()` call), `sharedWorker: false` and `bitmapCacheBytes` (memory for off-screen page bitmaps, default 192 MB).
+Copy the folders from `node_modules/pdfjs-dist/` into your `static/` directory. `configurePdf` also accepts `workerSrc`, `workerPort` (a ready `Worker` to use instead), `documentOptions` (merged into every `getDocument()` call), `sharedWorker: false` and `bitmapCacheBytes` (memory for off-screen page bitmaps, default 192 MB).
 
 <Callout title="Server-side rendering">
-	pdf.js touches the DOM, so it is only ever imported in the browser. Components render their static shell on the server and start loading after hydration — no special setup is needed in SvelteKit.
+	Components render their static shell on the server and only start loading documents in the browser, after hydration. No special setup is needed in SvelteKit, and prerendering works. See <a href="/docs/deployment#ssr-and-prerendering">SSR and prerendering</a>.
 </Callout>

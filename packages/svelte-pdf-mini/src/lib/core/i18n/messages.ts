@@ -87,11 +87,67 @@ export const defaultMessages = {
 	addNoteHere: 'Add note here',
 	drawBox: 'Draw box',
 	fitWidth: 'Fit width',
-	shortcuts: 'Keyboard shortcuts'
+	shortcuts: 'Keyboard shortcuts',
+	// Annotation parts
+	annotationsOnPage: 'Annotations, page {page}',
+	annotationMarkers: 'Annotation markers, page {page}',
+	annotationNote: 'note: {note}',
+	textBox: 'Text box',
+	typeText: 'Type…',
+	markupStyle: 'Style',
+	reply: 'Reply',
+	pendingKeep: 'keep',
+	pendingDiscard: 'discard',
+	pendingColor: 'colour',
+	pageShort: 'p. {page}',
+	// Papers & links
+	prevReference: 'Previous reference',
+	nextReference: 'Next reference',
+	citedTimes: 'cited {count}×',
+	figureOnPage: '{label} · page {page}',
+	internalLink: 'Internal link',
+	linkPreviewCaption: 'Page {page} · {kind}',
+	linkKind_citation: 'citation',
+	linkKind_section: 'section',
+	linkKind_figure: 'figure',
+	linkKind_table: 'table',
+	linkKind_equation: 'equation',
+	linkKind_footnote: 'footnote',
+	linkKind_page: 'page',
+	linkKind_algorithm: 'algorithm',
+	linkKind_theorem: 'theorem',
+	linkKind_other: 'other',
+	linkKind_url: 'link',
+	// Outline
+	expand: 'Expand',
+	collapse: 'Collapse',
+	// Annotation kinds (announcements)
+	kind_highlight: 'Highlight',
+	kind_underline: 'Underline',
+	kind_strikeout: 'Strike-out',
+	kind_squiggly: 'Squiggly underline',
+	kind_area: 'Box',
+	kind_note: 'Note',
+	kind_ink: 'Drawing',
+	kind_rect: 'Rectangle',
+	kind_ellipse: 'Ellipse',
+	kind_line: 'Line',
+	kind_arrow: 'Arrow',
+	kind_freetext: 'Text box',
+	kind_other: 'Annotation',
+	// Screen-reader announcements
+	announceCreated: '{kind} created. Type a note, Enter to keep, Escape to discard.',
+	announceDeleted: 'Annotation deleted',
+	announceDeletedMany: '{count} annotations deleted',
+	announceDiscarded: 'Discarded',
+	announceOverlap: '{index} of {count} overlapping annotations'
 };
 
 export type Messages = typeof defaultMessages;
 export type MessageKey = keyof Messages;
+
+/** Narrows a computed key (e.g. `kind_${kind}`) to a known message key. */
+export const isMessageKey = (key: string): key is MessageKey => key in defaultMessages;
 
 let globalMessages: Messages = { ...defaultMessages };
 

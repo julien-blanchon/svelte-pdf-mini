@@ -76,7 +76,7 @@
 
 	/** Accessible name: the URL, the named destination, or a generic label. */
 	const linkLabel = (link: Link) =>
-		link.url ?? (typeof link.dest === 'string' ? link.dest : 'Internal link');
+		link.url ?? (typeof link.dest === 'string' ? link.dest : viewer.t('internalLink'));
 
 	const refAttachment = attachRef<HTMLDivElement>((node) => (ref = node));
 	const mergedProps = $derived(mergeProps(rest, { 'data-pdf-link-layer': '', ...refAttachment }));

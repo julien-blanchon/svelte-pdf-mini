@@ -1177,6 +1177,7 @@
 						"data-active",
 						"data-contains-active",
 						"data-depth",
+						"data-disabled",
 						"data-pdf-outline-item"
 					]
 				}

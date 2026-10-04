@@ -14,7 +14,7 @@ import type { CitationProvider, PaperMetadata } from '../core/providers/types.js
 import { extract, type MaybeGetter } from '../internal/types.js';
 import { LruCache } from '../core/cache/lru.js';
 import type { KeyValueStore } from '../core/cache/kv.js';
-import { assetUrls, loadPdfJs } from '../core/document/pdfjs.js';
+import { assetUrls, getPdfConfig, loadPdfJs } from '../core/document/pdfjs.js';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { ViewerState } from './viewer.svelte.js';
 
@@ -314,7 +314,8 @@ function groupByPage<T extends { page: number }>(items: T[]) {
  * analysis work that would otherwise sit in the rendering worker's queue.
  */
 async function openIsolated(doc: PDFDocumentProxy) {
-	if (typeof Worker === 'undefined') return null;
+	// An app-provided `workerPort` is the only worker we may use: analyse on it.
+	if (typeof Worker === 'undefined' || getPdfConfig().workerPort) return null;
 	const pdfjs = await loadPdfJs();
 	const worker = new pdfjs.PDFWorker();
 	const task = pdfjs.getDocument({

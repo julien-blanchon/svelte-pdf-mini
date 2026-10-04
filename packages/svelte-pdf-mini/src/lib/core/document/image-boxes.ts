@@ -7,7 +7,7 @@
  * Used by figure/table detection and by the figure-preserving dark mode.
  */
 import type { PDFPageProxy } from 'pdfjs-dist';
-import { OPS } from 'pdfjs-dist';
+import { OPS } from './ops.js';
 import type { PdfRect } from '../types.js';
 
 type Matrix = [number, number, number, number, number, number];

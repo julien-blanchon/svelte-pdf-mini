@@ -81,7 +81,7 @@
 							tabindex={-1}
 							data-pdf-outline-toggle=""
 							data-state={expanded ? 'open' : 'closed'}
-							aria-label={expanded ? 'Collapse' : 'Expand'}
+							aria-label={outline.viewer.t(expanded ? 'collapse' : 'expand')}
 							onclick={() => outline.toggle(item)}>{expanded ? '▾' : '▸'}</button
 						>
 					{:else}

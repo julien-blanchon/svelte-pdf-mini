@@ -11,7 +11,7 @@
 	import { icons, toolIcons } from './icons.ts';
 
 	let {
-		tools = ['select', 'highlight', 'underline', 'area', 'note', 'ink', 'arrow', 'rect', 'freetext', 'eraser'] as AnnotationTool[],
+		tools = ['select', 'hand', 'highlight', 'underline', 'area', 'note', 'ink', 'arrow', 'rect', 'freetext', 'eraser'] as AnnotationTool[],
 		colors = true,
 		history = true,
 		label = 'Annotation tools',

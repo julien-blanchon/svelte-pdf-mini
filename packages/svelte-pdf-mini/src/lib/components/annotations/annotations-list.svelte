@@ -67,7 +67,7 @@
 							aria-current={props.selected ? 'true' : undefined}
 							onclick={props.go}
 						>
-							<span data-part="page">p. {props.pageLabel}</span>
+							<span data-part="page">{store.viewer.t('pageShort', { page: props.pageLabel })}</span>
 							{#if a.label}<strong data-part="label">{a.label}</strong>{/if}
 							{#if props.quote}<span data-part="quote">{props.quote}</span>{/if}
 							{#if a.contents}<span data-part="contents"><Markdown source={a.contents} /></span

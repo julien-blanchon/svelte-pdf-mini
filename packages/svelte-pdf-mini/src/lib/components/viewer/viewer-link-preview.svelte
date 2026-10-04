@@ -138,7 +138,11 @@
 			{:else}
 				<div {...canvasProps}></div>
 				{#if children}{@render children({ open, kind: target.kind, page: target.page })}{:else}<span
-						data-part="caption">Page {viewer.document.pageLabel(target.page)} · {target.kind}</span
+						data-part="caption"
+						>{viewer.t('linkPreviewCaption', {
+							page: viewer.document.pageLabel(target.page),
+							kind: viewer.t(`linkKind_${target.kind}`)
+						})}</span
 					>{/if}
 			{/if}
 		</div>

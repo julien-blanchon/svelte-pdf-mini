@@ -196,7 +196,7 @@
 		aria-expanded={isOpen}
 		onclick={toggle}
 		onkeydown={handleTriggerKeydown}
-		class="focus-ring relative inline-flex w-full cursor-default items-center justify-between gap-1 rounded-sm px-3 py-1.5 text-sm font-medium text-foreground-muted/70 transition-[color,box-shadow] duration-150 ease-out outline-none hover:text-foreground-muted focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+		class="focus-ring relative inline-flex w-full items-center justify-between gap-1 rounded-sm px-3 py-1.5 text-sm font-medium text-foreground-muted/70 transition-[color,box-shadow] duration-150 ease-out outline-none hover:text-foreground-muted focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
 	>
 		<span class="flex items-center gap-1.5 select-none">
 			{#if activeSection?.icon}

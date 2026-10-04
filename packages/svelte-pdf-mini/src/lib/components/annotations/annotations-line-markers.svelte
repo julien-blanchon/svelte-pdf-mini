@@ -61,7 +61,7 @@
 			'data-pdf-line-markers': '',
 			'data-side': side,
 			role: 'group',
-			'aria-label': `Annotation markers, page ${page.pageNumber}`,
+			'aria-label': store.viewer.t('annotationMarkers', { page: page.pageNumber }),
 			...refAttachment
 		})
 	);

@@ -190,6 +190,28 @@ html {
 		background-color: var(--color-accent);
 		color: var(--color-foreground);
 	}
+
+	/*
+	 * Pointer on controls that act on click (Tailwind v4 resets buttons to the
+	 * default cursor). Menu items and listbox options keep the arrow, like
+	 * native menus; disabled controls get no pointer. Zero specificity, so any
+	 * cursor-* utility wins.
+	 */
+	:where(
+			button,
+			[role='button'],
+			[role='tab'],
+			[role='radio'],
+			[role='checkbox'],
+			[role='switch'],
+			[role='slider'],
+			summary,
+			select,
+			label:has(input[type='checkbox'], input[type='radio']),
+			input:is([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'])
+		):not(:disabled, [aria-disabled='true'], [data-disabled]) {
+		cursor: pointer;
+	}
 }
 
 /*

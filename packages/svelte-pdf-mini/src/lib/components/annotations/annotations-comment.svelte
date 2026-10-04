@@ -88,7 +88,7 @@
 					role="button"
 					tabindex="0"
 					data-part="view"
-					aria-label="Edit note"
+					aria-label={store.viewer.t('editNote')}
 					onclick={() => store.edit(annotation.id)}
 					onkeydown={(e) => {
 						if (!isActivationKey(e)) return;

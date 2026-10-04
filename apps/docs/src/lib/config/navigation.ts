@@ -41,7 +41,8 @@ export const contentSections: ContentSectionConfig[] = [
 					{ slug: '', name: 'Introduction' },
 					{ slug: 'installation', name: 'Installation' },
 					{ slug: 'quick-start', name: 'Quick start' },
-					{ slug: 'concepts', name: 'Concepts' }
+					{ slug: 'concepts', name: 'Concepts' },
+					{ slug: 'deployment', name: 'Bundlers & deployment' }
 				]
 			},
 			{

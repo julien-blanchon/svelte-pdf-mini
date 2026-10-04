@@ -66,6 +66,8 @@ test('library: covers render, quick look opens and closes cleanly', async ({ pag
 });
 
 test('compare: both versions render with section breadcrumbs', async ({ page }) => {
+	// Two arXiv PDFs at once: slow when the whole suite runs in parallel.
+	test.setTimeout(120_000);
 	await page.goto('/demo/compare');
 	await expect(page.locator('[data-pdf-viewport]')).toHaveCount(2);
 	await expect(page.locator('[data-pdf-canvas][data-rendered]').nth(1)).toBeAttached({ timeout: 40_000 });

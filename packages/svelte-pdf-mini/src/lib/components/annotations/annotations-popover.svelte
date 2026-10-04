@@ -131,7 +131,7 @@
 						{#if isTextMarkup(a)}
 							{@const current = Math.max(0, TEXT_MARKUP_KINDS.indexOf(a.kind))}
 							<span data-part="sep" aria-hidden="true"></span>
-							<div role="radiogroup" aria-label="Style" data-part="kinds">
+							<div role="radiogroup" aria-label={store.viewer.t('markupStyle')} data-part="kinds">
 								{#each TEXT_MARKUP_KINDS as k, i (k)}
 									<button
 										type="button"
@@ -184,10 +184,18 @@
 					data-part="comment"
 				/>
 				{#each store.replies.get(a.id) ?? [] as r (r.id)}
-					<div data-part="reply"><strong>{r.author?.name ?? 'Reply'}</strong> {r.contents}</div>
+					<div data-part="reply">
+						<strong>{r.author?.name ?? store.viewer.t('reply')}</strong>
+						{r.contents}
+					</div>
 				{/each}
 				{#if store.pendingId === a.id}
-					<p data-part="hint"><kbd>↵</kbd> keep · <kbd>Esc</kbd> discard · <kbd>1–9</kbd> colour</p>
+					<p data-part="hint">
+						<kbd>↵</kbd>
+						{store.viewer.t('pendingKeep')} · <kbd>Esc</kbd>
+						{store.viewer.t('pendingDiscard')} · <kbd>1–9</kbd>
+						{store.viewer.t('pendingColor')}
+					</p>
 				{:else if a.author?.name}<p data-part="meta">
 						{a.author.name} · {new Date(a.modifiedAt).toLocaleString()}
 					</p>{/if}
