@@ -51,7 +51,9 @@ export default defineConfig({
 				test: {
 					name: 'slow',
 					environment: 'node',
-					include: ['src/**/*.slow.test.ts']
+					include: ['src/**/*.slow.test.ts'],
+					// Whole-PDF round trips: several seconds each on CI runners.
+					testTimeout: 30_000
 				}
 			}
 		]
