@@ -12,3 +12,4 @@
 - **Box labels shrink with the page** when zoomed out.
 - A box with only a label (drawn on the box) gets no side note, line marker or hover card.
 - **Previews follow the reading theme:** cross-reference and link previews render with the pages' theme (night recoloring, tint, page color), not pdf.js's white page. `renderRegionToCanvas` takes a `theme`.
+- **`Viewer.Root zoomLocked`:** user zooming (pinch, wheel, shortcuts, `zoomTo`, zoom mode changes) does nothing while set; a fit mode keeps fitting the view.
