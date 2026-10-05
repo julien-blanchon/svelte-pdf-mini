@@ -54,10 +54,15 @@
 		const floating = el;
 		const rect = sel.anchorRect;
 		if (!open || !floating || !rect) return;
+		// Placed once, when the selection is made: centered above the selected text, below
+		// it when there is no room above (within the pages' area, never over the app's
+		// toolbars); it then stays put while the pages scroll.
 		return float(
 			virtualRef(() => rect, store.viewer.scrollEl ?? undefined),
 			floating,
-			placement
+			placement,
+			8,
+			{ clamp: true, boundary: store.viewer.scrollEl ?? undefined }
 		);
 	});
 

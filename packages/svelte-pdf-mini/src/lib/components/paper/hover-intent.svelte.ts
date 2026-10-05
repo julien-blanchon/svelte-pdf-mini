@@ -32,7 +32,8 @@ export class PaperHoverIntent {
 	constructor(paper: PaperState, kind: PaperHover['kind'], options: PaperHoverIntentOptions) {
 		$effect(() => {
 			const hovered = paper.hovered;
-			if (hovered?.kind !== kind) {
+			// Nothing opens while a text selection is being dragged.
+			if (hovered?.kind !== kind || paper.viewer.selection.selecting) {
 				const t = setTimeout(() => (this.shown = null), HIDE_DELAY);
 				return () => clearTimeout(t);
 			}

@@ -71,6 +71,9 @@ export type ViewerRootProps = DivPartProps<
 		/** Shortcuts on the viewport (default), anywhere but text fields and dialogs ('document'), or off. */
 		keyboard?: boolean | 'document';
 		zoomSteps?: number[];
+		/** Smallest and largest zoom any way of zooming reaches (pinch, wheel, steps, fit modes). Defaults 0.1 and 10. */
+		minZoom?: number;
+		maxZoom?: number;
 		/** The viewer state (bind:viewer to call commands from outside). */
 		viewer?: ViewerState;
 	},

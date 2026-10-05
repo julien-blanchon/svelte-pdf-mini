@@ -102,6 +102,10 @@ export interface ViewerOptions {
 	detailMinWidth?: MaybeGetter<number | undefined>;
 	/** Zoom steps for zoomIn/zoomOut. */
 	zoomSteps?: MaybeGetter<number[] | undefined>;
+	/** Smallest zoom any way of zooming reaches (0.5 = 50%). Default 0.1. */
+	minZoom?: MaybeGetter<number | undefined>;
+	/** Largest zoom any way of zooming reaches (3 = 300%). Default 10. */
+	maxZoom?: MaybeGetter<number | undefined>;
 	/**
 	 * Keyboard shortcuts: on the viewport (true, default), anywhere in the page
 	 * except text fields and dialogs ('document': for apps with one viewer, so
@@ -241,6 +245,8 @@ export class ViewerState {
 	readonly overscan = $derived(this.#opt('overscan') ?? 1);
 	readonly maxCanvasPixels = $derived(this.#opt('maxCanvasPixels') ?? 16_777_216);
 	readonly zoomSteps = $derived(this.#opt('zoomSteps') ?? ZOOM_STEPS);
+	readonly minZoom = $derived(this.#opt('minZoom') ?? MIN_ZOOM);
+	readonly maxZoom = $derived(this.#opt('maxZoom') ?? MAX_ZOOM);
 	/** Where shortcuts are listened to (see the `keyboard` option). */
 	readonly keyboard = $derived(this.#opt('keyboard') ?? true);
 	/** Shortcuts in effect (defaults + overrides). */
@@ -249,8 +255,8 @@ export class ViewerState {
 	readonly detailMinWidth = $derived(this.#opt('detailMinWidth') ?? 260);
 	readonly maxColumns = $derived(clamp(this.#opt('maxColumns') ?? 4, 1, 12));
 	readonly firstPageAlone = $derived(this.#opt('firstPageAlone') ?? false);
-	readonly canZoomIn = $derived(this.zoom < Math.min(MAX_ZOOM, this.zoomSteps.at(-1)!) - 1e-3);
-	readonly canZoomOut = $derived(this.zoom > Math.max(MIN_ZOOM, this.zoomSteps[0]) + 1e-3);
+	readonly canZoomIn = $derived(this.zoom < Math.min(this.maxZoom, this.zoomSteps.at(-1)!) - 1e-3);
+	readonly canZoomOut = $derived(this.zoom > Math.max(this.minZoom, this.zoomSteps[0]) + 1e-3);
 	readonly canGoPrev = $derived(this.page > 1);
 	readonly canGoNext = $derived(this.page < this.document.numPages);
 
@@ -514,7 +520,7 @@ export class ViewerState {
 	 * horizontally; once wider, the anchor is followed in both directions.
 	 */
 	zoomTo(zoom: number, { anchor, animate }: { anchor?: ClientPoint; animate?: boolean } = {}) {
-		const target = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+		const target = clamp(zoom, this.minZoom, this.maxZoom);
 		const smooth = (animate ?? this.#opt('smoothZoom') ?? true) && !prefersReducedMotion();
 		this.#zoomMode.current = 'manual';
 		if (!smooth) {
@@ -533,7 +539,7 @@ export class ViewerState {
 			this.#setZoom(target);
 			return;
 		}
-		this.#anim.start(clamp(target, MIN_ZOOM, MAX_ZOOM), anchor, keepMode);
+		this.#anim.start(clamp(target, this.minZoom, this.maxZoom), anchor, keepMode);
 	}
 
 	rotateClockwise() {
@@ -818,6 +824,8 @@ export class ViewerState {
 			'data-scroll-mode': this.scrollMode,
 			'data-zooming': dataAttr(this.isZooming),
 			'data-has-selection': dataAttr(!this.selection.isEmpty),
+			// A text selection being dragged: hotspots and annotations let the pointer through.
+			'data-selecting': dataAttr(this.selection.selecting && !this.selection.isEmpty),
 			tabindex: 0,
 			style: 'overflow: auto; position: relative; overscroll-behavior: contain;',
 			onkeydown: (e: KeyboardEvent) => this.#onKeydown(e),
@@ -910,7 +918,7 @@ export class ViewerState {
 	}
 
 	#setZoom(z: number) {
-		this.#zoom.current = clamp(Math.round(z * 1e4) / 1e4, MIN_ZOOM, MAX_ZOOM);
+		this.#zoom.current = clamp(Math.round(z * 1e4) / 1e4, this.minZoom, this.maxZoom);
 	}
 
 	#setInternalPage(p: number) {

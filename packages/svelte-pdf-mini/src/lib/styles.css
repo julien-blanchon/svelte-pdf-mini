@@ -44,6 +44,19 @@
 	:where([data-pdf-viewport][data-panning]) {
 		cursor: grabbing;
 	}
+	/* While a text selection is dragged, links, citations, cross-references and annotations
+	   let the pointer through: no preview opens, and the selection can't jump to an
+	   overlay's edge (which can select a whole page). */
+	[data-pdf-viewport][data-selecting]
+		:is(
+			[data-pdf-link],
+			[data-pdf-citation],
+			[data-pdf-crossref],
+			[data-pdf-backlink-target],
+			[data-pdf-annotation]
+		) {
+		pointer-events: none !important;
+	}
 	[data-pdf-viewport]:focus-visible {
 		outline: 2px solid var(--pdf-focus-ring, Highlight);
 		outline-offset: -2px;

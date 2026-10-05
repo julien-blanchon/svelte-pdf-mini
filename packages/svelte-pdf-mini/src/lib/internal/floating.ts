@@ -16,13 +16,23 @@ export function float(
 	reference: FloatingReference,
 	floating: HTMLElement,
 	placement: Placement = 'top',
-	gap = 8
+	gap = 8,
+	{ clamp = false, boundary }: { clamp?: boolean; boundary?: Element } = {}
 ): () => void {
+	// `boundary`: the area the part must fit in (e.g. the pages' scroller, so it never
+	// covers the app's toolbars); the window by default.
+	const area = boundary ? { boundary } : {};
 	const update = () =>
 		computePosition(reference, floating, {
 			placement,
 			strategy: 'fixed',
-			middleware: [offset(gap), flip({ padding: 8 }), shift({ padding: 8 })]
+			// `clamp`: when neither side fits (a reference taller than the area), keep the
+			// part inside the area rather than past its edge.
+			middleware: [
+				offset(gap),
+				flip({ padding: 8, ...area }),
+				shift({ padding: 8, crossAxis: clamp, ...area })
+			]
 		}).then(({ x, y, placement: p }) => {
 			floating.style.left = `${x}px`;
 			floating.style.top = `${y}px`;

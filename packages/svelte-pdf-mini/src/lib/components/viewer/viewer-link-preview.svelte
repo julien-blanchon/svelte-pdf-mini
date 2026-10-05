@@ -44,7 +44,10 @@
 	let loading = $state(false);
 
 	const link = $derived(viewer.hoveredLink);
-	const open = $derived(!!link && !!target && (!kinds || kinds.includes(target.kind)));
+	// Nothing opens while a text selection is being dragged.
+	const open = $derived(
+		!!link && !!target && !viewer.selection.selecting && (!kinds || kinds.includes(target.kind))
+	);
 	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
 	watch(
 		() => open,

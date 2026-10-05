@@ -35,6 +35,8 @@
 		wheelZoom,
 		keyboard,
 		zoomSteps,
+		minZoom,
+		maxZoom,
 		viewer = $bindable(),
 		ref = $bindable(null),
 		child,
@@ -90,7 +92,9 @@
 			maxCanvasPixels: () => maxCanvasPixels,
 			wheelZoom: () => wheelZoom,
 			keyboard: () => keyboard,
-			zoomSteps: () => zoomSteps
+			zoomSteps: () => zoomSteps,
+			minZoom: () => minZoom,
+			maxZoom: () => maxZoom
 		})
 	);
 	viewer = state;

@@ -25,7 +25,7 @@ export class TextSelectionState {
 	ranges = $state.raw<PageSelection[]>([]);
 	/** Clicks of the gesture that made the selection: 1 drag, 2 word, 3 line. */
 	clicks = 1;
-	/** Client rect of the selection end (anchor for floating menus). */
+	/** Client box of the selected text, within the visible view (anchor for floating menus). */
 	anchorRect = $state.raw<DOMRect | null>(null);
 	/** True while the pointer is down (selection still changing). */
 	selecting = $state(false);
@@ -169,9 +169,51 @@ export class TextSelectionState {
 			});
 		}
 		this.ranges = out;
-		const rects = range.getClientRects();
-		this.anchorRect = rects.length ? rects[rects.length - 1] : range.getBoundingClientRect();
+		this.anchorRect = selectionBounds(range, scroller);
 	}
+}
+
+/**
+ * Screen box of the selected characters, within the visible part of `scroller`.
+ * Built from the text nodes of the text layer only: a range's own client rects
+ * also include whole spans and pdf.js's oversized end-of-content element.
+ */
+export function selectionBounds(range: Range, scroller: HTMLElement): DOMRect {
+	let left = Infinity,
+		top = Infinity,
+		right = -Infinity,
+		bottom = -Infinity;
+	const root = range.commonAncestorContainer;
+	const walker = document.createTreeWalker(
+		root.nodeType === Node.TEXT_NODE ? (root.parentNode ?? root) : root,
+		NodeFilter.SHOW_TEXT
+	);
+	const part = document.createRange();
+	// A selection is a few hundred text items at most; stop scanning past a generous cap.
+	for (let n = walker.nextNode(), seen = 0; n && seen < 5000; n = walker.nextNode(), seen++) {
+		if (!range.intersectsNode(n) || !n.parentElement?.closest(ITEM_SPAN)) continue;
+		const len = n.textContent?.length ?? 0;
+		part.setStart(n, n === range.startContainer ? range.startOffset : 0);
+		part.setEnd(n, n === range.endContainer ? range.endOffset : len);
+		for (const r of part.getClientRects()) {
+			if (!r.width || !r.height) continue;
+			left = Math.min(left, r.left);
+			top = Math.min(top, r.top);
+			right = Math.max(right, r.right);
+			bottom = Math.max(bottom, r.bottom);
+		}
+	}
+	const box =
+		left < right
+			? new DOMRect(left, top, right - left, bottom - top)
+			: range.getBoundingClientRect();
+	// Only what can be seen counts: a selection running past the view anchors to its visible part.
+	const view = scroller.getBoundingClientRect();
+	const t = Math.max(box.top, view.top);
+	const b = Math.min(box.bottom, view.bottom);
+	const l = Math.max(box.left, view.left);
+	const r = Math.min(box.right, view.right);
+	return b > t && r > l ? new DOMRect(l, t, r - l, b - t) : box;
 }
 
 const ITEM_SPAN = 'span[data-idx]';

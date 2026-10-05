@@ -33,7 +33,8 @@
 		const a = id ? store.byId.get(id) : null;
 		const inNote = !!store.hoverAnchor?.closest('[data-pdf-margin-note]');
 		const more = a && !inNote && (a.kind === 'area' ? !!a.contents?.trim() : hasNote(a));
-		const show = a && more && !store.isSelected(a.id) ? a.id : null;
+		const show =
+			a && more && !store.isSelected(a.id) && !store.viewer.selection.selecting ? a.id : null;
 		// Render the note during the delay, so the card opens at its final size.
 		if (show && a?.contents && hasMarkup(a.contents))
 			void renderMarkdown(a.contents).catch(() => {});
