@@ -37,9 +37,10 @@
 	const oninput: FormEventHandler<HTMLInputElement> = (e) => (find.query = e.currentTarget.value);
 
 	const onkeydown: KeyboardEventHandler<HTMLInputElement> = (e) => {
-		if (e.key === 'Enter') {
+		// Enter / ↓: next match; Shift+Enter / ↑: previous.
+		if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			e.preventDefault();
-			if (e.shiftKey) find.prev();
+			if (e.key === 'ArrowUp' || (e.key === 'Enter' && e.shiftKey)) find.prev();
 			else find.next();
 		} else if (e.key === 'Escape') {
 			find.clear();

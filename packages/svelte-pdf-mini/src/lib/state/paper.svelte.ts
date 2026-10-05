@@ -301,7 +301,7 @@ export class PaperState {
 	goToFigure(f: Figure) {
 		return this.viewer.navigate(
 			{ page: f.page, rect: f.rect },
-			{ highlight: 'outline', align: 'center' }
+			{ highlight: 'pulse', align: 'center' }
 		);
 	}
 

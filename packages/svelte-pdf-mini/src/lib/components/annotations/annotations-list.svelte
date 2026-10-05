@@ -19,13 +19,10 @@
 	}: AnnotationsListProps = $props();
 	const store = AnnotationsContext.get();
 	const list = $derived(filter ? store.ordered.filter(filter) : store.ordered);
-	/** Select the annotation and scroll it into the middle of the view. */
+	/** Select the annotation and scroll it into the middle of the view (selected is enough: no flash). */
 	function go(a: Annotation) {
 		store.select(a.id);
-		store.viewer.navigate(
-			{ page: a.page, rect: a.rect },
-			{ highlight: 'outline', align: 'center' }
-		);
+		store.viewer.navigate({ page: a.page, rect: a.rect }, { highlight: false, align: 'center' });
 	}
 	// The list lives outside the pages: always the light color.
 	const itemProps = (a: Annotation): ListItemSnippetProps => ({
