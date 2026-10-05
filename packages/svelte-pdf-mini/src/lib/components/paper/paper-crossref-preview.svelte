@@ -62,7 +62,8 @@
 				page,
 				rect: regionOf(page.view as PdfRect, target, x.kind),
 				cssWidth: width,
-				signal: controller.signal
+				signal: controller.signal,
+				theme: paper.viewer.pageTheme
 			});
 			if (!controller.signal.aborted) host.replaceChildren(canvas);
 		})().catch(() => {});
@@ -92,12 +93,15 @@
 		})
 	);
 	/** Spread on the element the preview canvas is rendered into. */
-	const canvasProps = {
-		[createAttachmentKey()]: (node: HTMLElement) => {
+	const hostKey = createAttachmentKey();
+	// The theme's page color behind the canvas, as under the pages (tint, night).
+	const canvasProps = $derived({
+		style: `background:${paper.viewer.pageTheme.background ?? '#fff'}`,
+		[hostKey]: (node: HTMLElement) => {
 			canvasHost = node;
 			return () => (canvasHost = null);
 		}
-	};
+	});
 </script>
 
 {#if xref && (open || forceMount)}

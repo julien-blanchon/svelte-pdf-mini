@@ -87,7 +87,13 @@
 			setTarget({ page: dest.page, kind });
 			const page = await viewer.document.getPage(dest.page);
 			const rect = regionOf(page, dest, kind);
-			const canvas = await renderRegionToCanvas({ page, rect, cssWidth: width, signal });
+			const canvas = await renderRegionToCanvas({
+				page,
+				rect,
+				cssWidth: width,
+				signal,
+				theme: viewer.pageTheme
+			});
 			if (!signal.aborted) canvasHost?.replaceChildren(canvas);
 		})()
 			.catch(() => {})
@@ -137,13 +143,16 @@
 			...wheelAttachment
 		})
 	);
-	const canvasProps = {
+	const hostKey = createAttachmentKey();
+	// The theme's page color behind the canvas, as under the pages (tint, night).
+	const canvasProps = $derived({
+		style: `background:${viewer.pageTheme.background ?? '#fff'}`,
 		'data-pdf-link-preview-canvas': '',
-		[createAttachmentKey()]: (node: HTMLElement) => {
+		[hostKey]: (node: HTMLElement) => {
 			canvasHost = node;
 			return () => (canvasHost = null);
 		}
-	};
+	});
 </script>
 
 {#if (open && target) || (forceMount && lastTarget)}

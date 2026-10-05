@@ -77,8 +77,10 @@ export async function renderRegionToCanvas(opts: {
 	rect: [number, number, number, number];
 	cssWidth: number;
 	signal?: AbortSignal;
+	/** The reading theme (night recoloring, tint), as the pages get it. */
+	theme?: PageThemeStrategy;
 }): Promise<HTMLCanvasElement> {
-	const { page, rect, cssWidth } = opts;
+	const { page, rect, cssWidth, theme } = opts;
 	const base = page.getViewport({ scale: 1 });
 	const [ax, ay] = base.convertToViewportPoint(rect[0], rect[3]);
 	const [bx, by] = base.convertToViewportPoint(rect[2], rect[1]);
@@ -97,11 +99,25 @@ export async function renderRegionToCanvas(opts: {
 	canvas.style.width = `${cssWidth}px`;
 	canvas.style.height = `${(h / w) * cssWidth}px`;
 	opts.signal?.throwIfAborted();
-	const task = page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport });
+	let ctx = canvas.getContext('2d', { alpha: false })!;
+	if (theme?.wrapContext) ctx = theme.wrapContext(ctx);
+	const task = page.render({
+		// pdf.js ignores `canvasContext` when `canvas` is set: pass only the (wrapped) context then.
+		canvas: theme?.wrapContext ? null : canvas,
+		canvasContext: ctx,
+		viewport,
+		pageColors: theme?.pageColors
+	});
 	const onAbort = () => task.cancel();
 	opts.signal?.addEventListener('abort', onAbort, { once: true });
 	try {
 		await task.promise;
+		if (theme?.postProcess && !opts.signal?.aborted)
+			await theme.postProcess(canvas.getContext('2d')!, { page, viewport, outputScale: 1 });
+		// The same look as the pages: filter, and blend over the theme's page color (set it
+		// behind the canvas, e.g. on its host).
+		canvas.style.filter = theme?.filter ?? '';
+		if (theme?.blend) canvas.style.mixBlendMode = theme.blend;
 	} catch (err) {
 		releaseCanvas(canvas);
 		throw err;

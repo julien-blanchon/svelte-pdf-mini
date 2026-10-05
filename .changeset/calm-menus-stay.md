@@ -11,3 +11,4 @@
 - **Side notes in spreads and grids:** a page with another page beside it on the notes side (spreads, Auto's grid, horizontal strips) shows markers just past its edge, painted above the neighbor, never full notes over it; thumbnail-sized pages show markers too. New `viewer.hasNeighbor(page, side)`.
 - **Box labels shrink with the page** when zoomed out.
 - A box with only a label (drawn on the box) gets no side note, line marker or hover card.
+- **Previews follow the reading theme:** cross-reference and link previews render with the pages' theme (night recoloring, tint, page color), not pdf.js's white page. `renderRegionToCanvas` takes a `theme`.
