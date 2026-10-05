@@ -110,10 +110,13 @@ export async function extractFigures(
 			for (const o of blocks)
 				if (o.capLines !== capLines) for (const l of o.capLines) others.set(l, o.c.kind);
 			const textCol = columnFor(cols, captionRect);
-			const column = besideText(lines, capLines, textCol) ?? subColumn(textCol, captionRect);
+			const wrapped = besideText(lines, capLines, textCol);
+			const column = wrapped ?? subColumn(textCol, captionRect);
 			const found = regionBody(ctx, lines, capLines, others, graphics, column, {
 				halfColumn:
 					column !== textCol || (cols.length === 2 && column[1] - column[0] < size.width * 0.6),
+				// A wrapped figure only has text on one side: the other may reach into the margin.
+				openSide: wrapped ? openSideOf(wrapped, textCol) : undefined,
 				noGraphics,
 				kind: c.kind,
 				size
@@ -249,7 +252,9 @@ export function extractEquations(
 				if (!r.every(Number.isFinite)) return false;
 				if (group.some((c) => c.line === x)) return true;
 				if (x.rotated) return false;
-				if (r[1] > size.height - band || r[3] < band) return false;
+				// Running headers, footers and page numbers (by their middle: they can overhang the band).
+				const mid = (r[1] + r[3]) / 2;
+				if (mid > size.height - band || mid < band) return false;
 				return Math.min(r[2], col[1] + 4) - Math.max(r[0], col[0] - 4) > (r[2] - r[0]) * 0.5;
 			});
 			const rows = rowsOf(colLines);
@@ -289,7 +294,7 @@ export function extractEquations(
 							// that text's ink (font boxes include generous ascent / descent).
 							const main = w.lines.reduce((a, x) => (x.size > a.size ? x : a));
 							if (dir < 0) ceil = main.y - main.size * 0.2;
-							else floor = main.y + main.size * 0.7;
+							else floor = main.y + main.size * 0.45;
 							break;
 						}
 						const other = numbered.get(w);
@@ -443,7 +448,9 @@ function besideText(
 		(l) =>
 			!l.rotated &&
 			!capLines.includes(l) &&
-			Math.abs(l.y - first.y) < first.size * 0.5 &&
+			// Beside the caption (its own baselines: wrapped text doesn't line up).
+			Math.min(l.top, cap[3]) - Math.max(l.bottom, cap[1]) >
+				Math.min(l.top - l.bottom, first.size) * 0.5 &&
 			(l.right < cap[0] - 4 || l.x > cap[2] + 4) &&
 			l.x >= col[0] - 4 &&
 			l.right <= col[1] + 4 &&
@@ -455,6 +462,10 @@ function besideText(
 	if (left.length) return [Math.max(...left.map((l) => l.right)) + 4, col[1]];
 	return [col[0], Math.min(...right.map((l) => l.x)) - 4];
 }
+
+/** The side of a wrapped figure away from the text (text on its left: its right). */
+const openSideOf = (wrapped: [number, number], col: [number, number]): 'left' | 'right' =>
+	wrapped[0] > col[0] ? 'right' : 'left';
 
 /**
  * Side-by-side figures (minipages): a short caption (almost) within one half of
@@ -584,6 +595,8 @@ interface RegionOptions {
 	halfColumn: boolean;
 	/** No graphics known for the page (none, or not computed): fall back to blank space. */
 	noGraphics: boolean;
+	/** The side without text next to it (wrapped figures): graphics are clipped to the page there. */
+	openSide?: 'left' | 'right';
 	kind: FigureKind;
 	size: { width: number; height: number };
 }
@@ -603,7 +616,7 @@ function regionBody(
 	others: Map<Line, FigureKind>,
 	graphics: Graphics,
 	col: [number, number],
-	{ halfColumn, noGraphics, kind, size }: RegionOptions
+	{ halfColumn, noGraphics, openSide, kind, size }: RegionOptions
 ): { rect: PdfRect; graphics: boolean } | null {
 	const cap = unionRect(capLines.map(lineRect))!;
 	const capSpan: [number, number] = [Math.min(cap[0], col[0] + 4), Math.max(cap[2], col[1] - 4)];
@@ -617,9 +630,9 @@ function regionBody(
 	// Form XObjects often have a page-wide bbox while the plot sits in one column:
 	// clip graphics to the caption's column (when the caption is a column caption) and to the margins.
 	const clip = (r: PdfRect): PdfRect => [
-		halfColumn ? Math.max(r[0], col[0] - 6) : r[0],
+		halfColumn && openSide !== 'left' ? Math.max(r[0], col[0] - 6) : Math.max(r[0], 0),
 		Math.max(r[1], band),
-		halfColumn ? Math.min(r[2], col[1] + 6) : r[2],
+		halfColumn && openSide !== 'right' ? Math.min(r[2], col[1] + 6) : Math.min(r[2], size.width),
 		Math.min(r[3], size.height - band)
 	];
 	// Vector "drawings" that hold running text are background panels (abstract boxes,
@@ -775,7 +788,9 @@ function regionBody(
 		if (hasGraphics) {
 			const g = unionRect(claimed.filter((t) => t.graphic || t.rule).map((t) => t.r))!;
 			kept = claimed.filter((t) => {
-				const reach = t.short ? 24 : 14;
+				// A paragraph's short last line starts at the column's edge, in body size.
+				const tail = t.body && t.r[0] <= col[0] + ctx.body;
+				const reach = t.short && !tail ? 24 : 14;
 				return t.graphic || t.rule || (above ? t.r[3] <= g[3] + reach : t.r[1] >= g[1] - reach);
 			});
 		}
