@@ -347,6 +347,13 @@
 							"bindable": false
 						},
 						{
+							"name": "zoomLocked",
+							"type": "boolean",
+							"description": "Lock the zoom (user zooming does nothing; a fit mode keeps fitting).",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "viewer",
 							"type": "ViewerState",
 							"description": "The viewer state (bind:viewer to call commands from outside).",
@@ -5742,6 +5749,10 @@
 		{
 			"name": "--pdf-ref-hover",
 			"default": "rgb(59 130 246 / 0.16)"
+		},
+		{
+			"name": "--pdf-scale",
+			"default": "1"
 		},
 		{
 			"name": "--pdf-selection",

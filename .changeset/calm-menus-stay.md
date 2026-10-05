@@ -1,5 +1,5 @@
 ---
-'svelte-pdf-mini': patch
+'svelte-pdf-mini': minor
 ---
 
 - **Selection menu placement:** anchored to the box of the selected characters (not the last line, nor the text layer's oversized helper elements), centered above it; below it when there is no room above within the pages' area (it never covers the app's toolbars); kept inside the view for a selection taller than it. `float()` gains `clamp` and `boundary` options.
