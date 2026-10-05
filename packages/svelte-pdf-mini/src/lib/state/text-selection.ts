@@ -40,8 +40,41 @@ function resetAll() {
 }
 
 const onDown = (e: PointerEvent) => {
-	if (e.button === 0) dragging = true;
+	if (e.button !== 0) return;
+	dragging = true;
+	anchorAtPointer(e);
 };
+
+/**
+ * A press in a gap (on the layer or its end element, not on text): WebKit anchors the
+ * selection wherever the end element sits, by default the end of the page. Move it
+ * just before the nearest text at or after the pointer, so the selection starts where
+ * the drag enters the text (as in Chromium) instead of at the page's end.
+ */
+function anchorAtPointer(e: PointerEvent) {
+	const target = e.target as Element | null;
+	const layer = target?.closest?.<HTMLElement>('[data-pdf-text-layer]');
+	const end = layer && layers.get(layer);
+	if (!layer || !end || (target !== layer && target !== end)) return;
+	let best: Element | null = null;
+	let bestScore = Infinity;
+	for (const span of layer.querySelectorAll<HTMLElement>('span[data-idx]')) {
+		const r = span.getBoundingClientRect();
+		if (!r.width || r.bottom < e.clientY) continue; // above the pointer
+		// Lines below count by their distance; on the pointer's own line, text to its right.
+		const sameLine = r.top <= e.clientY;
+		if (sameLine && r.right < e.clientX) continue;
+		const score = sameLine
+			? r.left - e.clientX
+			: 1e4 + (r.top - e.clientY) * 10 + Math.abs(r.left - e.clientX) / 10;
+		if (score < bestScore) [best, bestScore] = [span, score];
+	}
+	if (!best?.parentElement) return;
+	end.style.width = layer.style.width;
+	end.style.height = layer.style.height;
+	end.style.userSelect = 'text';
+	best.parentElement.insertBefore(end, best);
+}
 const onUp = () => {
 	dragging = false;
 	resetAll();
