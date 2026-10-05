@@ -95,13 +95,20 @@
 	});
 	/** Distance from the page edge to the notes: `offset` when they fit outside, negative when they overlap the page. */
 	const shift = $derived(Math.min(offset, page.viewer.sideRoom - edge - width));
+	/** Another page right beside on this side (a spread): only markers fit, in the gap. */
+	const neighbor = $derived(page.viewer.hasNeighbor(page.pageNumber, side));
 	/** Full notes when they fit, else compact markers (unless forced). */
 	const mode = $derived.by((): Exclude<MarginLayout, 'auto'> => {
 		if (layout !== 'auto') return layout;
-		return width >= minWidth ? 'notes' : 'markers';
+		// Thumbnail-sized pages (zoomed out, grids) get markers: full notes would dwarf them.
+		return width >= minWidth && !neighbor && page.detailed ? 'notes' : 'markers';
 	});
-	// Markers sit in the room beside the page when there is some, else on the page's edge.
-	const markerPlacement = $derived(page.viewer.sideRoom >= MARKER + 8 ? 'outside' : 'inside');
+	// Markers sit in the room beside the page when there is some, else on the page's edge;
+	// next to another page, just past this page's edge, over the neighbor's blank margin.
+	const markerPlacement = $derived.by(() => {
+		if (neighbor) return 'gap';
+		return page.viewer.sideRoom >= MARKER + 8 ? 'outside' : 'inside';
+	});
 	/** Gap between the page and outside markers: centered in the room, at most `offset`. */
 	const markerGap = $derived(Math.min(offset, (page.viewer.sideRoom - MARKER) / 2));
 
@@ -239,6 +246,12 @@
 		}
 		[data-placement='outside'][data-side='left'] {
 			right: calc(100% + var(--pdf-margin-marker-gap));
+		}
+		[data-placement='gap'][data-side='right'] {
+			left: calc(100% + 4px);
+		}
+		[data-placement='gap'][data-side='left'] {
+			right: calc(100% + 4px);
 		}
 		[data-placement='inside'][data-side='right'] {
 			right: 4px;

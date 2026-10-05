@@ -26,13 +26,12 @@
 	let lastId = $state<string | null>(null);
 
 	// Show the hovered annotation's note after a short delay (not when it is selected: the popover shows it).
-	// A box's label is already drawn on the box, so a box with only a label has nothing more to show;
-	// neither has a side note, which already shows the whole note.
+	// A side note already shows the whole note (and see `hasNote` for boxes).
 	$effect(() => {
 		const id = store.hoveredId;
 		const a = id ? store.byId.get(id) : null;
 		const inNote = !!store.hoverAnchor?.closest('[data-pdf-margin-note]');
-		const more = a && !inNote && (a.kind === 'area' ? !!a.contents?.trim() : hasNote(a));
+		const more = a && !inNote && hasNote(a);
 		const show =
 			a && more && !store.isSelected(a.id) && !store.viewer.selection.selecting ? a.id : null;
 		// Render the note during the delay, so the card opens at its final size.

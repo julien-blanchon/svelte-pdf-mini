@@ -7,9 +7,12 @@ import type { AnnotationSnippetProps } from './types.js';
 /** CSS custom properties, for a typed `style` merged with `mergeProps`. */
 export type CssVars = Record<`--${string}`, string | number>;
 
-/** Has something to show in a side note or hover card: a comment or a label. */
+/**
+ * Has something to show in a side note, line marker or hover card: a comment, or a label
+ * (except a box's, which is already drawn on the box).
+ */
 export function hasNote(a: Annotation): boolean {
-	return !!(a.contents?.trim() || a.label);
+	return !!(a.contents?.trim() || (a.label && a.kind !== 'area'));
 }
 
 /** The quoted text of a markup (or the text of a text box), '' otherwise. */

@@ -8,3 +8,6 @@
 - **One focus effect:** figures, tables and equations get the filled pulse, like references and citations; jumping to a note from `Annotations.List` scrolls to it and selects it, without a flash.
 - **Find:** ↓ / ↑ in `Find.Input` go to the next / previous match (as Enter / Shift+Enter).
 - **No focus ring around the document:** the viewport keeps keyboard focus without an outline (`--pdf-viewport-focus-ring` brings one back).
+- **Side notes in spreads and grids:** a page with another page beside it on the notes side (spreads, Auto's grid, horizontal strips) shows markers just past its edge, painted above the neighbor, never full notes over it; thumbnail-sized pages show markers too. New `viewer.hasNeighbor(page, side)`.
+- **Box labels shrink with the page** when zoomed out.
+- A box with only a label (drawn on the box) gets no side note, line marker or hover card.

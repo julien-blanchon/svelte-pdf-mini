@@ -57,6 +57,10 @@
 		) {
 		pointer-events: none !important;
 	}
+	/* A page whose margin markers overlap the next page (spreads) paints above it. */
+	[data-pdf-page]:has([data-pdf-annotation-margin][data-placement='gap']) {
+		z-index: 1;
+	}
 	/* The viewport takes focus so the keyboard scrolls it (and focus returns to it after
 	   find, menus…). A ring around the whole document reads as a glitch, so none by default;
 	   set --pdf-viewport-focus-ring (e.g. `2px solid Highlight`) to show one. */
@@ -263,13 +267,14 @@
 		background: #fff;
 		border: 1.5px solid var(--pdf-accent, rgb(37 99 235));
 	}
+	/* Shrinks with the page when zoomed out (a 11px label would dwarf a thumbnail-sized page). */
 	[data-pdf-annotation-label] {
 		font:
-			600 11px/1.2 system-ui,
+			600 max(6px, calc(11px * min(1, var(--pdf-scale, 1))))/1.2 system-ui,
 			sans-serif;
-		padding: 2px 6px;
-		margin-bottom: 2px;
-		border-radius: 4px 4px 4px 0;
+		padding: 0.18em 0.55em;
+		margin-bottom: 0.18em;
+		border-radius: 0.36em 0.36em 0.36em 0;
 		color: #1c1917;
 		background: var(--annotation-color);
 		white-space: nowrap;

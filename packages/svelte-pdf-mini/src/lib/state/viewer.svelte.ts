@@ -926,6 +926,19 @@ export class ViewerState {
 		if (this.page !== p) this.#page.current = p;
 	}
 
+	/**
+	 * Is another page right beside `page` on that side (a spread's other page, or the
+	 * next page in a horizontal strip)? Side content (margin notes) can't spread there.
+	 */
+	hasNeighbor(page: number, side: 'left' | 'right'): boolean {
+		const n = this.document.numPages;
+		if (this.scrollMode === 'horizontal' || this.scrollMode === 'wrapped')
+			return side === 'left' ? page > 1 : page < n;
+		const group = this.#groupOf(page);
+		const i = group.indexOf(page);
+		return side === 'left' ? i > 0 : i < group.length - 1;
+	}
+
 	/** Pages shown together with `page` in single-page mode (a spread). */
 	#groupOf(page: number): number[] {
 		const n = this.document.numPages;
