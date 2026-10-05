@@ -74,6 +74,8 @@ export type ViewerRootProps = DivPartProps<
 		/** Smallest and largest zoom any way of zooming reaches (pinch, wheel, steps, fit modes). Defaults 0.1 and 10. */
 		minZoom?: number;
 		maxZoom?: number;
+		/** Lock the zoom (user zooming does nothing; a fit mode keeps fitting). */
+		zoomLocked?: boolean;
 		/** The viewer state (bind:viewer to call commands from outside). */
 		viewer?: ViewerState;
 	},

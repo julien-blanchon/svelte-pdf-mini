@@ -107,6 +107,11 @@ export interface ViewerOptions {
 	/** Largest zoom any way of zooming reaches (3 = 300%). Default 10. */
 	maxZoom?: MaybeGetter<number | undefined>;
 	/**
+	 * Lock the zoom: pinch, wheel, shortcuts, `zoomTo` and zoom mode changes do nothing
+	 * (gestures are still captured). A fit mode keeps fitting the view as it resizes.
+	 */
+	zoomLocked?: MaybeGetter<boolean | undefined>;
+	/**
 	 * Keyboard shortcuts: on the viewport (true, default), anywhere in the page
 	 * except text fields and dialogs ('document': for apps with one viewer, so
 	 * keys still work after clicking a toolbar button), or off (false).
@@ -247,6 +252,7 @@ export class ViewerState {
 	readonly zoomSteps = $derived(this.#opt('zoomSteps') ?? ZOOM_STEPS);
 	readonly minZoom = $derived(this.#opt('minZoom') ?? MIN_ZOOM);
 	readonly maxZoom = $derived(this.#opt('maxZoom') ?? MAX_ZOOM);
+	readonly zoomLocked = $derived(this.#opt('zoomLocked') ?? false);
 	/** Where shortcuts are listened to (see the `keyboard` option). */
 	readonly keyboard = $derived(this.#opt('keyboard') ?? true);
 	/** Shortcuts in effect (defaults + overrides). */
@@ -255,8 +261,12 @@ export class ViewerState {
 	readonly detailMinWidth = $derived(this.#opt('detailMinWidth') ?? 260);
 	readonly maxColumns = $derived(clamp(this.#opt('maxColumns') ?? 4, 1, 12));
 	readonly firstPageAlone = $derived(this.#opt('firstPageAlone') ?? false);
-	readonly canZoomIn = $derived(this.zoom < Math.min(this.maxZoom, this.zoomSteps.at(-1)!) - 1e-3);
-	readonly canZoomOut = $derived(this.zoom > Math.max(this.minZoom, this.zoomSteps[0]) + 1e-3);
+	readonly canZoomIn = $derived(
+		!this.zoomLocked && this.zoom < Math.min(this.maxZoom, this.zoomSteps.at(-1)!) - 1e-3
+	);
+	readonly canZoomOut = $derived(
+		!this.zoomLocked && this.zoom > Math.max(this.minZoom, this.zoomSteps[0]) + 1e-3
+	);
 	readonly canGoPrev = $derived(this.page > 1);
 	readonly canGoNext = $derived(this.page < this.document.numPages);
 
@@ -457,6 +467,7 @@ export class ViewerState {
 	}
 	/** Setting zoom jumps there immediately and switches to manual mode. */
 	set zoom(z: number) {
+		if (this.zoomLocked) return;
 		this.#stopZoomAnimation();
 		this.#zoomMode.current = 'manual';
 		this.#setZoom(z);
@@ -465,6 +476,7 @@ export class ViewerState {
 		return this.#zoomMode.current;
 	}
 	set zoomMode(m: ZoomMode) {
+		if (this.zoomLocked) return;
 		this.#stopZoomAnimation();
 		if (m !== this.#zoomMode.current) this.#modeSwitched = m !== 'manual';
 		this.#zoomMode.current = m;
@@ -520,6 +532,7 @@ export class ViewerState {
 	 * horizontally; once wider, the anchor is followed in both directions.
 	 */
 	zoomTo(zoom: number, { anchor, animate }: { anchor?: ClientPoint; animate?: boolean } = {}) {
+		if (this.zoomLocked) return;
 		const target = clamp(zoom, this.minZoom, this.maxZoom);
 		const smooth = (animate ?? this.#opt('smoothZoom') ?? true) && !prefersReducedMotion();
 		this.#zoomMode.current = 'manual';
