@@ -110,24 +110,26 @@
 </div>
 
 <style>
-	/* Structural layout only (zero specificity: themes and user styles win). */
-	:global(:where([data-pdf-outline-group])) {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	:global(:where([data-pdf-outline-row])) {
-		display: flex;
-		align-items: center;
-		padding-inline-start: calc(var(--pdf-depth, 0) * var(--pdf-outline-indent, 12px));
-	}
-	:global(:where([data-pdf-outline-spacer])) {
-		display: inline-block;
-		width: var(--pdf-outline-toggle-size, 1.25em);
-	}
-	:global(:where([data-pdf-outline-row] > [data-pdf-outline-item])) {
-		flex: 1;
-		min-width: 0;
-		text-align: start;
+	@layer svelte-pdf-mini {
+		/* Structural layout only (zero specificity: themes and user styles win). */
+		:global(:where([data-pdf-outline-group])) {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+		}
+		:global(:where([data-pdf-outline-row])) {
+			display: flex;
+			align-items: center;
+			padding-inline-start: calc(var(--pdf-depth, 0) * var(--pdf-outline-indent, 12px));
+		}
+		:global(:where([data-pdf-outline-spacer])) {
+			display: inline-block;
+			width: var(--pdf-outline-toggle-size, 1.25em);
+		}
+		:global(:where([data-pdf-outline-row] > [data-pdf-outline-item])) {
+			flex: 1;
+			min-width: 0;
+			text-align: start;
+		}
 	}
 </style>

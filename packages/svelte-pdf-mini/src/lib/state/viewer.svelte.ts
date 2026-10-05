@@ -1,7 +1,12 @@
 import { tick, untrack } from 'svelte';
 import { createAttachmentKey } from 'svelte/attachments';
 import { resolveDestination } from '../core/document/destinations.js';
-import { clamp, distanceToRange, pdfRectToViewport } from '../core/view/geometry.js';
+import {
+	clamp,
+	distanceToRange,
+	fractionToPdfY,
+	pdfRectToViewport
+} from '../core/view/geometry.js';
 import { PDF_TO_CSS } from '../core/document/pdfjs.js';
 import { RenderScheduler } from '../core/document/scheduler.js';
 import { resolvePageTheme, type PageThemeInput } from '../core/view/theme.js';
@@ -97,8 +102,12 @@ export interface ViewerOptions {
 	detailMinWidth?: MaybeGetter<number | undefined>;
 	/** Zoom steps for zoomIn/zoomOut. */
 	zoomSteps?: MaybeGetter<number[] | undefined>;
-	/** Keyboard shortcuts on the viewport. Default true. */
-	keyboard?: MaybeGetter<boolean | undefined>;
+	/**
+	 * Keyboard shortcuts: on the viewport (true, default), anywhere in the page
+	 * except text fields and dialogs ('document': for apps with one viewer, so
+	 * keys still work after clicking a toolbar button), or off (false).
+	 */
+	keyboard?: MaybeGetter<boolean | 'document' | undefined>;
 	/** How long a focus highlight stays, in ms. Default 1800. */
 	focusDuration?: MaybeGetter<number | undefined>;
 	/** Default effect when a link (or `focus()` without `highlight`) lands on a region. Default 'pulse'. */
@@ -115,6 +124,8 @@ interface Anchor extends ClientPoint {
 	page: number;
 	fx: number;
 	fy: number;
+	/** Was scrolled to the very top: stays there. */
+	pinTop?: boolean;
 }
 
 interface LayoutRect {
@@ -148,7 +159,7 @@ const PAGE_SCALE_VARS =
 
 /**
  * Layout, zoom, navigation and visibility for one scrollable view of a document.
- * Must be constructed during component initialisation.
+ * Must be constructed during component initialization.
  */
 export class ViewerState {
 	readonly scheduler = new RenderScheduler(2);
@@ -172,7 +183,7 @@ export class ViewerState {
 	/**
 	 * Room fit modes leave beside the pages for side content such as margin
 	 * notes (CSS px), read from `--pdf-pages-aside`. It never moves the pages
-	 * (they stay centred) and never adds a scrollbar: side content adapts to
+	 * (they stay centered) and never adds a scrollbar: side content adapts to
 	 * `sideRoom` instead.
 	 */
 	aside = $state(0);
@@ -217,27 +228,21 @@ export class ViewerState {
 	hoveredLink = $state.raw<HoveredLink | null>(null);
 	/** Back / forward stacks for in-document jumps. */
 	readonly history = new NavigationHistory();
-	/** @deprecated use `history.back` */
-	get backStack() {
-		return this.history.back;
-	}
-	get forwardStack() {
-		return this.history.forward;
-	}
-	get canGoBack() {
-		return this.history.canGoBack;
-	}
-	get canGoForward() {
-		return this.history.canGoForward;
-	}
 	/** Browser text selection mapped to the text index. */
 	readonly selection: TextSelectionState;
 
 	readonly scale = $derived(this.zoom * PDF_TO_CSS);
 	readonly pageTheme = $derived(resolvePageTheme(this.#opt('pageTheme')));
+	/** Id of the part of the theme drawn into page bitmaps ('none' for CSS-only themes). */
+	readonly renderThemeId = $derived.by(() => {
+		const t = this.pageTheme;
+		return t.pageColors || t.wrapContext || t.postProcess ? t.id : 'none';
+	});
 	readonly overscan = $derived(this.#opt('overscan') ?? 1);
 	readonly maxCanvasPixels = $derived(this.#opt('maxCanvasPixels') ?? 16_777_216);
 	readonly zoomSteps = $derived(this.#opt('zoomSteps') ?? ZOOM_STEPS);
+	/** Where shortcuts are listened to (see the `keyboard` option). */
+	readonly keyboard = $derived(this.#opt('keyboard') ?? true);
 	/** Shortcuts in effect (defaults + overrides). */
 	readonly keymap: Keymap = $derived({ ...defaultKeymap, ...(this.#opt('keymap') ?? {}) });
 	readonly oversampling = $derived(this.#opt('oversampling') ?? true);
@@ -267,6 +272,8 @@ export class ViewerState {
 	#visibleObserver: IntersectionObserver | null = null;
 	#internalPage = 1;
 	#lastFitZoom = NaN;
+	/** Fit width at the previous fit (0 before the first): tells resizes apart. */
+	#fitWidthBefore = 0;
 	#pendingAnchor: ClientPoint | null = null;
 	#anim = new ZoomAnimator(
 		() => this.zoom,
@@ -317,6 +324,12 @@ export class ViewerState {
 		});
 		this.#columns = new Synced({ value: opts.columns ?? 1, onChange: opts.onColumnsChange });
 		this.selection = new TextSelectionState(this);
+		$effect(() => {
+			if (this.keyboard !== 'document') return;
+			const onKey = (e: KeyboardEvent) => this.isStrayKey(e) && this.#onKeydown(e);
+			document.addEventListener('keydown', onKey);
+			return () => document.removeEventListener('keydown', onKey);
+		});
 
 		// Fit modes: recompute zoom when the container, page size, rotation, columns or mode change.
 		$effect(() => {
@@ -332,11 +345,19 @@ export class ViewerState {
 			const gap = this.gap;
 			const z = fitZoom(mode, size, { width: (width - gap * (cols - 1)) / cols, height });
 			this.#lastFitZoom = z;
+			// The container was resized (e.g. a side panel animating open).
+			const resized = this.#fitWidthBefore > 0 && width !== this.#fitWidthBefore;
+			this.#fitWidthBefore = width;
 			untrack(() => {
 				// Switching modes animates; container resizes follow instantly.
 				if (this.#modeSwitched && this.document.status === 'ready')
 					this.#animateZoom(z, null, true);
-				else this.#setZoom(z);
+				else {
+					// Resizes follow every frame like a zoom gesture: bitmaps are stretched
+					// and re-rendered once the size settles, not on every frame.
+					if (resized && Math.abs(z - this.zoom) > 1e-4) this.#markZooming();
+					this.#setZoom(z);
+				}
 				this.#modeSwitched = false;
 			});
 		});
@@ -395,6 +416,8 @@ export class ViewerState {
 			if (this.document.status !== 'ready') return;
 			const proxy = this.document.proxy;
 			untrack(() => {
+				// Places in the previous document mean nothing here.
+				this.history.clear();
 				this.scrollEl?.scrollTo({ top: 0, left: 0 });
 				const p = this.page;
 				this.#internalPage = 1;
@@ -478,7 +501,7 @@ export class ViewerState {
 
 	// ── Commands ───────────────────────────────────────────────────────────────
 
-	/** Next zoom step, eased. The anchor defaults to the viewport centre. */
+	/** Next zoom step, eased. The anchor defaults to the viewport center. */
 	zoomIn(anchor?: ClientPoint) {
 		this.zoomTo(nextZoomStep(this.#anim.destination, 1, this.zoomSteps), { anchor });
 	}
@@ -487,7 +510,7 @@ export class ViewerState {
 	}
 	/**
 	 * Zoom to a value, keeping the point under `anchor` (client coordinates)
-	 * fixed. While pages are narrower than the view they stay centred
+	 * fixed. While pages are narrower than the view they stay centered
 	 * horizontally; once wider, the anchor is followed in both directions.
 	 */
 	zoomTo(zoom: number, { anchor, animate }: { anchor?: ClientPoint; animate?: boolean } = {}) {
@@ -682,10 +705,16 @@ export class ViewerState {
 		if (to) return this.#goToLocation(to);
 	}
 
-	#goToLocation(l: ViewLocation) {
-		const size = this.document.pageSize(l.page);
+	/** The PDF point at `fraction` down the page as shown (rotation and crop box included). */
+	async #pointAt(page: number, fraction: number): Promise<[number, number]> {
+		const p = await this.document.getPage(page);
+		const vp = p.getViewport({ scale: 1, rotation: (p.rotate + this.rotation) % 360 });
+		return vp.convertToPdfPoint(0, fraction * vp.height) as [number, number];
+	}
+
+	async #goToLocation(l: ViewLocation) {
 		return this.focus(
-			{ page: l.page, point: [0, size.height * (1 - l.fraction)] },
+			{ page: l.page, point: await this.#pointAt(l.page, l.fraction) },
 			{
 				align: 'start',
 				offset: 0,
@@ -774,9 +803,8 @@ export class ViewerState {
 		const page = Math.floor(position);
 		const frac = position - page;
 		if (!this.document.proxy) return;
-		const size = this.document.pageSize(page);
 		await this.focus(
-			{ page, point: [0, size.height * (1 - frac)] },
+			{ page, point: await this.#pointAt(page, frac) },
 			{ align: 'start', offset: 0, behavior: 'instant', highlight: false }
 		);
 	}
@@ -789,6 +817,7 @@ export class ViewerState {
 			'data-pdf-viewport': '',
 			'data-scroll-mode': this.scrollMode,
 			'data-zooming': dataAttr(this.isZooming),
+			'data-has-selection': dataAttr(!this.selection.isEmpty),
 			tabindex: 0,
 			style: 'overflow: auto; position: relative; overscroll-behavior: contain;',
 			onkeydown: (e: KeyboardEvent) => this.#onKeydown(e),
@@ -808,7 +837,7 @@ export class ViewerState {
 			style:
 				`position:relative;${layout}gap:var(--pdf-page-gap,16px);padding:var(--pdf-pages-padding,16px);box-sizing:border-box;` +
 				`--pdf-scale:${this.scale};` +
-				// Page box = themed page colour, so rounded corners don't show a white rim.
+				// Page box = themed page color, so rounded corners don't show a white rim.
 				(this.pageTheme.background ? `--pdf-page-bg:${this.pageTheme.background};` : ''),
 			[this.#contentKey]: this.#contentAttach
 		} as const;
@@ -833,7 +862,7 @@ export class ViewerState {
 	});
 
 	/**
-	 * Free width (CSS px) on each side of the centred pages, from the edge of
+	 * Free width (CSS px) on each side of the centered pages, from the edge of
 	 * the widest row to the edge of the view. Follows zoom animations frame by
 	 * frame; side content (margin notes) sizes itself from it.
 	 */
@@ -961,6 +990,8 @@ export class ViewerState {
 			clientX: sr.left + sr.width / 2,
 			clientY: sr.top + sr.height / 2
 		};
+		// At the very top with no pointer anchor (e.g. fit-to-width on open): stay at the top.
+		const pinTop = !this.#pendingAnchor && scroller.scrollTop <= 1;
 		this.#pendingAnchor = null;
 		let best: Anchor | null = null;
 		let bestDist = Infinity;
@@ -981,7 +1012,7 @@ export class ViewerState {
 				};
 			}
 		}
-		return best;
+		return best && { ...best, pinTop };
 	}
 
 	#restoreAnchor(a: Anchor) {
@@ -989,9 +1020,10 @@ export class ViewerState {
 		const r = this.#layoutRect(a.page);
 		if (!scroller || !r) return;
 		// When pages are narrower than the view, scrollLeft clamps to 0 and the
-		// centred layout keeps the page centred: zoom happens around its centre.
+		// centered layout keeps the page centered: zoom happens around its center.
 		scroller.scrollLeft += r.left + a.fx * r.width - a.clientX;
-		scroller.scrollTop += r.top + a.fy * r.height - a.clientY;
+		if (a.pinTop) scroller.scrollTop = 0;
+		else scroller.scrollTop += r.top + a.fy * r.height - a.clientY;
 	}
 
 	#snapshotNearPages() {
@@ -1028,7 +1060,8 @@ export class ViewerState {
 
 	#attachViewport(node: HTMLElement) {
 		this.scrollEl = node;
-		const ro = new ResizeObserver(() => this.#scheduleMeasure());
+		// Measured even mid-zoom: a resize must refit (cheaply, see the fit effect).
+		const ro = new ResizeObserver(() => this.#scheduleMeasure(true));
 		ro.observe(node);
 		this.#measure();
 
@@ -1127,8 +1160,8 @@ export class ViewerState {
 	#measureDeferred = false;
 
 	/** Coalesce measurements to one per frame; never force style recalcs mid-zoom. */
-	#scheduleMeasure() {
-		if (this.isZooming) {
+	#scheduleMeasure(force = false) {
+		if (this.isZooming && !force) {
 			this.#measureDeferred = true;
 			return;
 		}
@@ -1136,7 +1169,7 @@ export class ViewerState {
 		this.#measureRaf = requestAnimationFrame(() => untrack(() => this.#measure()));
 	}
 
-	/** Pages wider than the view: scroll horizontally so the current page is centred. */
+	/** Pages wider than the view: scroll horizontally so the current page is centered. */
 	#centerX() {
 		const el = this.scrollEl;
 		if (!el || el.scrollWidth <= el.clientWidth + 1) return;
@@ -1262,7 +1295,7 @@ export class ViewerState {
 		if (start && end) this.viewRange = { start, end };
 	}
 
-	/** Scroll so `loc` sits at the top (or centre) of the view. Synchronous by default. */
+	/** Scroll so `loc` sits at the top (or center) of the view. Synchronous by default. */
 	scrollToLocation(
 		loc: ViewLocation,
 		{
@@ -1288,9 +1321,8 @@ export class ViewerState {
 			const r = this.#layoutRect(n);
 			if (!r || probeY < r.top - this.gap || probeY > r.top + r.height) continue;
 			const fraction = clamp((probeY - r.top) / r.height, 0, 1);
-			const size = this.document.pageSize(n);
-			// Unrotated pages: fraction from the top maps to PDF y directly.
-			const y = this.rotation === 0 ? size.height * (1 - fraction) : Infinity;
+			// Sideways pages have no PDF y down the screen: count the whole page as read.
+			const y = fractionToPdfY(this.document.pageSize(n), fraction, this.rotation) ?? -Infinity;
 			const prev = this.readingPoint;
 			if (prev.page !== n || Math.abs(prev.fraction - fraction) > 0.002)
 				this.readingPoint = { page: n, y, fraction };
@@ -1298,8 +1330,20 @@ export class ViewerState {
 		}
 	}
 
+	/**
+	 * With `keyboard: 'document'`: a key pressed outside the viewport that the
+	 * viewer should still handle (not in a text field, dialog or menu).
+	 */
+	isStrayKey(e: KeyboardEvent) {
+		const target = e.target as HTMLElement | null;
+		if (!target || this.scrollEl?.contains(target)) return false;
+		return !target.closest?.(
+			'[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]'
+		);
+	}
+
 	#onKeydown(e: KeyboardEvent) {
-		if (!(this.#opt('keyboard') ?? true) || e.defaultPrevented) return;
+		if (!this.keyboard || e.defaultPrevented) return;
 		const target = e.target as HTMLElement;
 		if (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
 		const scroller = this.scrollEl;

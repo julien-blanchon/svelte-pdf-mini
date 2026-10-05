@@ -4,3 +4,4 @@ export * from './create.js';
 export * from './geometry.js';
 export * from './anchor.js';
 export * from './freehand.js';
+export * from './stroke.js';

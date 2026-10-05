@@ -26,7 +26,7 @@ export interface ResolvedTarget {
 	rect?: PdfRect;
 }
 
-/** Everything the analyser needs from a document (pdf.js adapter: `pdfjsPaperSource`). */
+/** Everything the analyzer needs from a document (pdf.js adapter: `pdfjsPaperSource`). */
 export interface PaperSource {
 	numPages: number;
 	getPageText(page: number): Promise<PageText>;

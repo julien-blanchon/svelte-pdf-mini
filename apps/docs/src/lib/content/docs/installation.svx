@@ -31,7 +31,7 @@ export default defineConfig({
 import 'svelte-pdf-mini/styles.css';
 ```
 
-The stylesheet holds the pdf.js text-layer rules, focus effects and calm defaults for the floating UI (menus, popovers, cards, side notes, tables of contents). Every value is a CSS variable; skip it entirely if you style the parts yourself.
+With Tailwind v4, import it from your CSS and declare the layer order in your HTML `<head>` (`@layer theme, base, svelte-pdf-mini, components, utilities;`), see [Styling](/docs/styling#cascade-layer). The stylesheet holds the pdf.js text-layer rules, focus effects and calm defaults for the floating UI (menus, popovers, cards, side notes, tables of contents). Every value is a CSS variable; skip it entirely if you style the parts yourself.
 
 ## Worker and assets
 

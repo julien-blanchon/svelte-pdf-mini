@@ -50,12 +50,13 @@ export async function getJson<T>(
 	}
 }
 
+/** Wait `ms`, or reject as soon as `signal` aborts (the listener never outlives the wait). */
 function sleep(ms: number, signal?: AbortSignal) {
+	signal?.throwIfAborted();
 	return new Promise<void>((resolve, reject) => {
-		const t = setTimeout(resolve, ms);
-		signal?.addEventListener('abort', () => (clearTimeout(t), reject(signal.reason)), {
-			once: true
-		});
+		const onAbort = () => (clearTimeout(t), reject(signal!.reason));
+		const t = setTimeout(() => (signal?.removeEventListener('abort', onAbort), resolve()), ms);
+		signal?.addEventListener('abort', onAbort, { once: true });
 	});
 }
 
@@ -125,14 +126,7 @@ export function rateLimiter(intervalMs: number) {
 		const now = Date.now();
 		const wait = Math.max(0, next - now);
 		next = Math.max(now, next) + intervalMs;
-		if (wait) {
-			await new Promise<void>((resolve, reject) => {
-				const t = setTimeout(resolve, wait);
-				signal?.addEventListener('abort', () => (clearTimeout(t), reject(signal.reason)), {
-					once: true
-				});
-			});
-		}
+		if (wait) await sleep(wait, signal);
 	};
 }
 

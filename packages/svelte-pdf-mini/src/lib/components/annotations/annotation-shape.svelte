@@ -16,14 +16,13 @@
 	} from '../../core/annotations/geometry.js';
 	import type { Annotation } from '../../core/annotations/model.js';
 
-	/** Highlights cover the line, a bit beyond the glyph box (fraction of its height, each side). */
-	const HIGHLIGHT_PAD = 0.1;
+	import { HIGHLIGHT_PAD } from '../../core/annotations/geometry.js';
 	import { dataAttr } from '../../internal/types.js';
 
 	interface Props {
 		annotation: Annotation;
 		vp: PageViewport;
-		/** CSS colour for the current page theme. */
+		/** CSS color for the current page theme. */
 		color: string;
 		selected: boolean;
 		hovered: boolean;

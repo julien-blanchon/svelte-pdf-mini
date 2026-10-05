@@ -39,7 +39,7 @@ store.batch(() => {
 
 ## Showing notes
 
-- `Annotations.Margin` stacks notes beside the page without overlaps; `Annotations.LineMarkers` draws gutter bars; `Annotations.HoverCard` shows a note on hover.
+- `Annotations.Margin` stacks notes beside the page without overlaps (narrower when room is short, over the page's blank margin if needed, markers below `minWidth`); `Annotations.LineMarkers` draws gutter bars; `Annotations.HoverCard` shows a note on hover (not for a box whose label is all it has, nor over a side note that already shows it).
 - `store.notesVisible = false` hides margin notes and markers in one go.
 - `forceMount` + the `child` snippet's `open` flag let you animate your own hover card (see [Floating parts](/docs/floating-parts)).
 

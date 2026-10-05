@@ -48,11 +48,15 @@ export async function renderPageToCanvas(opts: RenderPageOptions): Promise<HTMLC
 	signal.addEventListener('abort', onAbort, { once: true });
 	try {
 		await task.promise;
+		if (theme.postProcess && !signal.aborted) {
+			await theme.postProcess(canvas.getContext('2d')!, { page, viewport, outputScale });
+		}
+	} catch (err) {
+		// Cancelled or failed: the caller never gets the canvas, so free it here.
+		releaseCanvas(canvas);
+		throw err;
 	} finally {
 		signal.removeEventListener('abort', onAbort);
-	}
-	if (theme.postProcess && !signal.aborted) {
-		await theme.postProcess(canvas.getContext('2d')!, { page, viewport, outputScale });
 	}
 	return canvas;
 }
@@ -92,8 +96,17 @@ export async function renderRegionToCanvas(opts: {
 	canvas.height = Math.round(h * scale);
 	canvas.style.width = `${cssWidth}px`;
 	canvas.style.height = `${(h / w) * cssWidth}px`;
+	opts.signal?.throwIfAborted();
 	const task = page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport });
-	opts.signal?.addEventListener('abort', () => task.cancel(), { once: true });
-	await task.promise;
+	const onAbort = () => task.cancel();
+	opts.signal?.addEventListener('abort', onAbort, { once: true });
+	try {
+		await task.promise;
+	} catch (err) {
+		releaseCanvas(canvas);
+		throw err;
+	} finally {
+		opts.signal?.removeEventListener('abort', onAbort);
+	}
 	return canvas;
 }

@@ -1,3 +1,4 @@
+import type { Snippet } from 'svelte';
 import type { PageThemeInput } from '../../core/view/theme.js';
 import type { Columns, FocusHighlight, Rotation, ScrollMode, ZoomMode } from '../../core/types.js';
 import type { ButtonPartProps, DivPartProps } from '../../internal/component-types.js';
@@ -67,7 +68,8 @@ export type ViewerRootProps = DivPartProps<
 		overscan?: number;
 		maxCanvasPixels?: number;
 		wheelZoom?: boolean;
-		keyboard?: boolean;
+		/** Shortcuts on the viewport (default), anywhere but text fields and dialogs ('document'), or off. */
+		keyboard?: boolean | 'document';
 		zoomSteps?: number[];
 		/** The viewer state (bind:viewer to call commands from outside). */
 		viewer?: ViewerState;
@@ -91,12 +93,18 @@ export interface LinkInfo {
 	url?: string;
 	kind: LinkKind;
 }
-export type ViewerLinkLayerProps = DivPartProps<{
-	/** How external URLs open. Default 'new-tab'. */
-	external?: 'new-tab' | 'same-tab';
-	/** Replace the click action (e.g. open a cited paper in your app). Return false to skip the default. */
-	onLinkClick?: (link: LinkInfo, event: MouseEvent) => void | false;
-}>;
+export type ViewerLinkLayerProps = DivPartProps<
+	{
+		/** How external URLs open. Default 'new-tab'. */
+		external?: 'new-tab' | 'same-tab';
+		/** Replace the click action (e.g. open a cited paper in your app). Return false to skip the default. */
+		onLinkClick?: (link: LinkInfo, event: MouseEvent) => void | false;
+	},
+	{
+		/** The link hotspots: render them inside your own element (`child`). */
+		links: Snippet;
+	}
+>;
 export type ViewerLinkPreviewProps = DivPartProps<
 	{
 		/** Preview width in CSS px. Default 420. */ width?: number;

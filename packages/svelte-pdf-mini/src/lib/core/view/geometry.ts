@@ -1,7 +1,7 @@
 import type { PageViewport } from 'pdfjs-dist';
-import type { PdfRect } from '../types.js';
+import type { PageSize, PdfRect } from '../types.js';
 
-/** Normalise a rect so x1<x2 and y1<y2. */
+/** Normalize a rect so x1<x2 and y1<y2. */
 export function normalizeRect([a, b, c, d]: PdfRect): PdfRect {
 	return [Math.min(a, c), Math.min(b, d), Math.max(a, c), Math.max(b, d)];
 }
@@ -60,4 +60,26 @@ export function pdfRectToPercent(viewport: PageViewport, rect: PdfRect) {
 		width: (r.width / viewport.width) * 100,
 		height: (r.height / viewport.height) * 100
 	};
+}
+
+/**
+ * PDF y at `fraction` (0..1) down a page as shown, or null when the page is
+ * shown sideways (90° / 270°: down the screen is along PDF x).
+ */
+export function fractionToPdfY(size: PageSize, fraction: number, viewRotation = 0): number | null {
+	const [, y1, , y2] = size.viewBox ?? [0, 0, size.width, size.height];
+	const r = ((((size.rotate ?? 0) + viewRotation) % 360) + 360) % 360;
+	if (r === 0) return y2 - fraction * (y2 - y1);
+	if (r === 180) return y1 + fraction * (y2 - y1);
+	return null;
+}
+
+/** Inverse of `fractionToPdfY` (null when the page is shown sideways). */
+export function pdfYToFraction(size: PageSize, y: number, viewRotation = 0): number | null {
+	const [, y1, , y2] = size.viewBox ?? [0, 0, size.width, size.height];
+	const h = y2 - y1 || 1;
+	const r = ((((size.rotate ?? 0) + viewRotation) % 360) + 360) % 360;
+	if (r === 0) return clamp((y2 - y) / h, 0, 1);
+	if (r === 180) return clamp((y - y1) / h, 0, 1);
+	return null;
 }

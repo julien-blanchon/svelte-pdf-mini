@@ -15,24 +15,6 @@ export interface AnnotationsJson {
 	[meta: string]: unknown;
 }
 
-const KINDS = new Set([
-	'highlight',
-	'underline',
-	'strikeout',
-	'squiggly',
-	'note',
-	'area',
-	'ink',
-	'rect',
-	'ellipse',
-	'line',
-	'arrow',
-	'polygon',
-	'polyline',
-	'freetext',
-	'stamp'
-]);
-
 /** Serialise annotations (plus optional metadata such as the document fingerprint). */
 export function annotationsToJSON(list: Annotation[], meta: Record<string, unknown> = {}): string {
 	const doc: AnnotationsJson = {
@@ -64,7 +46,7 @@ export function annotationsFromJSON(
 			typeof x.id === 'string' &&
 			typeof x.page === 'number' &&
 			typeof x.kind === 'string' &&
-			KINDS.has(x.kind) &&
+			Object.hasOwn(KIND_LABEL, x.kind) &&
 			Array.isArray(x.rect) &&
 			Array.isArray(x.color)
 		);
@@ -77,7 +59,7 @@ export interface MarkdownOptions {
 	sections?: { title: string; page: number; y: number }[];
 	/** Page label (e.g. roman numerals); default the page number. */
 	pageLabel?: (page: number) => string;
-	/** Colour names (palette key → label). */
+	/** Color names (palette key → label). */
 	palette?: { key: string; label: string }[];
 }
 
@@ -143,8 +125,8 @@ export function annotationsToMarkdown(list: Annotation[], opts: MarkdownOptions 
 			lines.push(`## ${g}`, '');
 		}
 		const meta = [`p. ${pageLabel(a.page)}`, KIND_LABEL[a.kind]];
-		const colour = a.paletteKey ? palette.get(a.paletteKey) : undefined;
-		if (colour) meta.push(colour.toLowerCase());
+		const color = a.paletteKey ? palette.get(a.paletteKey) : undefined;
+		if (color) meta.push(color.toLowerCase());
 		if (a.label) meta.push(`*${a.label}*`);
 		if (a.author?.name) meta.push(a.author.name);
 		lines.push(`- ${meta.join(' · ')}`);

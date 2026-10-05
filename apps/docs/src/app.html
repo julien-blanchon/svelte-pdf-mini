@@ -2,6 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<!-- Cascade layer order before any stylesheet (the first mention of a layer fixes its rank). -->
+		<style>
+			@layer theme, base, svelte-pdf-mini, components, utilities;
+		</style>
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<style>
 			html[data-docs-package-manager] .package-manager-command {

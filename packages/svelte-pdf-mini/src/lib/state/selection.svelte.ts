@@ -1,7 +1,9 @@
+import { untrack } from 'svelte';
 import type { Quad } from '../core/text/text-index.js';
 import { cleanQuote, quadsBounds } from '../core/text/text-index.js';
 import type { PdfRect } from '../core/types.js';
 import type { ViewerState } from './viewer.svelte.js';
+import { copyText, hasCustomClipboard } from '../core/document/clipboard.js';
 
 /** The selected text on one page. Offsets are raw page-text offsets. */
 export interface PageSelection {
@@ -21,6 +23,8 @@ export interface PageSelection {
 export class TextSelectionState {
 	/** Current selection, one entry per page it spans. */
 	ranges = $state.raw<PageSelection[]>([]);
+	/** Clicks of the gesture that made the selection: 1 drag, 2 word, 3 line. */
+	clicks = 1;
 	/** Client rect of the selection end (anchor for floating menus). */
 	anchorRect = $state.raw<DOMRect | null>(null);
 	/** True while the pointer is down (selection still changing). */
@@ -33,6 +37,13 @@ export class TextSelectionState {
 
 	constructor(viewer: ViewerState) {
 		this.#viewer = viewer;
+		// The selection moved with the zoom: re-measure it once the zoom settles.
+		let wasZooming = false;
+		$effect(() => {
+			const zooming = viewer.isZooming;
+			if (wasZooming && !zooming && untrack(() => this.ranges.length)) this.refresh();
+			wasZooming = zooming;
+		});
 		$effect(() => {
 			const scroller = viewer.scrollEl;
 			if (!scroller) return;
@@ -43,24 +54,32 @@ export class TextSelectionState {
 			const onDown = (e: PointerEvent) => {
 				if (e.button === 0) this.selecting = true;
 			};
+			// Click count of the gesture that made the selection (2: word, 3: line).
+			const onMouseDown = (e: MouseEvent) => {
+				if (e.button === 0) this.clicks = e.detail;
+			};
 			const onUp = () => {
 				if (!this.selecting) return;
 				this.selecting = false;
 				onChange();
 			};
 			const onCopy = (e: ClipboardEvent) => {
-				if (!this.ranges.length || !e.clipboardData) return;
-				e.clipboardData.setData('text/plain', this.text);
+				if (!this.ranges.length) return;
+				if (hasCustomClipboard()) void copyText(this.text);
+				else if (e.clipboardData) e.clipboardData.setData('text/plain', this.text);
+				else return;
 				e.preventDefault();
 			};
 			document.addEventListener('selectionchange', onChange);
 			scroller.addEventListener('pointerdown', onDown);
+			scroller.addEventListener('mousedown', onMouseDown);
 			document.addEventListener('pointerup', onUp);
 			scroller.addEventListener('copy', onCopy);
 			return () => {
 				cancelAnimationFrame(this.#raf);
 				document.removeEventListener('selectionchange', onChange);
 				scroller.removeEventListener('pointerdown', onDown);
+				scroller.removeEventListener('mousedown', onMouseDown);
 				document.removeEventListener('pointerup', onUp);
 				scroller.removeEventListener('copy', onCopy);
 			};

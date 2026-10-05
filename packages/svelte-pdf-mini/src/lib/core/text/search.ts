@@ -1,5 +1,5 @@
 /**
- * Full-text search over `PageText`. Matching runs on the normalised text
+ * Full-text search over `PageText`. Matching runs on the normalized text
  * (case-, diacritic-, ligature- and hyphenation-insensitive by default) and
  * maps hits back to raw page offsets, so results can be drawn and quoted.
  */
@@ -12,7 +12,7 @@ export interface SearchOptions {
 	diacritics?: boolean;
 	/** Only whole words. */
 	wholeWord?: boolean;
-	/** Treat the query as a regular expression (applied to normalised text). */
+	/** Treat the query as a regular expression (applied to normalized text). */
 	regex?: boolean;
 }
 
@@ -25,7 +25,7 @@ export interface SearchMatch {
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Compile a query to a global regex over normalised text, or null when empty/invalid. */
+/** Compile a query to a global regex over normalized text, or null when empty/invalid. */
 export function compileQuery(query: string, opts: SearchOptions = {}): RegExp | null {
 	const q = opts.regex ? query : normalizeQuery(query);
 	if (!q) return null;

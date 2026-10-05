@@ -5,7 +5,7 @@
  * - `raw`: the page text (items concatenated, with `\n` at line ends and a
  *   space where items are visibly apart), plus a map from raw offsets to items;
  * - geometry: PDF-space quads (Z order: TL, TR, BL, BR) for any raw range;
- * - `norm`: a search-friendly normalisation (NFKD, no diacritics, ligatures
+ * - `norm`: a search-friendly normalization (NFKD, no diacritics, ligatures
  *   expanded, de-hyphenated line ends, collapsed whitespace) with a map back to
  *   raw offsets.
  *
@@ -62,7 +62,7 @@ export class PageText {
 	readonly raw: string;
 	/** Raw offset where each item starts. */
 	readonly itemStart: number[];
-	/** Search-normalised text. */
+	/** Search-normalized text. */
 	readonly norm: string;
 	/** For each `norm` char, the raw offset it came from. Length norm.length + 1. */
 	readonly normToRaw: Int32Array;
@@ -333,7 +333,7 @@ const PUNCT: Record<string, string> = {
 };
 
 /**
- * Normalise text for matching, keeping a map back to the source offsets:
+ * Normalize text for matching, keeping a map back to the source offsets:
  * NFKD without combining marks, lower-case, ligatures and typographic
  * punctuation folded, `-\n` joins removed, whitespace collapsed to one space.
  */
@@ -372,7 +372,7 @@ export function normalizeWithMap(src: string): { norm: string; map: Int32Array }
 	return { norm: out.join(''), map: Int32Array.from(map) };
 }
 
-/** Normalise a query the same way as page text. */
+/** Normalize a query the same way as page text. */
 export function normalizeQuery(q: string): string {
 	return normalizeWithMap(q).norm.trim();
 }

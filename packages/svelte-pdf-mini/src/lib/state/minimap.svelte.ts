@@ -1,4 +1,4 @@
-import { clamp } from '../core/view/geometry.js';
+import { clamp, pdfYToFraction } from '../core/view/geometry.js';
 import { rotatedSize } from '../core/view/zoom.js';
 import type { ViewerState, ViewLocation } from './viewer.svelte.js';
 
@@ -141,7 +141,8 @@ export class MinimapState {
 	/** Strip y of a PDF-space point on a page. */
 	yOfPoint(page: number, pdfY: number): number {
 		const size = this.viewer.document.pageSize(page);
-		return this.yOf({ page, fraction: 1 - clamp(pdfY / size.height, 0, 1) });
+		const fraction = pdfYToFraction(size, pdfY, this.viewer.rotation);
+		return this.yOf({ page, fraction: fraction ?? 0 });
 	}
 
 	/** Document location at a strip y (before offset). */

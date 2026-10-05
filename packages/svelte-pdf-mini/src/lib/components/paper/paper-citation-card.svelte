@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { watch } from 'runed';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import type { Reference } from '../../core/paper/types.js';
 	import { float } from '../../internal/floating.js';
@@ -34,7 +35,12 @@
 		}
 	});
 	const open = $derived(hover.open);
-	$effect(() => onOpenChange?.(open));
+	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
+	watch(
+		() => open,
+		(o) => onOpenChange?.(o),
+		{ lazy: true }
+	);
 
 	const citation = $derived.by(() => {
 		const current = hover.current;
@@ -76,6 +82,8 @@
 		mergeProps(rest, {
 			'data-pdf-citation-card': '',
 			'data-state': open ? 'open' : 'closed',
+			// The app runs its own transitions: no default entry animation.
+			'data-force-mount': forceMount ? '' : undefined,
 			'data-layout': mode,
 			role: 'dialog',
 			'aria-label': paper.viewer.t('reference'),
@@ -179,10 +187,12 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-citation-card])) {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 50;
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-citation-card])) {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 50;
+		}
 	}
 </style>

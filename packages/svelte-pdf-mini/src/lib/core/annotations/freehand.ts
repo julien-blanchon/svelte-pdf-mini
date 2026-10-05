@@ -1,6 +1,6 @@
 /**
  * Freehand ink (tldraw / excalidraw style): the stroke is a filled outline
- * computed by perfect-freehand from the centre line and pressure, so it
+ * computed by perfect-freehand from the center line and pressure, so it
  * thins, tapers and smooths like a real pen. Pure functions (PDF space in,
  * PDF space out) shared by the on-screen layer and the PDF appearance stream.
  */

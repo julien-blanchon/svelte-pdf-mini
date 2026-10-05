@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { watch } from 'runed';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { renderRegionToCanvas } from '../../core/document/render.js';
@@ -28,7 +29,12 @@
 
 	const hover = new PaperHoverIntent(paper, 'crossref', { delay: () => delay });
 	const open = $derived(hover.open);
-	$effect(() => onOpenChange?.(open));
+	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
+	watch(
+		() => open,
+		(o) => onOpenChange?.(o),
+		{ lazy: true }
+	);
 
 	const xref = $derived.by(() => {
 		const current = hover.current;
@@ -76,6 +82,8 @@
 		mergeProps(rest, {
 			'data-pdf-crossref-preview': '',
 			'data-state': open ? 'open' : 'closed',
+			// The app runs its own transitions: no default entry animation.
+			'data-force-mount': forceMount ? '' : undefined,
 			'data-kind': xref?.kind,
 			role: 'tooltip',
 			style: cssVars({ '--pdf-preview-width': `${width}px` }),
@@ -109,11 +117,13 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-crossref-preview])) {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 50;
-		width: var(--pdf-preview-width);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-crossref-preview])) {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 50;
+			width: var(--pdf-preview-width);
+		}
 	}
 </style>

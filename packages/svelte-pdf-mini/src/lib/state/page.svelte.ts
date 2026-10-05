@@ -96,7 +96,7 @@ export class PageState {
 /**
  * Renders the page bitmap into its container, double-buffered: the previous
  * bitmap stays (stretched) until the new render completes.
- * Must be constructed during component initialisation.
+ * Must be constructed during component initialization.
  */
 export class PageCanvasState {
 	readonly page: PageState;
@@ -130,7 +130,9 @@ export class PageCanvasState {
 			const n = page.pageNumber;
 			const scale = viewer.scale;
 			const rotation = viewer.rotation;
-			const theme = viewer.pageTheme;
+			// Only themes drawn into the bitmap re-render: CSS ones (tint, filter) are applied below.
+			void viewer.renderThemeId;
+			const theme = untrack(() => viewer.pageTheme);
 			const maxPixels = viewer.maxCanvasPixels;
 			const annotationMode = viewer.hideNativeAnnotations ? 0 : 1;
 			if (!el || !doc) return;
@@ -254,6 +256,9 @@ export class PageCanvasState {
 	}
 
 	#release() {
+		// A render still in flight (e.g. the progressive one) must not land on a released page.
+		++this.#job;
+		this.#progressive = false;
 		// Keep a snapshot for an instant return (rendered bitmaps only).
 		if (this.#canvas && this.rendered && this.#cacheKey)
 			void storeCanvas(this.#cacheKey, this.#canvas, this.#bitmapScale).catch(() => {});
@@ -270,9 +275,14 @@ function oversample(zoom: number, enabled: boolean) {
 	return Math.min(2, 1 / zoom);
 }
 
-function applyBitmapTheme(canvas: HTMLCanvasElement, theme: { filter?: string; blend?: string }) {
+function applyBitmapTheme(
+	canvas: HTMLCanvasElement,
+	theme: { filter?: string; blend?: string; dark?: boolean }
+) {
 	canvas.style.filter = theme.filter ?? '';
-	canvas.style.mixBlendMode = theme.blend ?? '';
+	// Blend over what's under the bitmap (page color, highlight underlay): on a
+	// plain page this changes nothing; over a highlight it's a marker effect.
+	canvas.style.mixBlendMode = theme.blend ?? (theme.dark ? 'lighten' : 'multiply');
 }
 
 /**

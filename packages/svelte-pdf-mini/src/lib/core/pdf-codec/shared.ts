@@ -1,6 +1,6 @@
 /**
  * Shared helpers for the PDF annotation codec: lazy pdf-lib loading, PDF
- * dates, colours, quad normalisation and the private-data conventions.
+ * dates, colors, quad normalization and the private-data conventions.
  */
 import type { Quad } from '../text/text-index.js';
 import type { Annotation, FreeTextAnnotation, Rgb } from '../annotations/model.js';
@@ -90,7 +90,15 @@ export function fromPdfDate(s: string | undefined): string | undefined {
 	return Number.isNaN(ms) ? undefined : new Date(ms).toISOString();
 }
 
-/** PDF colour array (gray / RGB / CMYK) → Rgb. */
+/**
+ * The `modifiedAt` an imported annotation gets: /M, else /CreationDate, else the
+ * epoch. The writer compares against the same value to tell untouched imports.
+ */
+export function importedModifiedAt(m: string | undefined, creation: string | undefined): string {
+	return fromPdfDate(m) ?? fromPdfDate(creation) ?? new Date(0).toISOString();
+}
+
+/** PDF color array (gray / RGB / CMYK) → Rgb. */
 export function colorFromArray(values: number[] | undefined): Rgb | undefined {
 	if (!values || !values.length) return undefined;
 	if (values.length === 1) return [values[0], values[0], values[0]];
@@ -161,7 +169,7 @@ export interface PrivateData {
 }
 
 /**
- * /SPM_Data holds the whole model except the page (re-serialisers such as
+ * /SPM_Data holds the whole model except the page (re-serializers such as
  * Apple's PDFKit keep unknown keys but drop /NM, /M, /CA, /IRT and embedded
  * files, so the private copy must be self-sufficient).
  */

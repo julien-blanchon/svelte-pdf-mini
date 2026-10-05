@@ -4,6 +4,8 @@
 	it, with the surrounding sentence; click one to jump there.
 -->
 <script lang="ts">
+	import { watch } from 'runed';
+	import { untrack } from 'svelte';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import type { CrossRef } from '../../core/paper/types.js';
 	import { float } from '../../internal/floating.js';
@@ -28,7 +30,12 @@
 
 	const hover = new PaperHoverIntent(paper, 'backlinks', { delay: () => delay });
 	const open = $derived(hover.open);
-	$effect(() => onOpenChange?.(open));
+	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
+	watch(
+		() => open,
+		(o) => onOpenChange?.(o),
+		{ lazy: true }
+	);
 
 	const targetId = $derived(hover.current?.id ?? null);
 	const label = $derived.by(() => {
@@ -47,13 +54,16 @@
 		if (!open || !list.length) return;
 		let cancelled = false;
 		(async () => {
-			const next = new Map(context);
+			// Untracked: this effect writes `context`, so reading it here would loop.
+			const next = untrack(() => new Map(context));
+			let added = false;
 			for (const x of list) {
 				if (next.has(x.id)) continue;
 				const raw = (await paper.viewer.document.getPageText(x.page)).raw;
 				next.set(x.id, sentenceAround(raw, x));
+				added = true;
 			}
-			if (!cancelled) context = next;
+			if (added && !cancelled) context = next;
 		})().catch(() => {});
 		return () => (cancelled = true);
 	});
@@ -98,6 +108,8 @@
 		mergeProps(rest, {
 			'data-pdf-backlinks': '',
 			'data-state': open ? 'open' : 'closed',
+			// The app runs its own transitions: no default entry animation.
+			'data-force-mount': forceMount ? '' : undefined,
 			role: 'dialog',
 			'aria-label': paper.viewer.t('mentionsOf', { label }),
 			style: cssVars({ '--pdf-backlinks-width': `${width}px` }),
@@ -133,11 +145,13 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-backlinks])) {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 50;
-		width: var(--pdf-backlinks-width);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-backlinks])) {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 50;
+			width: var(--pdf-backlinks-width);
+		}
 	}
 </style>

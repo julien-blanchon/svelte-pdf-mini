@@ -15,6 +15,9 @@ import {
 import { lineRect, type Line } from './lines.js';
 import type { OutlineNodeLike, Section } from './types.js';
 
+/** A leading section number ("3.2 ", "A. "): group 1 is the number. */
+const SECTION_NUMBER = /^((?:\d+|[A-Z])(?:\.\d+)*)\.?\s+/;
+
 interface FlatSection extends Omit<Section, 'children' | 'endPage' | 'endY'> {
 	/** Reading-order key within the page (raw offset of the heading line). */
 	order: number;
@@ -41,17 +44,17 @@ async function fromOutline(ctx: DocContext, outline: OutlineNodeLike[]): Promise
 				const page = target.page;
 				const y = finiteTargetY(target) ?? ctx.src.pageSize(page).height;
 				const raw = cleanTitle(node.title);
-				let number = /^((?:\d+|[A-Z])(?:\.\d+)*)\.?\s+/.exec(raw)?.[1];
+				let number = SECTION_NUMBER.exec(raw)?.[1];
 				let title = number ? raw.slice(raw.indexOf(' ') + 1).trim() : raw;
 				// Find the heading line at the destination to recover number and box.
 				const line = findHeadingLine(ctx.lines[page - 1] ?? [], y, title);
 				if (line && !number) {
-					const m = /^((?:\d+|[A-Z])(?:\.\d+)*)\.?\s+/.exec(line.text.trim());
+					const m = SECTION_NUMBER.exec(line.text.trim());
 					if (m && headingKey(line.text).includes(headingKey(title).slice(0, 12))) number = m[1];
 				}
 				// Titles polluted by macro garbage: prefer the visible line.
 				if (line && /\d{4}\/\d\d\/\d\d|bold0mu|ver:|\b[a-z]+:[a-z]+\b/.test(title))
-					title = line.text.trim().replace(/^((?:\d+|[A-Z])(?:\.\d+)*)\.?\s+/, '');
+					title = line.text.trim().replace(SECTION_NUMBER, '');
 				out.push({
 					id: `sec-${out.length + 1}`,
 					number,
@@ -103,7 +106,7 @@ function fromText(ctx: DocContext): FlatSection[] {
 			// Numbered lines must look like titles, not table rows or equations.
 			if (m && !known && !/^\p{Lu}[\p{L}-]{2,}/u.test(m[2])) continue;
 			if (m && !known && /\d\s+\d/.test(m[2])) continue;
-			const number = m?.[1] ?? /^((?:\d+|[A-Z])(?:\.\d+)*)\.?\s+/.exec(text)?.[1];
+			const number = m?.[1] ?? SECTION_NUMBER.exec(text)?.[1];
 			const title = cleanTitle(
 				m ? m[2] : text.replace(/^((?:\d+|[A-Z]|[IVX]+)(?:\.\d+)*)\.?\s+/, '')
 			);

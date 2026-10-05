@@ -31,6 +31,8 @@ export type {
 	AnnotationSnippetProps,
 	ListItemSnippetProps,
 	MarginNoteSnippetProps,
+	PopoverSnippetProps,
+	SelectionMenuSnippetProps,
 	PageSide,
 	SelectOn,
 	MarginLayout,

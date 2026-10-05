@@ -59,7 +59,7 @@ export function richTextOf(
 			last.s += s;
 		else runs.push({ s, style });
 	}
-	// Paragraphs: a blank line or a line ending with a full stop followed by an indented / capitalised line is a break (approximation: double newline only).
+	// Whitespace (line breaks included) collapses to single spaces: the copy is one paragraph.
 	const fix = (s: string) => cleanQuote(s, { trim: false });
 	const plain = cleanQuote(runs.map((r) => r.s).join(''));
 	const wrap = (s: string, style: FontStyle, md: boolean) => {

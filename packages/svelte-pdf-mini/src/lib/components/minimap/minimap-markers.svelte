@@ -85,13 +85,15 @@
 </div>
 
 <style>
-	:global(:where([data-pdf-minimap-markers])) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-	:global(:where([data-pdf-minimap-marker])) {
-		position: absolute;
-		top: var(--pdf-minimap-marker-top);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-minimap-markers])) {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+		:global(:where([data-pdf-minimap-marker])) {
+			position: absolute;
+			top: var(--pdf-minimap-marker-top);
+		}
 	}
 </style>

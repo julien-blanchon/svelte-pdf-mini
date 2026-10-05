@@ -58,13 +58,25 @@ export function withCache(
 			if (hit !== undefined) return hit;
 			let p = inflight.get(key);
 			if (!p) {
+				// Shared by every caller, so no caller's signal: one aborting must not fail the others.
 				p = provider
-					.resolve(ref, opts)
+					.resolve(ref, { ...opts, signal: undefined })
 					.then(async (v) => (await cache.set(key, v), v))
 					.finally(() => inflight.delete(key));
 				inflight.set(key, p);
 			}
-			return p;
+			return untilAborted(p, opts?.signal);
 		}
 	};
+}
+
+/** `p`, or an AbortError as soon as `signal` aborts (the work itself goes on). */
+function untilAborted<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
+	if (!signal) return p;
+	signal.throwIfAborted();
+	return new Promise<T>((resolve, reject) => {
+		const onAbort = () => reject(signal.reason);
+		signal.addEventListener('abort', onAbort, { once: true });
+		p.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+	});
 }

@@ -50,19 +50,21 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-focus-clip])) {
-		position: absolute;
-		inset: 0;
-		overflow: hidden;
-		pointer-events: none;
-		z-index: 3;
-	}
-	:global(:where([data-pdf-focus])) {
-		position: absolute;
-		pointer-events: none;
-		left: var(--pdf-focus-left);
-		top: var(--pdf-focus-top);
-		width: var(--pdf-focus-width);
-		height: var(--pdf-focus-height);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-focus-clip])) {
+			position: absolute;
+			inset: 0;
+			overflow: hidden;
+			pointer-events: none;
+			z-index: 3;
+		}
+		:global(:where([data-pdf-focus])) {
+			position: absolute;
+			pointer-events: none;
+			left: var(--pdf-focus-left);
+			top: var(--pdf-focus-top);
+			width: var(--pdf-focus-width);
+			height: var(--pdf-focus-height);
+		}
 	}
 </style>

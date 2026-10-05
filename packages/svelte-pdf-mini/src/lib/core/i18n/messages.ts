@@ -69,10 +69,10 @@ export const defaultMessages = {
 	citation: 'Citation {text}',
 	// Context menus / actions
 	highlight: 'Highlight',
-	highlightIn: 'Highlight in colour',
+	highlightIn: 'Highlight in color',
 	copyFormatted: 'Copy with formatting',
 	editNote: 'Edit note',
-	color: 'Colour',
+	color: 'Color',
 	changeType: 'Change type',
 	copyText: 'Copy text',
 	openCitedPaper: 'Open cited paper',
@@ -98,7 +98,7 @@ export const defaultMessages = {
 	reply: 'Reply',
 	pendingKeep: 'keep',
 	pendingDiscard: 'discard',
-	pendingColor: 'colour',
+	pendingColor: 'color',
 	pageShort: 'p. {page}',
 	// Papers & links
 	prevReference: 'Previous reference',

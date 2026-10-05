@@ -1,5 +1,5 @@
 /**
- * The annotation model: plain, JSON-serialisable objects in PDF user space
+ * The annotation model: plain, JSON-serializable objects in PDF user space
  * (points, origin bottom-left, unrotated page). This is what the store holds,
  * what change events carry, and what the PDF codec reads and writes.
  */
@@ -17,7 +17,7 @@ export type AnnotationKind =
 export interface Author {
 	name: string;
 	id?: string;
-	/** Display colour for avatars / thread UI (CSS colour). */
+	/** Display color for avatars / thread UI (CSS color). */
 	color?: string;
 }
 
@@ -39,11 +39,11 @@ export interface AnnotationBase {
 	kind: AnnotationKind;
 	/** Bounding box in PDF space; always contains all geometry. */
 	rect: PdfRect;
-	/** Stroke / markup colour. */
+	/** Stroke / markup color. */
 	color: Rgb;
 	/** 0..1 (PDF /CA). */
 	opacity: number;
-	/** Palette key ('yellow', 'sage'…) so themes can remap colours. */
+	/** Palette key ('yellow', 'sage'…) so themes can remap colors. */
 	paletteKey?: string;
 	/** Comment / side note (plain text or Markdown, see contentsFormat). */
 	contents?: string;
@@ -82,7 +82,7 @@ export interface NoteAnnotation extends AnnotationBase {
 /** A box drawn around a region (figure, equation, table…), usually with a side note. */
 export interface AreaAnnotation extends AnnotationBase {
 	kind: 'area';
-	/** Fill colour (defaults to `color`). */
+	/** Fill color (defaults to `color`). */
 	fill?: Rgb;
 	/** Fill opacity 0..1 (border uses `opacity`). Default 0.12. */
 	fillOpacity?: number;
@@ -151,7 +151,7 @@ export interface FreeTextAnnotation extends AnnotationBase {
 		italic?: boolean;
 	};
 	align?: 'left' | 'center' | 'right';
-	/** Text colour (`color` is the border). */
+	/** Text color (`color` is the border). */
 	textColor?: Rgb;
 	fill?: Rgb;
 }
@@ -194,7 +194,7 @@ export type AnnotationPatch = AllFields & {
 	fillOpacity?: number;
 };
 
-/** Fields accepted when creating an annotation of kind K (ids, dates, colour and author are filled in). */
+/** Fields accepted when creating an annotation of kind K (ids, dates, color and author are filled in). */
 export type AnnotationInit<K extends AnnotationKind> = Partial<Omit<AnnotationOf<K>, 'kind'>> &
 	Pick<AnnotationBase, 'page' | 'rect'>;
 

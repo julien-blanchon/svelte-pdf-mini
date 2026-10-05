@@ -27,7 +27,7 @@
 			{ highlight: 'outline', align: 'center' }
 		);
 	}
-	// The list lives outside the pages: always the light colour.
+	// The list lives outside the pages: always the light color.
 	const itemProps = (a: Annotation): ListItemSnippetProps => ({
 		...snippetPropsFor(store, a, annotationCss(a, store.palette, false)),
 		quote: quoteOf(a),

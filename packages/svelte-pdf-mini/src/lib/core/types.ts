@@ -23,6 +23,10 @@ export type PdfPoint = [number, number];
 export interface PageSize {
 	width: number;
 	height: number;
+	/** The page's box in PDF space (`[x1, y1, x2, y2]`), when measured. */
+	viewBox?: [number, number, number, number];
+	/** The page's own `/Rotate` (degrees), when measured. */
+	rotate?: number;
 }
 
 export type ZoomMode = 'manual' | 'page-width' | 'page-height' | 'page-fit' | 'auto';

@@ -49,23 +49,25 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-toc='progress'])) {
-		position: relative;
-	}
-	:global(:where([data-pdf-toc='progress'] > [data-part='fill'])) {
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: calc(var(--pdf-reading-progress, 0) * 100%);
-		pointer-events: none;
-	}
-	/* Not zero-specificity: must beat the theme's `[data-pdf-toc-segment] { all: unset }`. */
-	:global([data-pdf-toc='progress'] > [data-pdf-toc-segment]) {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		left: calc(var(--pdf-toc-start) * 100%);
-		width: calc((var(--pdf-toc-end) - var(--pdf-toc-start)) * 100%);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-toc='progress'])) {
+			position: relative;
+		}
+		:global(:where([data-pdf-toc='progress'] > [data-part='fill'])) {
+			position: absolute;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			width: calc(var(--pdf-reading-progress, 0) * 100%);
+			pointer-events: none;
+		}
+		/* Not zero-specificity: must beat the theme's `[data-pdf-toc-segment] { all: unset }`. */
+		:global([data-pdf-toc='progress'] > [data-pdf-toc-segment]) {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: calc(var(--pdf-toc-start) * 100%);
+			width: calc((var(--pdf-toc-end) - var(--pdf-toc-start)) * 100%);
+		}
 	}
 </style>

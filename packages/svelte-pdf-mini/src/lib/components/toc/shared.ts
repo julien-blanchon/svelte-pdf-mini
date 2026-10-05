@@ -6,7 +6,7 @@ const clamp = (value: number, min: number, max: number): number =>
 	Math.min(max, Math.max(min, value));
 
 /** Document position (0..1) of a PDF point. */
-export function docPosition(paper: PaperState, page: number, y: number): number {
+function docPosition(paper: PaperState, page: number, y: number): number {
 	const doc = paper.viewer.document;
 	const pages = Math.max(1, doc.numPages);
 	const height = doc.pageSize(page).height || 1;

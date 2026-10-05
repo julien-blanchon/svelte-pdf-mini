@@ -20,7 +20,7 @@
 	const findState = FindContext.getOr(null);
 	const store = AnnotationsContext.getOr(null);
 
-	/** Marker density per strip bin, normalised to 0..1 (empty bins left out). */
+	/** Marker density per strip bin, normalized to 0..1 (empty bins left out). */
 	const bins = $derived.by(() => {
 		const n = Math.max(1, Math.ceil(minimap.total / bin));
 		const counts = new Float32Array(n);
@@ -55,19 +55,21 @@
 </div>
 
 <style>
-	:global(:where([data-pdf-minimap-heatmap])) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-	/* --pdf-minimap-heat: the bin's density (0..1). */
-	:global(:where([data-pdf-minimap-heat])) {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: var(--pdf-minimap-heat-top);
-		height: var(--pdf-minimap-bin);
-		background: var(--pdf-minimap-heat-color);
-		opacity: calc(0.15 + 0.85 * var(--pdf-minimap-heat));
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-minimap-heatmap])) {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+		/* --pdf-minimap-heat: the bin's density (0..1). */
+		:global(:where([data-pdf-minimap-heat])) {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: var(--pdf-minimap-heat-top);
+			height: var(--pdf-minimap-bin);
+			background: var(--pdf-minimap-heat-color);
+			opacity: calc(0.15 + 0.85 * var(--pdf-minimap-heat));
+		}
 	}
 </style>

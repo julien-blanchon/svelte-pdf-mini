@@ -32,7 +32,7 @@ export class PdfLoadError extends Error {
 /**
  * Loads a PDF and exposes it reactively.
  *
- * Must be constructed during component initialisation (it owns an `$effect`),
+ * Must be constructed during component initialization (it owns an `$effect`),
  * or inside `$effect.root`.
  */
 export class PdfDocument {
@@ -43,7 +43,7 @@ export class PdfDocument {
 	/** The pdf.js proxy. Never deep-proxied. */
 	proxy = $state.raw<PDFDocumentProxy | null>(null);
 	numPages = $state(0);
-	/** Unrotated page sizes in PDF points (index 0 = page 1). Estimated until measured. */
+	/** Page sizes in PDF points with each page's own `/Rotate` (not the view rotation), index 0 = page 1. Estimated until measured. */
 	pageSizes = $state.raw<PageSize[]>([]);
 	/** True once every page size has been measured (not estimated). */
 	sizesExact = $state(false);
@@ -80,7 +80,8 @@ export class PdfDocument {
 
 	/** Answer a password prompt. */
 	submitPassword(password: string) {
-		this.#updatePassword?.(password);
+		if (!this.#updatePassword) return;
+		this.#updatePassword(password);
 		this.status = 'loading';
 	}
 
@@ -253,6 +254,8 @@ export class PdfDocument {
 					...(getPdfConfig().sharedWorker === false ? {} : { worker: await getSharedWorker() }),
 					password
 				};
+				// Superseded while building the params: never start the stale load.
+				if (gen !== this.#generation) return;
 				const task = pdfjs.getDocument(params);
 				this.#task = task;
 				task.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
@@ -266,6 +269,11 @@ export class PdfDocument {
 					this.status = 'password';
 				};
 				doc = await task.promise;
+				if (gen !== this.#generation) {
+					// Superseded mid-load (destroying twice is harmless).
+					void task.destroy();
+					return;
+				}
 			}
 			if (gen !== this.#generation) return;
 			const first = await doc.getPage(1);
@@ -343,7 +351,8 @@ export class PdfDocument {
 
 function sizeOf(page: PDFPageProxy): PageSize {
 	const vp = page.getViewport({ scale: 1 });
-	return { width: vp.width, height: vp.height };
+	const [x1, y1, x2, y2] = vp.viewBox;
+	return { width: vp.width, height: vp.height, viewBox: [x1, y1, x2, y2], rotate: page.rotate };
 }
 
 function isProxy(src: unknown): src is PDFDocumentProxy {

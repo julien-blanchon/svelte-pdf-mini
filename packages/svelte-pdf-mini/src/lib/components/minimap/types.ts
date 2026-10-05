@@ -13,7 +13,7 @@ export type MinimapRootProps = DivPartProps<
 		 * - 'pages': bitmap previews (blocks when pages get too small to read),
 		 * - 'blocks': plain page blocks with numbers,
 		 * - 'text': structure drawn from the text index (lines, headings, figures),
-		 * - 'spine': coloured section bands with labels (needs Paper.Root),
+		 * - 'spine': colored section bands with labels (needs Paper.Root),
 		 * - 'heatmap': no pages, only markers / Minimap.Heatmap.
 		 * Default 'pages'.
 		 */
@@ -57,6 +57,6 @@ export type MinimapHeatmapProps = DivPartProps<{
 	find?: boolean;
 	annotations?: boolean;
 	items?: MinimapMarker[];
-	/** CSS colour of the hottest bin. */
+	/** CSS color of the hottest bin. */
 	color?: string;
 }>;

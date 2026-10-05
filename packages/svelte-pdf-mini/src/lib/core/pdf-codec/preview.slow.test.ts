@@ -77,7 +77,7 @@ describe.skipIf(!canRun)('Apple Preview (PDFKit) interop', () => {
 		expect(byId(annotations)).toEqual(byId(samples));
 	}, 60_000);
 
-	it('picks up a colour change made in Preview, keeping opacity and private fields', async () => {
+	it('picks up a color change made in Preview, keeping opacity and private fields', async () => {
 		const recolored = preview('recolor', exported);
 		const { annotations } = await importAnnotations(recolored);
 		const hl = annotations.find((a) => a.id === 'hl-title')!;

@@ -3,7 +3,7 @@
  *
  * Our own annotations are rebuilt exactly (embedded JSON, else /SPM_Data),
  * except where another app edited them after us (newer /M): then the standard
- * fields (colour, opacity, contents, geometry) win. If a re-serialiser dropped
+ * fields (color, opacity, contents, geometry) win. If a re-serializer dropped
  * /NM and /SPM_Data (Apple Preview can), annotations are matched back to the
  * embedded model by page, kind and geometry. Everything else is mapped to the
  * closest kind with `origin: 'foreign'`.
@@ -24,6 +24,7 @@ import {
 	colorFromArray,
 	fontFamilyOf,
 	fromPdfDate,
+	importedModifiedAt,
 	loadPdfLib,
 	normalizeQuad,
 	toBytes
@@ -243,7 +244,7 @@ function reconcile(a: Annotation, std: Annotation, m: string | undefined): Annot
 			take('rect', std.rect);
 		}
 	} else if (a.kind === 'note') {
-		// Viewers resize note icons around their centre (PDFKit: 20pt → 24pt); only a moved centre is an edit.
+		// Viewers resize note icons around their center (PDFKit: 20pt → 24pt); only a moved center is an edit.
 		const c = (r: number[]) => [(r[0] + r[2]) / 2, (r[1] + r[3]) / 2];
 		if (!near(c(a.rect), c(std.rect), 2)) {
 			const [w, h] = [a.rect[2] - a.rect[0], a.rect[3] - a.rect[1]];
@@ -340,9 +341,8 @@ function mapStandardKind(
 	];
 	const flags = r.num(dict, 'F') ?? 0;
 	const nm = r.text(dict, 'NM');
-	const modified = fromPdfDate(r.text(dict, 'M'));
-	const created =
-		fromPdfDate(r.text(dict, 'CreationDate')) ?? modified ?? new Date(0).toISOString();
+	const modified = importedModifiedAt(r.text(dict, 'M'), r.text(dict, 'CreationDate'));
+	const created = fromPdfDate(r.text(dict, 'CreationDate')) ?? modified;
 	const contents = r.text(dict, 'Contents')?.replace(/\r\n?/g, '\n').trim() || undefined;
 	const author = r.text(dict, 'T');
 	const label = r.text(dict, 'Subj');
@@ -369,7 +369,7 @@ function mapStandardKind(
 			label,
 			author: author ? { name: author } : undefined,
 			createdAt: created,
-			modifiedAt: modified ?? created,
+			modifiedAt: modified,
 			locked: flags & (AnnotFlag.Locked | AnnotFlag.ReadOnly) ? true : undefined,
 			hidden: flags & AnnotFlag.Hidden ? true : undefined,
 			origin: 'foreign' as const

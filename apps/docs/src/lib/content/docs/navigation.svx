@@ -42,7 +42,7 @@ Effects render in `<Viewer.Focus />` inside each page. The built-ins are plain C
 
 ## History and reading position
 
-- `navigate()` pushes the current place; `back()` / `forward()` (Alt + ← / →), `canGoBack` and `<Viewer.BackButton />` ("← Back to page 2") use it. Links, citations and outline items navigate this way.
+- `navigate()` pushes the current place; `back()` / `forward()` (Alt + ← / →), `history.canGoBack` and `<Viewer.BackButton />` ("← Back to page 2") use it. Links, citations and outline items navigate this way.
 - `viewer.position` (e.g. `3.42` = 42% into page 3) and `viewer.restorePosition(3.42)` save and restore where the reader was; put it in the URL hash.
 - `viewer.readingPoint` (`{ page, y, fraction }`) and `viewer.viewRange` describe what is on screen; they drive active sections, progress bars and the minimap.
 

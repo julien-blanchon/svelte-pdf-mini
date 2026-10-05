@@ -55,7 +55,8 @@ export function pdfjsPaperSource(
 				out.push({
 					rect: a.rect as PdfRect,
 					dest: a.dest ?? null,
-					url: a.url ?? a.unsafeUrl ?? null
+					// Only what pdf.js deems safe (never `javascript:` and the like).
+					url: a.url ?? null
 				});
 			}
 			return out;

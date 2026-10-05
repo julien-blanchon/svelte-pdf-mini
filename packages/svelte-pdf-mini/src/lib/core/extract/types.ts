@@ -6,7 +6,7 @@ export interface RegionExtraction {
 	markdown: string;
 	/** Optional HTML (`<table>` / `<p>`). */
 	html?: string;
-	/** Table cells when the region was recognised as a table (rows × columns). */
+	/** Table cells when the region was recognized as a table (rows × columns). */
 	cells?: string[][];
 	/** Which extractor produced it. */
 	source: string;

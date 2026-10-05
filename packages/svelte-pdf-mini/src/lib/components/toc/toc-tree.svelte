@@ -108,17 +108,19 @@
 </div>
 
 <style>
-	:global(:where([data-pdf-toc-group])) {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	/*
-	 * Indent by depth. Not zero-specificity: it must beat the theme's
-	 * `[data-pdf-toc-item] { all: unset }` and single-class overrides of the
-	 * padding, which the former inline style also won against.
-	 */
-	:global([data-pdf-toc='tree'] [data-pdf-toc-item][data-depth]) {
-		padding-inline-start: calc((var(--pdf-depth, 1) - 1) * var(--pdf-toc-indent, 12px));
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-toc-group])) {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+		}
+		/*
+		 * Indent by depth. Not zero-specificity: it must beat the theme's
+		 * `[data-pdf-toc-item] { all: unset }` and single-class overrides of the
+		 * padding, which the former inline style also won against.
+		 */
+		:global([data-pdf-toc='tree'] [data-pdf-toc-item][data-depth]) {
+			padding-inline-start: calc((var(--pdf-depth, 1) - 1) * var(--pdf-toc-indent, 12px));
+		}
 	}
 </style>

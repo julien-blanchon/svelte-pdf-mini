@@ -71,4 +71,22 @@ describe('RenderScheduler', () => {
 		await new Promise((r) => setTimeout(r, 10));
 		expect(ran).toEqual([]);
 	});
+
+	it('tells a job it was cancelled before it ran', async () => {
+		const s = new RenderScheduler(1);
+		const gate = defer();
+		let cancelled = 0;
+		s.schedule({ key: 'x', priority: 0, run: () => gate.promise, onCancel: () => cancelled++ });
+		const cancel = s.schedule({
+			key: 'y',
+			priority: 0,
+			run: async () => {},
+			onCancel: () => cancelled++
+		});
+		cancel();
+		// Running jobs learn it from their signal instead.
+		s.clear();
+		gate.resolve();
+		expect(cancelled).toBe(1);
+	});
 });

@@ -13,13 +13,15 @@ export interface CachedBitmap {
 }
 
 let cache: LruCache<string, CachedBitmap> | null = null;
+let budget = 0;
 
 /** The shared page-bitmap cache (budget: `configurePdf({ bitmapCacheBytes })`, default 192 MB). */
 export function pageBitmapCache(): LruCache<string, CachedBitmap> {
-	cache ??= new LruCache<string, CachedBitmap>(
-		getPdfConfig().bitmapCacheBytes ?? 192 * 1024 * 1024,
-		(v) => v.bitmap.close()
-	);
+	const bytes = getPdfConfig().bitmapCacheBytes ?? 192 * 1024 * 1024;
+	if (!cache) cache = new LruCache<string, CachedBitmap>(bytes, (v) => v.bitmap.close());
+	// A budget configured after first use still applies.
+	else if (bytes !== budget) cache.resize(bytes);
+	budget = bytes;
 	return cache;
 }
 

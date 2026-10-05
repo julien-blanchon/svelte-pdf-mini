@@ -1,4 +1,5 @@
 import type { PageViewport, PDFPageProxy } from 'pdfjs-dist';
+import { LruCache } from '../cache/lru.js';
 import { pageImageBoxes } from '../document/image-boxes.js';
 
 /**
@@ -15,9 +16,9 @@ export interface PageThemeStrategy {
 	filter?: string;
 	/** CSS mix-blend-mode of the bitmap over `background` (e.g. 'multiply' to tint paper). */
 	blend?: string;
-	/** Colour behind the bitmap (also shown while it renders). */
+	/** Color behind the bitmap (also shown while it renders). */
 	background?: string;
-	/** pdf.js duotone recolouring (`render({ pageColors })`). */
+	/** pdf.js duotone recoloring (`render({ pageColors })`). */
 	pageColors?: { background: string; foreground: string };
 	/** Wrap the 2D context before pdf.js draws (advanced, experimental). */
 	wrapContext?: (ctx: CanvasRenderingContext2D) => CanvasRenderingContext2D;
@@ -58,7 +59,7 @@ export const pageThemes = {
 		background: '#000',
 		dark: true
 	}),
-	/** Softer: dims and warms the page, keeps colours and images. */
+	/** Softer: dims and warms the page, keeps colors and images. */
 	dim: ({
 		brightness = 0.75,
 		sepia = 0.25
@@ -74,7 +75,7 @@ export const pageThemes = {
 	}),
 	/**
 	 * Tinted paper (un.ms style): white becomes `color`, ink stays dark, images
-	 * keep their colours (multiplied). Instant.
+	 * keep their colors (multiplied). Instant.
 	 */
 	tint: ({ color = '#e8efdc' }: { color?: string } = {}): PageThemeStrategy => ({
 		id: `tint(${color})`,
@@ -83,7 +84,7 @@ export const pageThemes = {
 	}),
 	/**
 	 * Dark tinted paper: the page is inverted, then screened over a deep
-	 * `color`, so the background takes that colour and ink becomes light. Instant.
+	 * `color`, so the background takes that color and ink becomes light. Instant.
 	 */
 	tintDark: ({
 		color = '#1f2a1c',
@@ -140,8 +141,8 @@ export const pageThemes = {
 		}
 	}),
 	/**
-	 * Experimental: recolour vector content while drawing (text and lines get
-	 * light-on-dark colours with their hue kept; images are left untouched).
+	 * Experimental: recolor vector content while drawing (text and lines get
+	 * light-on-dark colors with their hue kept; images are left untouched).
 	 */
 	vectorRecolor: ({
 		background = '#1b1b1d',
@@ -202,7 +203,7 @@ export function resolvePageTheme(input: PageThemeInput | undefined): PageThemeSt
 	return input;
 }
 
-/** A colour per category, with light and dark variants (matte, low-chroma). */
+/** A color per category, with light and dark variants (matte, low-chroma). */
 export interface PaperColor {
 	name: string;
 	light: string;
@@ -232,7 +233,7 @@ export function paperTheme(color: PaperColor, dark = false, strength = 0.6): Pag
 	});
 }
 
-/** Mix two #rrggbb colours: t = 0 → a, 1 → b. */
+/** Mix two #rrggbb colors: t = 0 → a, 1 → b. */
 export function mixHex(a: string, b: string, t: number): string {
 	const pa = parseCss(a);
 	const pb = parseCss(b);
@@ -244,19 +245,20 @@ export function mixHex(a: string, b: string, t: number): string {
 	return `#${c(0)}${c(1)}${c(2)}`;
 }
 
-// ── Vector recolouring ──────────────────────────────────────────────────────
+// ── Vector recoloring ──────────────────────────────────────────────────────
 
-const colorCache = new Map<string, string>();
+/** Recolored CSS colors, by input + range + options (count-bounded). */
+const colorCache = new LruCache<string, string>(4096);
 
 interface RecolorOptions {
 	/** Page background: pure white is mapped exactly to it. */
 	background?: string;
-	/** Hue given to neutral (grey) ink. */
+	/** Hue given to neutral (gray) ink. */
 	tint?: string;
 	tintSaturation?: number;
 }
 
-/** HSL hue in [0, 1) of a non-grey colour, given its max channel and chroma `d` (> 0). */
+/** HSL hue in [0, 1) of a non-gray color, given its max channel and chroma `d` (> 0). */
 function hueOf(r: number, g: number, b: number, max: number, d: number): number {
 	let sextant: number;
 	if (max === r) sextant = (g - b) / d + (g < b ? 6 : 0);
@@ -265,7 +267,7 @@ function hueOf(r: number, g: number, b: number, max: number, d: number): number 
 	return sextant / 6;
 }
 
-/** Invert a CSS colour's lightness into [min, max], keeping its hue. */
+/** Invert a CSS color's lightness into [min, max], keeping its hue. */
 export function invertLightness(
 	css: string,
 	[min, max]: [number, number] = [0.08, 0.9],
@@ -339,16 +341,21 @@ function parseCss(css: string): [number, number, number, number] | null {
 	return null;
 }
 
-/** Proxy a 2D context so solid fill/stroke colours are recoloured. */
+/** Proxy a 2D context so solid fill/stroke colors are recolored. */
 function recolorContext(
 	ctx: CanvasRenderingContext2D,
 	range: [number, number],
 	opts: RecolorOptions = {}
 ): CanvasRenderingContext2D {
+	// Bound methods, made once (a render calls them thousands of times).
+	const bound = new Map<PropertyKey, unknown>();
 	return new Proxy(ctx, {
 		get(target, key) {
 			const v = Reflect.get(target, key, target);
-			return typeof v === 'function' ? v.bind(target) : v;
+			if (typeof v !== 'function') return v;
+			let fn = bound.get(key);
+			if (!fn) bound.set(key, (fn = v.bind(target)));
+			return fn;
 		},
 		set(target, key, value) {
 			if ((key === 'fillStyle' || key === 'strokeStyle') && typeof value === 'string')

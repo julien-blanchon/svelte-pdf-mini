@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { watch } from 'runed';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import type { TextMarkupKind } from '../../core/annotations/model.js';
+	import { copyText } from '../../core/document/clipboard.js';
 	import { on } from 'svelte/events';
 	import { float, virtualRef } from '../../internal/floating.js';
 	import { handleRovingKey } from '../../internal/roving.js';
@@ -31,11 +33,17 @@
 		!store.readonly &&
 			store.tool === 'select' &&
 			!sel.selecting &&
+			!store.viewer.isZooming &&
 			!sel.isEmpty &&
 			!!sel.anchorRect &&
 			!dismissed
 	);
-	$effect(() => onOpenChange?.(open));
+	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
+	watch(
+		() => open,
+		(o) => onOpenChange?.(o),
+		{ lazy: true }
+	);
 	// A context menu replaces the selection toolbar.
 	$effect(() => {
 		const scrollEl = store.viewer.scrollEl;
@@ -62,11 +70,11 @@
 		if (a) store.editingId = a.id;
 	};
 	const copy = () => {
-		navigator.clipboard?.writeText(sel.text);
+		copyText(sel.text);
 		dismissed = true;
 	};
 	const close = () => (dismissed = true);
-	/** Default content: the markup actions after the colour swatches. */
+	/** Default content: the markup actions after the color swatches. */
 	const actions = $derived(
 		(
 			[
@@ -120,6 +128,8 @@
 		mergeProps(rest, {
 			'data-pdf-selection-menu': '',
 			'data-state': open ? 'open' : 'closed',
+			// The app runs its own transitions: no default entry animation.
+			'data-force-mount': forceMount ? '' : undefined,
 			'data-pdf-annotation-ui': '',
 			role: 'toolbar',
 			'aria-label': store.viewer.t('annotateSelection'),
@@ -169,11 +179,13 @@
 {/if}
 
 <style>
-	/* Positioned by floating-ui (fixed strategy). */
-	:global(:where([data-pdf-selection-menu])) {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 40;
+	@layer svelte-pdf-mini {
+		/* Positioned by floating-ui (fixed strategy). */
+		:global(:where([data-pdf-selection-menu])) {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 40;
+		}
 	}
 </style>

@@ -2,8 +2,9 @@
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { on } from 'svelte/events';
-	import { hitStack, hitTest, simplifyPoints } from '../../core/annotations/geometry.js';
-	import type { Annotation, InkPath } from '../../core/annotations/model.js';
+	import { HIGHLIGHT_PAD, hitStack, hitTest, quadPoints } from '../../core/annotations/geometry.js';
+	import type { Annotation, InkPath, TextMarkupAnnotation } from '../../core/annotations/model.js';
+	import { smoothStroke } from '../../core/annotations/stroke.js';
 	import { isTextMarkup } from '../../core/annotations/model.js';
 	import type { PdfPoint, PdfRect } from '../../core/types.js';
 	import { pdfRectToPercent, viewportPointToPdf } from '../../core/view/geometry.js';
@@ -19,6 +20,7 @@
 	import {
 		movePoint,
 		rectFromPoints,
+		pdfHandle,
 		resizeRect,
 		translateAnnotation,
 		type DragMode,
@@ -75,6 +77,46 @@
 	const colorOf = (a: Annotation) => annotationCss(a, store.palette, dark);
 	const isOnPage = (id: string | null) => !!id && annots.some((a) => a.id === id);
 
+	// ── Highlight underlay ────────────────────────────────────────────────────
+	// Highlight fills are painted *under* the page bitmap, which then blends over
+	// them (multiply by day, lighten by night): text stays fully dark, like a
+	// real marker. Blending the fills over the bitmap instead is unreliable in
+	// WebKit (a GPU-composited canvas), where the text ends up washed out.
+	let underlayHost = $state<Element | null>(null);
+	let underlaySvg = $state<SVGSVGElement | null>(null);
+	const underlay = $derived(!!underlaySvg);
+	$effect(() => {
+		const host = underlayHost;
+		if (!host) return;
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.setAttribute('data-pdf-annotation-underlay', '');
+		svg.setAttribute('aria-hidden', 'true');
+		svg.setAttribute('preserveAspectRatio', 'none');
+		host.prepend(svg);
+		underlaySvg = svg;
+		return () => {
+			svg.remove();
+			underlaySvg = null;
+		};
+	});
+	$effect(() => {
+		const svg = underlaySvg;
+		if (!svg || !vp) return;
+		const attr = (v: string) => v.replace(/[&"<]/g, (c) => `&#${c.charCodeAt(0)};`);
+		svg.setAttribute('viewBox', `0 0 ${vp.width} ${vp.height}`);
+		svg.innerHTML = annots
+			.filter((a): a is TextMarkupAnnotation => a.kind === 'highlight')
+			.map((a) => {
+				const active = store.isSelected(a.id) || store.hoveredId === a.id;
+				const polys = a.quads
+					.map((q) => `<polygon points="${quadPoints(vp, q, HIGHLIGHT_PAD)}"/>`)
+					.join('');
+				const opacity = a.opacity < 1 ? `;opacity:${a.opacity}` : '';
+				return `<g style="fill:${attr(colorOf(a))}${opacity}"${active ? ' data-active=""' : ''}>${polys}</g>`;
+			})
+			.join('');
+	});
+
 	// ── Pointer → PDF space ───────────────────────────────────────────────────
 	let layerEl: HTMLElement | null = null;
 	function toPdf(e: { clientX: number; clientY: number }): PdfPoint | null {
@@ -102,6 +144,7 @@
 		layerEl = node;
 		const pageEl = node.closest<HTMLElement>('[data-pdf-page]');
 		if (!pageEl) return;
+		underlayHost = pageEl.querySelector(':scope > [data-pdf-canvas]');
 		let down: { x: number; y: number } | null = null;
 		let raf = 0;
 
@@ -173,6 +216,7 @@
 		return () => {
 			cancelAnimationFrame(raf);
 			for (const off of offs) off();
+			underlayHost = null;
 		};
 	};
 
@@ -263,11 +307,17 @@
 				break;
 			case 'ink': {
 				if (d.points.length < 2) break;
-				// Light simplification keeps the stroke faithful (perfect-freehand smooths the rest).
-				const path: InkPath = d.pen
-					? { points: d.points, pressure: d.pressure }
-					: { points: simplifyPoints(d.points, 0.15) };
-				store.create('ink', { page: pageNumber, rect, paths: [path], style: 'freehand' });
+				const method = store.inkSmoothing;
+				if (method === 'pen') {
+					// Variable-width outline: perfect-freehand smooths it (with real pressure from a pen).
+					const path: InkPath = d.pen
+						? { points: d.points, pressure: d.pressure }
+						: { points: smoothStroke(d.points, 'pen', 1 / viewer.scale) };
+					store.create('ink', { page: pageNumber, rect, paths: [path], style: 'freehand' });
+				} else {
+					const points = smoothStroke(d.points, method, 1 / viewer.scale);
+					store.create('ink', { page: pageNumber, rect, paths: [{ points }], style: 'line' });
+				}
 				break;
 			}
 			case 'freetext': {
@@ -324,8 +374,15 @@
 			on(window, 'pointerup', up),
 			on(window, 'pointercancel', up)
 		];
-		const stop = () => offs.forEach((off) => off());
+		const stop = () => {
+			offs.forEach((off) => off());
+			stopDrag = null;
+		};
+		stopDrag = stop;
 	}
+	/** Ends a drag in progress (its window listeners must not outlive the layer). */
+	let stopDrag: (() => void) | null = null;
+	$effect(() => () => stopDrag?.());
 
 	function onDragMove(e: PointerEvent) {
 		if (!drag) return;
@@ -344,7 +401,10 @@
 				return;
 			default:
 				store.update(o.id, {
-					rect: resizeRect(o.rect, mode, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey })
+					rect: resizeRect(o.rect, pdfHandle(mode, vp?.rotation ?? 0), dx, dy, {
+						keepRatio: e.shiftKey,
+						fromCenter: e.altKey
+					})
 				});
 		}
 	}
@@ -394,6 +454,7 @@
 		<svg
 			data-pdf-annotation-svg=""
 			data-theme={dark ? 'dark' : 'light'}
+			data-underlay={dataAttr(underlay)}
 			viewBox="0 0 {vp.width} {vp.height}"
 			preserveAspectRatio="none"
 		>
@@ -408,7 +469,13 @@
 				/>
 			{/each}
 			{#if draft && draft.tool !== 'eraser'}
-				<AnnotationDraft {draft} {vp} color={store.activeColor.light} />
+				<AnnotationDraft
+					{draft}
+					{vp}
+					color={store.activeColor.light}
+					smoothing={store.inkSmoothing}
+					ptPerPx={1 / viewer.scale}
+				/>
 			{/if}
 		</svg>
 
@@ -516,83 +583,81 @@
 </div>
 
 <style>
-	/* No z-index: the SVG must blend with the page bitmap (a stacking context would isolate it). */
-	[data-pdf-annotation-layer] {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-	[data-pdf-annotation-svg] {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-		pointer-events: none;
-		mix-blend-mode: multiply;
-	}
-	/* On dark pages, marks lighten the page instead. */
-	[data-pdf-annotation-svg][data-theme='dark'] {
-		mix-blend-mode: screen;
-	}
-	/*
-	 * Translucent as well as blended: WebKit (Safari, WKWebView) doesn't always
-	 * blend over a GPU-composited canvas, and an opaque fill hides the text.
-	 */
-	[data-pdf-annotation-svg] :global([data-part='highlight']) {
-		fill-opacity: var(--pdf-highlight-opacity, 0.45);
-	}
-	[data-pdf-annotation-overlay] {
-		position: absolute;
-		inset: 0;
-		z-index: 3;
-		pointer-events: none;
-	}
-	/* Overlay parts are placed in percent of the page (--pdf-left/top/width/height). */
-	:is([data-pdf-annotation-note], [data-pdf-annotation-focus]) {
-		position: absolute;
-		left: var(--pdf-left);
-		top: var(--pdf-top);
-		width: var(--pdf-width);
-		height: var(--pdf-height);
-	}
-	[data-pdf-annotation-note] {
-		color: var(--annotation-color);
-	}
-	[data-pdf-annotation-note] > svg {
-		width: 100%;
-		height: 100%;
-		filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3));
-	}
-	[data-pdf-annotation-label] {
-		position: absolute;
-		left: var(--pdf-left);
-		top: var(--pdf-top);
-		transform: translateY(-100%);
-	}
-	/* Focus targets only take keyboard focus: clicks go through to the page. */
-	[data-pdf-annotation-focus] {
-		pointer-events: none;
-	}
-	[data-pdf-draw-surface] {
-		position: absolute;
-		inset: 0;
-		pointer-events: auto;
-		touch-action: none;
-		cursor: crosshair;
-	}
-	[data-pdf-draw-surface][data-tool='eraser'] {
-		cursor: cell;
-	}
-	[data-pdf-draw-surface][data-tool='note'] {
-		cursor: copy;
-	}
-	/* Hand tool (set on the viewport by the store): drag to scroll. */
-	:global(:where([data-pdf-viewport][data-pan])) {
-		cursor: grab;
-		user-select: none;
-	}
-	:global(:where([data-pdf-viewport][data-panning])) {
-		cursor: grabbing;
+	@layer svelte-pdf-mini {
+		/* No z-index: the SVG must blend with the page bitmap (a stacking context would isolate it). */
+		[data-pdf-annotation-layer] {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+		[data-pdf-annotation-svg] {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			overflow: visible;
+			pointer-events: none;
+			mix-blend-mode: multiply;
+		}
+		/* On dark pages, marks lighten the page instead. */
+		[data-pdf-annotation-svg][data-theme='dark'] {
+			mix-blend-mode: screen;
+		}
+		/*
+		 * Translucent as well as blended: WebKit (Safari, WKWebView) doesn't always
+		 * blend over a GPU-composited canvas, and an opaque fill hides the text.
+		 */
+		[data-pdf-annotation-svg] :global([data-part='highlight']) {
+			fill-opacity: var(--pdf-highlight-opacity, 0.45);
+		}
+		/* Filled by the underlay instead: the shape stays for hit testing and focus. */
+		[data-pdf-annotation-svg][data-underlay] :global([data-part='highlight']) {
+			fill-opacity: 0;
+		}
+		[data-pdf-annotation-overlay] {
+			position: absolute;
+			inset: 0;
+			z-index: 3;
+			pointer-events: none;
+		}
+		/* Overlay parts are placed in percent of the page (--pdf-left/top/width/height). */
+		:is([data-pdf-annotation-note], [data-pdf-annotation-focus]) {
+			position: absolute;
+			left: var(--pdf-left);
+			top: var(--pdf-top);
+			width: var(--pdf-width);
+			height: var(--pdf-height);
+		}
+		[data-pdf-annotation-note] {
+			color: var(--annotation-color);
+		}
+		[data-pdf-annotation-note] > svg {
+			width: 100%;
+			height: 100%;
+			filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3));
+		}
+		[data-pdf-annotation-label] {
+			position: absolute;
+			left: var(--pdf-left);
+			top: var(--pdf-top);
+			transform: translateY(-100%);
+		}
+		/* Focus targets only take keyboard focus: clicks go through to the page. */
+		[data-pdf-annotation-focus] {
+			pointer-events: none;
+		}
+		[data-pdf-draw-surface] {
+			position: absolute;
+			inset: 0;
+			pointer-events: auto;
+			touch-action: none;
+			cursor: crosshair;
+		}
+		[data-pdf-draw-surface][data-tool='eraser'] {
+			cursor: cell;
+		}
+		[data-pdf-draw-surface][data-tool='note'] {
+			cursor: copy;
+		}
 	}
 </style>

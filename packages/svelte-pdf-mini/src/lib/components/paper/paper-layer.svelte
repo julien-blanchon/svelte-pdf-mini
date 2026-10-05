@@ -104,6 +104,8 @@
 					style:--pdf-hotspot-width="{box.width}%"
 					style:--pdf-hotspot-height="{box.height}%"
 					onpointerenter={(e) => enter('citation', c.id, e.currentTarget)}
+					onfocus={(e) => enter('citation', c.id, e.currentTarget)}
+					onblur={leave}
 					onpointerleave={leave}
 					onclick={(e) => onCitation(c, e)}
 				></a>
@@ -121,6 +123,8 @@
 				style:--pdf-hotspot-width="{box.width}%"
 				style:--pdf-hotspot-height="{box.height}%"
 				onpointerenter={(e) => enter('crossref', x.id, e.currentTarget)}
+				onfocus={(e) => enter('crossref', x.id, e.currentTarget)}
+				onblur={leave}
 				onpointerleave={leave}
 				onclick={(e) => onCrossRef(x, e)}
 			></a>
@@ -137,6 +141,8 @@
 				style:--pdf-hotspot-width="{box.width}%"
 				style:--pdf-hotspot-height="{box.height}%"
 				onpointerenter={(e) => enter('backlinks', t.id, e.currentTarget)}
+				onfocus={(e) => enter('backlinks', t.id, e.currentTarget)}
+				onblur={leave}
 				onpointerleave={leave}
 				onclick={(e) => onBacklink(t.id, e)}
 			></a>
@@ -145,18 +151,20 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-paper-layer])) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		z-index: 4;
-	}
-	:global(:where([data-pdf-citation], [data-pdf-crossref], [data-pdf-backlink-target])) {
-		position: absolute;
-		pointer-events: auto;
-		left: var(--pdf-hotspot-left);
-		top: var(--pdf-hotspot-top);
-		width: var(--pdf-hotspot-width);
-		height: var(--pdf-hotspot-height);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-paper-layer])) {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+			z-index: 4;
+		}
+		:global(:where([data-pdf-citation], [data-pdf-crossref], [data-pdf-backlink-target])) {
+			position: absolute;
+			pointer-events: auto;
+			left: var(--pdf-hotspot-left);
+			top: var(--pdf-hotspot-top);
+			width: var(--pdf-hotspot-width);
+			height: var(--pdf-hotspot-height);
+		}
 	}
 </style>

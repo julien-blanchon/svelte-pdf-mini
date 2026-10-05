@@ -13,7 +13,7 @@ import type { MetadataState, PaperState } from '../../state/paper.svelte.js';
 export interface PaperRootProps {
 	/** Reference metadata provider (e.g. `defaultCitationProvider()`); optional. */
 	provider?: CitationProvider | null;
-	/** Analyse automatically on load. Default true. */
+	/** Analyze automatically on load. Default true. */
 	auto?: boolean;
 	onAnalyzed?: (model: PaperModel) => void;
 	paper?: PaperState;
@@ -36,7 +36,7 @@ export type PaperLayerProps = DivPartProps<{
 }>;
 
 /** Shared by every floating part: transitions via `forceMount` + `open`, and open-state callbacks. */
-export interface FloatingProps {
+interface FloatingProps {
 	/** Keep rendering the `child` snippet while closed (with `open: false`) so you can run exit transitions. */
 	forceMount?: boolean;
 	onOpenChange?: (open: boolean) => void;

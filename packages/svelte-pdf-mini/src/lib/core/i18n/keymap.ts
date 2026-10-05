@@ -36,12 +36,12 @@ export const defaultKeymap = {
 	'tool.arrow': ['l'],
 	'tool.freetext': ['t'],
 	'tool.eraser': ['e'],
-	/** With text selected: create a markup of the current colour. */
+	/** With text selected: create a markup of the current color. */
 	'markup.highlight': ['h'],
 	'markup.underline': ['u'],
 	'markup.strikeout': ['s'],
 	'markup.comment': ['c'],
-	/** Colour N of the palette (applies to the selection / pending annotation, or the next one). */
+	/** Color N of the palette (applies to the selection / pending annotation, or the next one). */
 	'color.1': ['1', 'alt+1'],
 	'color.2': ['2', 'alt+2'],
 	'color.3': ['3', 'alt+3'],

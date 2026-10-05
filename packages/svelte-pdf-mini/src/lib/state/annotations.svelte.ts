@@ -1,8 +1,8 @@
+import type { InkSmoothing } from '../core/annotations/stroke.js';
 import { untrack } from 'svelte';
 import { on } from 'svelte/events';
 import {
 	baseFields,
-	createId,
 	nowIso,
 	rectFromQuads,
 	translateAnnotation,
@@ -72,10 +72,10 @@ export interface AnnotationStoreOptions {
 	onAnnotationsChange?: (annotations: Annotation[], ops: AnnotationOp[]) => void;
 	tool?: AnnotationTool | Getter<AnnotationTool>;
 	onToolChange?: (tool: AnnotationTool) => void;
-	/** Palette key of the active colour. */
+	/** Palette key of the active color. */
 	color?: string | Getter<string>;
 	onColorChange?: (color: string) => void;
-	/** Getter → controlled. Custom colours picked by the user are appended (see `addColor`). */
+	/** Getter → controlled. Custom colors picked by the user are appended (see `addColor`). */
 	palette?: PaletteColor[] | Getter<PaletteColor[]>;
 	onPaletteChange?: (palette: PaletteColor[]) => void;
 	author?: MaybeGetter<Author | undefined>;
@@ -94,6 +94,8 @@ export interface AnnotationStoreOptions {
 	tools?: MaybeGetter<readonly AnnotationTool[] | undefined>;
 	/** How an existing annotation is selected for editing. Default 'click'. */
 	selectOn?: MaybeGetter<'click' | 'dblclick' | undefined>;
+	/** How pen strokes are smoothed (see `smoothStroke`). Default 'smooth'. */
+	inkSmoothing?: MaybeGetter<InkSmoothing | undefined>;
 	/** New annotations open their note for typing (Enter keeps, Esc discards). Default true. */
 	editOnCreate?: MaybeGetter<boolean | undefined>;
 	/** Override keyboard shortcuts (merged over the defaults). */
@@ -110,8 +112,8 @@ export interface AnnotationStoreOptions {
 
 /**
  * The annotation store: the list (controlled or not), undo/redo, tools,
- * colours, selection and helpers to create annotations from the UI.
- * Must be constructed during component initialisation.
+ * colors, selection and helpers to create annotations from the UI.
+ * Must be constructed during component initialization.
  */
 export class AnnotationStore {
 	readonly viewer: ViewerState;
@@ -127,7 +129,7 @@ export class AnnotationStore {
 	notesVisible = $state(true);
 	/** Show annotations at all. */
 	annotationsVisible = $state(true);
-	/** Only show annotations whose palette key is in this list (null = all colours). */
+	/** Only show annotations whose palette key is in this list (null = all colors). */
 	colorFilter = $state.raw<string[] | null>(null);
 	/** Only show these kinds (null = all kinds). */
 	kindFilter = $state.raw<AnnotationKind[] | null>(null);
@@ -155,10 +157,11 @@ export class AnnotationStore {
 	readonly readonly = $derived(this.#opt('readonly') ?? false);
 	readonly foreign: ForeignPolicy = $derived(this.#opt('foreign') ?? 'editable');
 	readonly selectOn: 'click' | 'dblclick' = $derived(this.#opt('selectOn') ?? 'click');
+	readonly inkSmoothing: InkSmoothing = $derived(this.#opt('inkSmoothing') ?? 'smooth');
 
 	readonly canUndo = $derived(this.#undo.length > 0 && !this.readonly);
 	readonly canRedo = $derived(this.#redo.length > 0 && !this.readonly);
-	/** Visible annotations: not hidden, not filtered out by colour/kind, foreign ones per policy. */
+	/** Visible annotations: not hidden, not filtered out by color/kind, foreign ones per policy. */
 	readonly visible = $derived.by(() => {
 		if (!this.annotationsVisible) return [];
 		const colors = this.colorFilter;
@@ -172,7 +175,7 @@ export class AnnotationStore {
 				(!kinds || kinds.includes(a.kind))
 		);
 	});
-	/** Palette keys in use (for "show only colour…" filters). */
+	/** Palette keys in use (for "show only color…" filters). */
 	readonly usedColors = $derived([
 		...new Set(this.annotations.map((a) => a.paletteKey ?? rgbToHex(a.color)))
 	]);
@@ -231,7 +234,14 @@ export class AnnotationStore {
 			const onKey = (e: KeyboardEvent) => this.#onKeydown(e);
 			// Capture phase: runs before the viewer's own keys (arrows nudge a selected shape instead of turning pages).
 			scroller.addEventListener('keydown', onKey, true);
-			return () => scroller.removeEventListener('keydown', onKey, true);
+			// keyboard: 'document' — also keys pressed elsewhere (e.g. after clicking a toolbar button).
+			const onStray = (e: KeyboardEvent) => this.viewer.isStrayKey(e) && this.#onKeydown(e);
+			const global = this.viewer.keyboard === 'document';
+			if (global) document.addEventListener('keydown', onStray, true);
+			return () => {
+				scroller.removeEventListener('keydown', onKey, true);
+				if (global) document.removeEventListener('keydown', onStray, true);
+			};
 		});
 
 		// Hand tool: drag the pages to scroll (mouse and pen; touch already scrolls).
@@ -242,15 +252,16 @@ export class AnnotationStore {
 		});
 
 		// Highlighter mode (a markup tool is active): the settled text selection becomes
-		// a markup. Waits briefly so a double-click followed by a triple-click (word ->
-		// line) produces one annotation, and extends a markup made a moment ago instead
-		// of stacking a second one.
+		// a markup, at once for a drag. After a double-click it waits a moment for a
+		// possible triple-click (word -> line); a later overlapping selection extends
+		// the markup made a moment ago instead of stacking a second one.
 		$effect(() => {
 			const tool = this.tool;
 			const sel = this.viewer.selection;
 			if (!isTextMarkupKind(tool) || sel.selecting || sel.isEmpty) return;
 			void sel.ranges;
-			const timer = setTimeout(() => untrack(() => this.#markupFromTool(tool)), MARKUP_SETTLE_MS);
+			const wait = sel.clicks === 2 ? MARKUP_SETTLE_MS : 0;
+			const timer = setTimeout(() => untrack(() => this.#markupFromTool(tool)), wait);
 			return () => clearTimeout(timer);
 		});
 
@@ -341,8 +352,8 @@ export class AnnotationStore {
 	}
 
 	/**
-	 * Add a custom colour (any CSS hex) to the palette and return its key; an
-	 * existing entry with the same colour is reused. It then appears in pickers
+	 * Add a custom color (any CSS hex) to the palette and return its key; an
+	 * existing entry with the same color is reused. It then appears in pickers
 	 * and filters like the built-in ones.
 	 */
 	addColor(hex: string, label = hex.toUpperCase()): string {
@@ -356,7 +367,7 @@ export class AnnotationStore {
 		return key;
 	}
 
-	/** Show only some colours (null = all). Toggling the last one off shows all again. */
+	/** Show only some colors (null = all). Toggling the last one off shows all again. */
 	toggleColorFilter(key: string) {
 		const cur = this.colorFilter ?? [];
 		const next = cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
@@ -505,11 +516,14 @@ export class AnnotationStore {
 	/** Read the annotations stored in the PDF (ours losslessly, others as 'foreign'). */
 	async importFromPdf(): Promise<ImportResult | null> {
 		const doc = this.viewer.document;
-		if (!doc.proxy) return null;
+		const proxy = doc.proxy;
+		if (!proxy) return null;
 		const result = await importAnnotations(await doc.getData(), {
 			foreign: this.foreign !== 'hidden',
 			textOf: async (page, quads) => (await doc.getPageText(page)).textInQuads(quads)
 		});
+		// Another document opened meanwhile: these annotations belong to the old one.
+		if (doc.proxy !== proxy) return null;
 		this.load(result.annotations);
 		this.#opts.onImport?.(result);
 		return result;
@@ -522,17 +536,21 @@ export class AnnotationStore {
 	 */
 	async reanchor(): Promise<{ moved: number; orphans: number }> {
 		const doc = this.viewer.document;
-		if (!doc.proxy) return { moved: 0, orphans: 0 };
+		const proxy = doc.proxy;
+		if (!proxy) return { moved: 0, orphans: 0 };
+		const snapshot = this.annotations;
 		const { annotations, moved, orphans } = await reanchorAll(
-			this.annotations,
+			snapshot,
 			(n) => doc.getPageText(n).catch(() => null),
 			{ numPages: doc.numPages }
 		);
-		if (moved || orphans) {
-			const before = new Map(this.annotations.map((a) => [a.id, a]));
+		if ((moved || orphans) && doc.proxy === proxy) {
+			const before = new Map(snapshot.map((a) => [a.id, a]));
+			// Only annotations nobody touched while the text loaded: an edit made
+			// meanwhile wins over the re-anchored copy of the old version.
 			this.#apply(
 				annotations
-					.filter((a) => before.get(a.id) !== a)
+					.filter((a) => before.get(a.id) !== a && this.byId.get(a.id) === before.get(a.id))
 					.map((after) => ({
 						type: 'update' as const,
 						id: after.id,
@@ -666,7 +684,10 @@ export class AnnotationStore {
 		if (!a) return;
 		// Its creation (and edits) leave the history: discarding is not an undoable step.
 		const touches = (op: AnnotationOp) => op.type !== 'remove' && opTargetId(op) === id;
-		this.#undo = this.#undo.filter((ops) => !ops.some(touches));
+		// Only its own ops: a multi-page selection creates several markups in one step.
+		this.#undo = this.#undo
+			.map((ops) => ops.filter((op) => !touches(op)))
+			.filter((ops) => ops.length > 0);
 		this.#write([{ type: 'remove', annotation: a }]);
 		this.selectedIds = [];
 		this.announce(this.viewer.t('announceDiscarded'));
@@ -677,8 +698,8 @@ export class AnnotationStore {
 	 * Keyboard handling for a note editor (popover / margin textarea) so the
 	 * pending flow works while it has focus:
 	 * - Enter keeps (Shift+Enter = new line), Esc discards a pending one / stops editing;
-	 * - before anything is typed: digits 1–9 recolour, Backspace/Delete discard;
-	 * - Alt+1–9 always recolour.
+	 * - before anything is typed: digits 1–9 recolor, Backspace/Delete discard;
+	 * - Alt+1–9 always recolor.
 	 * Returns true when the key was handled.
 	 */
 	handleNoteKey(e: KeyboardEvent, annotation: Annotation): boolean {
@@ -776,7 +797,7 @@ export class AnnotationStore {
 		this.#shiftHeld = held;
 	}
 
-	/** Create an annotation of any kind with defaults (colour, author, ids, dates). */
+	/** Create an annotation of any kind with defaults (color, author, ids, dates). */
 	create<K extends AnnotationKind>(kind: K, fields: AnnotationInit<K>): AnnotationOf<K> | null {
 		if (this.readonly) return null;
 		const color = this.activeColor;
@@ -861,7 +882,7 @@ export class AnnotationStore {
 		const km = this.keymap;
 		const has = (a: KeymapAction) => km[a]?.some((c) => matchesCombo(e, c));
 		const colorAction = matchAction(e, km, COLOR_ACTIONS);
-		// Colours with Alt work even while typing a note.
+		// Colors with Alt work even while typing a note.
 		if (colorAction && (!typing || e.altKey)) {
 			const c = this.palette[COLOR_ACTIONS.indexOf(colorAction)];
 			if (c) {
@@ -907,15 +928,15 @@ export class AnnotationStore {
 		if (handled) e.preventDefault();
 	}
 
-	/** Annotations a colour shortcut applies to: the selection, else the pending one. */
+	/** Annotations a color shortcut applies to: the selection, else the pending one. */
 	#recolorTargets(): string[] {
 		if (this.selectedIds.length) return this.selectedIds;
 		return this.pendingId ? [this.pendingId] : [];
 	}
 }
 
-/** Highlighter mode waits this long for the selection to settle (double- then triple-click). */
-const MARKUP_SETTLE_MS = 320;
+/** After a double-click, highlighter mode waits this long for a triple-click. */
+const MARKUP_SETTLE_MS = 150;
 /** A new selection overlapping a markup made this recently extends it instead of stacking another. */
 const MARKUP_EXTEND_MS = 2500;
 /** Consecutive updates of one annotation within this window (typing, dragging) are one undo step. */
@@ -965,12 +986,14 @@ function createDefaults(kind: AnnotationKind): object {
 			return { fillOpacity: 0.12, width: 1.5 };
 		case 'rect':
 		case 'ellipse':
-		case 'line':
 		case 'polygon':
-		case 'polyline':
 			return { width: 1.5 };
+		// Same weight as pen strokes.
+		case 'line':
+		case 'polyline':
+			return { width: 2 };
 		case 'arrow':
-			return { width: 1.5, lineEndings: ['none', 'open-arrow'] };
+			return { width: 2, lineEndings: ['none', 'open-arrow'] };
 		case 'ink':
 			return { width: 2, paths: [], style: 'freehand' };
 		case 'note':
@@ -983,9 +1006,9 @@ function createDefaults(kind: AnnotationKind): object {
 }
 
 /**
- * Digit 1–9 of a colour shortcut typed in a note editor. Alt+digit reports a
+ * Digit 1–9 of a color shortcut typed in a note editor. Alt+digit reports a
  * symbol in e.key on macOS: read the key code then; otherwise use e.key so
- * Shift+8 ("*") is a character, not colour 8.
+ * Shift+8 ("*") is a character, not color 8.
  */
 function colorDigit(e: KeyboardEvent): string | undefined {
 	if (e.altKey) return /^Digit([1-9])$/.exec(e.code)?.[1];
@@ -1018,9 +1041,7 @@ export function quoteFor(text: PageText, start: number, end: number): TextQuote 
 	};
 }
 
-export { createId };
-
-/** Interactive UI inside the pages that keeps its own click behaviour while panning. */
+/** Interactive UI inside the pages that keeps its own click behavior while panning. */
 const PAN_IGNORE =
 	'a, button, input, textarea, select, [contenteditable], [data-pdf-annotation-ui]';
 

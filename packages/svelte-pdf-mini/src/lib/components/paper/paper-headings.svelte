@@ -56,33 +56,35 @@
 </div>
 
 <style>
-	:global(:where([data-pdf-headings])) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-	/*
-	 * The headings are always rendered here (no `child`), so these rules are scoped:
-	 * they must win over app-wide heading styles (margins) to stay visually hidden.
-	 */
-	[data-pdf-heading] {
-		position: absolute;
-		left: 0;
-		top: var(--pdf-heading-top);
-	}
-	[data-pdf-heading][data-visible] {
-		margin: 0;
-	}
-	/* Visually hidden, still read by assistive tech. */
-	[data-pdf-heading]:not([data-visible]) {
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border-width: 0;
-		transform: translateX(-100%);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-headings])) {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+		/*
+		 * The headings are always rendered here (no `child`), so these rules are scoped:
+		 * they must win over app-wide heading styles (margins) to stay visually hidden.
+		 */
+		[data-pdf-heading] {
+			position: absolute;
+			left: 0;
+			top: var(--pdf-heading-top);
+		}
+		[data-pdf-heading][data-visible] {
+			margin: 0;
+		}
+		/* Visually hidden, still read by assistive tech. */
+		[data-pdf-heading]:not([data-visible]) {
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border-width: 0;
+			transform: translateX(-100%);
+		}
 	}
 </style>

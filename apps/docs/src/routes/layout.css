@@ -1,4 +1,6 @@
+/* The library layer sits under Tailwind's utilities, so `class` overrides it. */
 @import 'tailwindcss';
+@import 'svelte-pdf-mini/styles.css';
 @import '@fontsource/inter/latin.css';
 @plugin '@iconify/tailwind4';
 

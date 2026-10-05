@@ -1,3 +1,4 @@
+import { untrack } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { analyzePaper } from '../core/paper/analyze.js';
 import { flattenSections, sectionAt } from '../core/paper/sections.js';
@@ -35,10 +36,10 @@ export interface PaperStateOptions {
 	cache?: MaybeGetter<KeyValueStore<PaperModel> | null | undefined>;
 }
 
-/** Results of recent analyses, by document fingerprint + analyser version. */
+/** Results of recent analyzes, by document fingerprint + analyzer version. */
 const memoryCache = new LruCache<string, PaperModel>(12);
-/** Bump when the analyser output changes shape, to ignore stale persisted results. */
-export const PAPER_ANALYSIS_VERSION = 3;
+/** Bump when the analyzer output changes shape, to ignore stale persisted results. */
+const PAPER_ANALYSIS_VERSION = 3;
 
 /** What the pointer is over: a citation, a cross-reference, or a label with backlinks. */
 export interface PaperHover {
@@ -199,7 +200,8 @@ export class PaperState {
 				return;
 			}
 			const controller = new AbortController();
-			this.analyze(controller.signal);
+			// Untracked: only the document (and `auto`) re-run it, not what analyzing reads.
+			untrack(() => this.analyze(controller.signal));
 			return () => controller.abort();
 		});
 	}
@@ -215,6 +217,7 @@ export class PaperState {
 		if (!doc) return;
 		this.status = 'analyzing';
 		this.progress = 0;
+		this.error = null;
 		this.metadata.clear();
 		const key = `${doc.fingerprints[0]}:v${PAPER_ANALYSIS_VERSION}`;
 		const store = extract(this.#opts.cache) ?? null;
@@ -260,10 +263,15 @@ export class PaperState {
 		const provider = this.provider;
 		if (existing || !provider) return existing;
 		this.metadata.set(ref.id, { status: 'loading' });
+		// Ids are positional (`ref-N`): a late answer for the previous paper is dropped.
+		const model = this.model;
+		const set = (state: MetadataState) => {
+			if (this.model === model) this.metadata.set(ref.id, state);
+		};
 		provider
 			.resolve(ref)
-			.then((data) => this.metadata.set(ref.id, { status: 'done', data }))
-			.catch((e) => this.metadata.set(ref.id, { status: 'error', error: String(e?.message ?? e) }));
+			.then((data) => set({ status: 'done', data }))
+			.catch((e) => set({ status: 'error', error: String(e?.message ?? e) }));
 		return this.metadata.get(ref.id);
 	}
 
@@ -333,16 +341,21 @@ function groupByPage<T extends { page: number }>(items: T[]) {
  * analysis work that would otherwise sit in the rendering worker's queue.
  */
 async function openIsolated(doc: PDFDocumentProxy) {
-	// An app-provided `workerPort` is the only worker we may use: analyse on it.
+	// An app-provided `workerPort` is the only worker we may use: analyze on it.
 	if (typeof Worker === 'undefined' || getPdfConfig().workerPort) return null;
 	const pdfjs = await loadPdfJs();
+	const data = await doc.getData();
 	const worker = new pdfjs.PDFWorker();
-	const task = pdfjs.getDocument({
-		...assetUrls(pdfjs.version),
-		data: await doc.getData(),
-		worker
-	});
-	const copy = await task.promise;
+	const task = pdfjs.getDocument({ ...assetUrls(pdfjs.version), data, worker });
+	let copy: PDFDocumentProxy;
+	try {
+		copy = await task.promise;
+	} catch (err) {
+		// The caller drops the failure: free the thread here.
+		void task.destroy();
+		worker.destroy();
+		throw err;
+	}
 	return {
 		doc: copy,
 		async destroy() {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { ViewerContext } from '../../state/context.js';
@@ -32,7 +33,8 @@
 		if (!visible || !canvasHost || !viewer.document.proxy) return;
 		let alive = true;
 		const host = canvasHost;
-		cache.canvas(pageNumber, ctx.width, isCurrent ? 1 : 5).then(
+		// Priority only: becoming current must not copy the bitmap again.
+		cache.canvas(pageNumber, ctx.width, untrack(() => isCurrent) ? 1 : 5).then(
 			(canvas) => {
 				if (!alive) return;
 				host.replaceChildren(canvas);
@@ -96,10 +98,12 @@
 {/if}
 
 <style>
-	/* Placeholder at the thumbnail's size until the canvas arrives. */
-	:global(:where([data-pdf-thumbnail-canvas])) {
-		width: var(--pdf-thumbnail-width);
-		height: var(--pdf-thumbnail-height);
-		background: var(--pdf-page-bg, #fff);
+	@layer svelte-pdf-mini {
+		/* Placeholder at the thumbnail's size until the canvas arrives. */
+		:global(:where([data-pdf-thumbnail-canvas])) {
+			width: var(--pdf-thumbnail-width);
+			height: var(--pdf-thumbnail-height);
+			background: var(--pdf-page-bg, #fff);
+		}
 	}
 </style>

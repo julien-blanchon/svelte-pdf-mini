@@ -101,31 +101,33 @@
 {/if}
 
 <style>
-	/* Scoped (not :where) so they win over the theme's `all: unset` on the bars. */
-	[data-pdf-line-markers] {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		width: 0;
-		z-index: 4;
-	}
-	[data-pdf-line-markers][data-side='left'] {
-		left: var(--pdf-marker-inset, 8px);
-	}
-	[data-pdf-line-markers][data-side='right'] {
-		right: var(--pdf-marker-inset, 8px);
-	}
-	[data-pdf-line-marker] {
-		--pdf-lane-offset: calc(
-			var(--pdf-lane) * (var(--pdf-marker-width, 3px) + var(--pdf-marker-gap, 3px))
-		);
-		top: var(--pdf-top);
-		height: max(var(--pdf-height), 6px);
-	}
-	[data-side='left'] > [data-pdf-line-marker] {
-		left: var(--pdf-lane-offset);
-	}
-	[data-side='right'] > [data-pdf-line-marker] {
-		right: var(--pdf-lane-offset);
+	@layer svelte-pdf-mini {
+		/* Scoped (not :where) so they win over the theme's `all: unset` on the bars. */
+		[data-pdf-line-markers] {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 0;
+			z-index: 4;
+		}
+		[data-pdf-line-markers][data-side='left'] {
+			left: var(--pdf-marker-inset, 8px);
+		}
+		[data-pdf-line-markers][data-side='right'] {
+			right: var(--pdf-marker-inset, 8px);
+		}
+		[data-pdf-line-marker] {
+			--pdf-lane-offset: calc(
+				var(--pdf-lane) * (var(--pdf-marker-width, 3px) + var(--pdf-marker-gap, 3px))
+			);
+			top: var(--pdf-top);
+			height: max(var(--pdf-height), 6px);
+		}
+		[data-side='left'] > [data-pdf-line-marker] {
+			left: var(--pdf-lane-offset);
+		}
+		[data-side='right'] > [data-pdf-line-marker] {
+			right: var(--pdf-lane-offset);
+		}
 	}
 </style>

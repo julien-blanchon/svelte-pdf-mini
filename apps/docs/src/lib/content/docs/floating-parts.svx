@@ -16,7 +16,7 @@ Six parts float above the pages: `Viewer.LinkPreview`, `Paper.CitationCard`, `Pa
 | `forceMount` | Keep rendering the `child` snippet while closed (with `open: false`) so you can run exit transitions |
 | `child(…)` | Render your own element; spread `props` on it |
 
-They expose `data-state="open"` / `"closed"`; `styles.css` ships a short entry animation.
+They expose `data-state="open"` / `"closed"`; `styles.css` ships a short entry animation, skipped with `forceMount` so your own transition runs alone. `onOpenChange` fires on changes only, not on mount.
 
 ## Transitions
 

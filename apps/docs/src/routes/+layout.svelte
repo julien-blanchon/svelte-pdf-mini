@@ -1,5 +1,4 @@
 <script lang="ts">
-	import 'svelte-pdf-mini/styles.css';
 	import './layout.css';
 	import { page } from '$app/state';
 	import { asset } from '$app/paths';

@@ -4,6 +4,7 @@
  */
 import type { PageViewport } from 'pdfjs-dist';
 import type { PdfPoint, PdfRect } from '../types.js';
+import { pdfRectToViewport } from '../view/geometry.js';
 import type { Quad } from '../text/text-index.js';
 import type { Annotation, InkPath } from './model.js';
 
@@ -75,6 +76,18 @@ export function hitsAnnotation(a: Annotation, x: number, y: number, tolerance = 
 			// Edges only, so text inside stays selectable; filled shapes hit anywhere.
 			const [x1, y1, x2, y2] = a.rect;
 			const filled = a.kind === 'area' || ('fill' in a && a.fill);
+			const near = tolerance + Math.max(2, (('width' in a && a.width) || 0) / 2);
+			if (a.kind === 'ellipse') {
+				const [cx, cy, rx, ry] = [(x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2];
+				if (rx <= 0 || ry <= 0) return false;
+				const r = Math.hypot((x - cx) / rx, (y - cy) / ry);
+				return filled ? r <= 1 : Math.abs(r - 1) * Math.min(rx, ry) <= near;
+			}
+			if (a.kind === 'polygon' && a.points && a.points.length > 2) {
+				const ring = [...a.points, a.points[0]];
+				if (filled && inPolygon(a.points, x, y)) return true;
+				return ring.some((pt, i) => i > 0 && distToSegment([x, y], ring[i - 1], pt) <= near);
+			}
 			if (filled) return true;
 			const edges: Pt[] = [
 				[x1, y1],
@@ -83,9 +96,7 @@ export function hitsAnnotation(a: Annotation, x: number, y: number, tolerance = 
 				[x1, y2],
 				[x1, y1]
 			];
-			return edges.some(
-				(pt, i) => i > 0 && distToSegment([x, y], edges[i - 1], pt) <= tolerance + 2
-			);
+			return edges.some((pt, i) => i > 0 && distToSegment([x, y], edges[i - 1], pt) <= near);
 		}
 		default:
 			return true;
@@ -159,10 +170,12 @@ export function quadToView(vp: PageViewport, q: Quad) {
 const fmt = (p: Pt) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
 const lerp = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
-/** Polygon points for a quad (TL, TR, BR, BL). */
+/** Highlights cover the line, a bit beyond the glyph box (fraction of its height, each side). */
+export const HIGHLIGHT_PAD = 0.1;
+
 /**
- * Polygon points for a quad. `pad` grows it across the line by that fraction
- * of its height on each side (highlights cover the line, not just the glyphs).
+ * Polygon points for a quad (TL, TR, BR, BL). `pad` grows it across the line by
+ * that fraction of its height on each side (highlights cover the line, not just the glyphs).
  */
 export function quadPoints(vp: PageViewport, q: Quad, pad = 0): string {
 	let { tl, tr, bl, br } = quadToView(vp, q);
@@ -189,6 +202,7 @@ export function quadSquiggle(vp: PageViewport, q: Quad): string {
 	const a = lerp(tl, bl, 0.92);
 	const b = lerp(tr, br, 0.92);
 	const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+	if (!len) return '';
 	const step = Math.max(1.5, height * 0.18);
 	const n = Math.max(2, Math.round(len / step));
 	const ux = (b[0] - a[0]) / len;
@@ -206,16 +220,10 @@ export function quadSquiggle(vp: PageViewport, q: Quad): string {
 	return d;
 }
 
-/** Axis-aligned box of a PDF rect in viewport space. */
+/** Axis-aligned box of a PDF rect in viewport space (as SVG `x`, `y`, `width`, `height`). */
 export function rectToView(vp: PageViewport, r: PdfRect) {
-	const [x1, y1] = toView(vp, [r[0], r[1]]);
-	const [x2, y2] = toView(vp, [r[2], r[3]]);
-	return {
-		x: Math.min(x1, x2),
-		y: Math.min(y1, y2),
-		width: Math.abs(x2 - x1),
-		height: Math.abs(y2 - y1)
-	};
+	const { left: x, top: y, width, height } = pdfRectToViewport(vp, r);
+	return { x, y, width, height };
 }
 
 /** Smooth path through ink points (quadratic curves through midpoints). */

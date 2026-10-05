@@ -200,11 +200,36 @@ describe('pdf annotation codec', () => {
 			(a) => a.id === 'foreign-sq'
 		)!;
 		expect(reimported.origin).toBe('foreign');
-		// Edited in our UI: rewritten with the new colour.
+		// Edited in our UI: rewritten with the new color.
 		const edited = await exportPdf(src, [
 			{ ...sq, color: [0, 0, 1], modifiedAt: new Date().toISOString() }
 		]);
 		const again = (await importAnnotations(edited)).annotations.find((a) => a.id === 'foreign-sq')!;
+		expect(again.color).toEqual([0, 0, 1]);
+	});
+
+	it('(4c) an edited foreign annotation without /M is rewritten too', async () => {
+		const lib = await loadPdfLib();
+		const doc = await lib.PDFDocument.load(original, { updateMetadata: false });
+		doc.getPage(0).node.addAnnot(
+			doc.context.register(
+				doc.context.obj({
+					Type: 'Annot',
+					Subtype: 'Square',
+					Rect: [10, 10, 60, 60],
+					C: [1, 0, 0],
+					NM: lib.PDFHexString.fromText('foreign-no-m')
+				})
+			)
+		);
+		const src = await doc.save({ useObjectStreams: false });
+		const sq = (await importAnnotations(src)).annotations.find((a) => a.id === 'foreign-no-m')!;
+		const edited = await exportPdf(src, [
+			{ ...sq, color: [0, 0, 1], modifiedAt: new Date().toISOString() }
+		]);
+		const again = (await importAnnotations(edited)).annotations.find(
+			(a) => a.id === 'foreign-no-m'
+		)!;
 		expect(again.color).toEqual([0, 0, 1]);
 	});
 

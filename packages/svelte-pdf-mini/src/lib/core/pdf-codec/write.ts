@@ -29,7 +29,7 @@ import {
 	PRIVATE_KEY,
 	QUADDING,
 	boundsOf,
-	fromPdfDate,
+	importedModifiedAt,
 	loadPdfLib,
 	n,
 	privateDataOf,
@@ -204,7 +204,7 @@ export async function exportPdf(
 			}
 		}
 
-		// 3. The full model, as an embedded file (survives re-serialisers that drop unknown keys).
+		// 3. The full model, as an embedded file (survives re-serializers that drop unknown keys).
 		const ours = annotations.filter((a) => !keep.has(a.id));
 		doc.detach(EMBEDDED_FILE_NAME);
 		if (ours.length) {
@@ -244,8 +244,8 @@ function isOurs(r: Readers, dict: PDFDict | undefined, stored: Map<string, Annot
 /** A foreign annotation in the list that the user has not modified since import. */
 function unchangedForeign(r: Readers, dict: PDFDict, a: Annotation) {
 	if (a.origin !== 'foreign') return false;
-	const m = fromPdfDate(r.text(dict, 'M'));
-	return !m || Math.abs(Date.parse(m) - Date.parse(a.modifiedAt)) < 1000;
+	const m = importedModifiedAt(r.text(dict, 'M'), r.text(dict, 'CreationDate'));
+	return Math.abs(Date.parse(m) - Date.parse(a.modifiedAt)) < 1000;
 }
 
 function removeAnnotation(lib: PdfLib, ctx: PDFContext, r: Readers, page: PDFPage, ref: PDFRef) {

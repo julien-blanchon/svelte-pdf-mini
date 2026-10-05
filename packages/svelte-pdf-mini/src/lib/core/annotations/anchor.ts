@@ -2,7 +2,7 @@
  * Re-anchoring: when a markup's quads no longer cover its quote (another
  * version of the paper, an import from another app, a re-typeset preprint),
  * find the quote again in the page text and recompute the quads.
- * Strategy (like Hypothesis): exact match on normalised text, disambiguated by
+ * Strategy (like Hypothesis): exact match on normalized text, disambiguated by
  * prefix/suffix similarity and distance to the original position.
  */
 import { normalizeQuery, type PageText } from '../text/text-index.js';

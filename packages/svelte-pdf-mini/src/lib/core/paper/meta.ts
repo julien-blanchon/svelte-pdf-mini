@@ -4,8 +4,9 @@ import type { DocContext } from './context.js';
 import type { Line } from './lines.js';
 import type { PaperMeta } from './types.js';
 
-const AFFILIATION =
-	/(univ|institut|research|lab|laborator|depart|school|college|center|centre|google|microsoft|openai|deepmind|meta|facebook|amazon|apple|nvidia|inc\b|corp|ltd|gmbh|brain|group|academy|hospital|foundation|@|https?:|\d{3,})/i;
+/** Affiliation / contact words, at word starts so names like "Brainard" or "Metallinou" survive. */
+export const AFFILIATION =
+	/\b(?:univ|institut|research|labs?\b|laborator|depart|school|college|cent(?:er|re)\b|google|microsoft|openai|deepmind|meta\b|facebook|amazon|apple\b|nvidia|inc\b|corp\b|ltd\b|gmbh|brain\b|group|academy|hospital|foundation)|@|https?:|\d{3,}/i;
 
 export function extractMeta(ctx: DocContext): PaperMeta {
 	const meta: PaperMeta = { authors: [] };

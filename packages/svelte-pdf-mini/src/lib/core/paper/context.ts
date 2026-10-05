@@ -61,7 +61,7 @@ export const REFERENCES_HEADING =
 export const NUMBERED_HEADING =
 	/^((?:\d{1,2}|[A-Z])(?:\.\d{1,2}){0,3})\.?\s+(\p{Lu}[^\n]{1,100})$/u;
 
-/** Normalise heading text for comparisons. */
+/** Normalize heading text for comparisons. */
 export const headingKey = (s: string) =>
 	s
 		.toLowerCase()

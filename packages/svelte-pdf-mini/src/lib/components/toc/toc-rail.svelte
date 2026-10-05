@@ -50,21 +50,23 @@
 </div>
 
 <style>
-	:global(:where([data-pdf-toc='rail'])) {
-		position: relative;
-	}
-	:global(:where([data-pdf-toc='rail'] > [data-part='progress'])) {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
-		height: calc(var(--pdf-reading-progress, 0) * 100%);
-		pointer-events: none;
-	}
-	/* Not zero-specificity: must beat the theme's `[data-pdf-toc-dot] { all: unset }`. */
-	:global([data-pdf-toc='rail'] > [data-pdf-toc-dot]) {
-		position: absolute;
-		top: calc(var(--pdf-toc-position) * 100%);
-		transform: translateY(-50%);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-toc='rail'])) {
+			position: relative;
+		}
+		:global(:where([data-pdf-toc='rail'] > [data-part='progress'])) {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			height: calc(var(--pdf-reading-progress, 0) * 100%);
+			pointer-events: none;
+		}
+		/* Not zero-specificity: must beat the theme's `[data-pdf-toc-dot] { all: unset }`. */
+		:global([data-pdf-toc='rail'] > [data-pdf-toc-dot]) {
+			position: absolute;
+			top: calc(var(--pdf-toc-position) * 100%);
+			transform: translateY(-50%);
+		}
 	}
 </style>

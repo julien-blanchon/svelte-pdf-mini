@@ -63,17 +63,19 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-find-layer])) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-	:global(:where([data-pdf-find-layer] > svg)) {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-		mix-blend-mode: multiply;
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-find-layer])) {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+		:global(:where([data-pdf-find-layer] > svg)) {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			overflow: visible;
+			mix-blend-mode: multiply;
+		}
 	}
 </style>

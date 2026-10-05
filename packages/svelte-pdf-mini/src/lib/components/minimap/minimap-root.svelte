@@ -75,6 +75,8 @@
 		(node) => {
 			let alive = true;
 			const doc = viewer.document;
+			// Read before any await, so figures found later redraw the page.
+			const figures = paper?.figures.filter((f) => f.page === page).map((f) => f.rect) ?? [];
 			const draw = async () => {
 				const [text, pdfPage] = await Promise.all([doc.getPageText(page), doc.getPage(page)]);
 				if (!alive) return;
@@ -87,7 +89,7 @@
 					width: node.width,
 					height: node.height,
 					view: pdfPage.view as PdfRect,
-					figures: paper?.figures.filter((f) => f.page === page).map((f) => f.rect) ?? []
+					figures
 				});
 			};
 			draw().catch(() => {});
@@ -133,7 +135,7 @@
 	const isActive = (b: Band) =>
 		b.page != null ? viewer.page === b.page : !!paper?.activePath.some((s) => s.id === b.key);
 
-	// Pointer: click jumps (centre there), dragging scrubs; grabbing the indicator keeps the grab offset.
+	// Pointer: click jumps (center there), dragging scrubs; grabbing the indicator keeps the grab offset.
 	type StripPointerEvent = PointerEvent & { currentTarget: EventTarget & HTMLElement };
 	let dragging = $state(false);
 	MinimapDragContext.set({
@@ -147,7 +149,11 @@
 		e.clientY - e.currentTarget.getBoundingClientRect().top + mm.offset;
 	function onDown(e: StripPointerEvent) {
 		if (e.button !== 0) return;
-		e.currentTarget.setPointerCapture(e.pointerId);
+		try {
+			e.currentTarget.setPointerCapture(e.pointerId);
+		} catch {
+			// The pointer is already gone (e.g. a synthetic event).
+		}
 		const y = stripY(e);
 		const ind = mm.indicator;
 		const onIndicator = y >= ind.top && y <= ind.top + ind.height;
@@ -290,44 +296,46 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-minimap])) {
-		position: relative;
-		overflow: hidden;
-		width: var(--pdf-minimap-width);
-		touch-action: none;
-		user-select: none;
-		cursor: pointer;
-	}
-	/* Click jumps there; dragging scrubs the document. */
-	:global(:where([data-pdf-minimap][data-dragging])) {
-		cursor: grabbing;
-	}
-	/* --pdf-minimap-offset scrolls the strip (updated while the document scrolls). */
-	:global(:where([data-pdf-minimap-track])) {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
-		height: var(--pdf-minimap-total);
-		transform: translateY(calc(-1 * var(--pdf-minimap-offset)));
-	}
-	:global(:where([data-pdf-minimap-band])) {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: var(--pdf-minimap-band-top);
-		height: var(--pdf-minimap-band-height);
-	}
-	:global(:where([data-pdf-minimap-page])) {
-		position: absolute;
-		left: var(--pdf-minimap-page-left);
-		top: var(--pdf-minimap-page-top);
-		width: var(--pdf-minimap-page-width);
-		height: var(--pdf-minimap-page-height);
-	}
-	:global(:where([data-pdf-minimap-page] > [data-part='preview'])) {
-		display: block;
-		width: 100%;
-		height: 100%;
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-minimap])) {
+			position: relative;
+			overflow: hidden;
+			width: var(--pdf-minimap-width);
+			touch-action: none;
+			user-select: none;
+			cursor: pointer;
+		}
+		/* Click jumps there; dragging scrubs the document. */
+		:global(:where([data-pdf-minimap][data-dragging])) {
+			cursor: grabbing;
+		}
+		/* --pdf-minimap-offset scrolls the strip (updated while the document scrolls). */
+		:global(:where([data-pdf-minimap-track])) {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			height: var(--pdf-minimap-total);
+			transform: translateY(calc(-1 * var(--pdf-minimap-offset)));
+		}
+		:global(:where([data-pdf-minimap-band])) {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: var(--pdf-minimap-band-top);
+			height: var(--pdf-minimap-band-height);
+		}
+		:global(:where([data-pdf-minimap-page])) {
+			position: absolute;
+			left: var(--pdf-minimap-page-left);
+			top: var(--pdf-minimap-page-top);
+			width: var(--pdf-minimap-page-width);
+			height: var(--pdf-minimap-page-height);
+		}
+		:global(:where([data-pdf-minimap-page] > [data-part='preview'])) {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
 	}
 </style>

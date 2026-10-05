@@ -19,7 +19,6 @@ export async function resolveDestination(
 	dest: unknown
 ): Promise<ResolvedDestination | null> {
 	const explicit = typeof dest === 'string' ? await doc.getDestination(dest) : dest;
-	if (!Array.isArray(explicit)) return null;
 	if (!Array.isArray(explicit) || explicit.length < 2) return null;
 	const [ref, mode, ...args] = explicit as [unknown, { name: string }, ...(number | null)[]];
 	let pageIndex: number;

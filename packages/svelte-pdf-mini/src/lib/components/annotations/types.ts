@@ -1,3 +1,4 @@
+import type { InkSmoothing } from '../../core/annotations/stroke.js';
 import type { Snippet } from 'svelte';
 import type { PaletteColor } from '../../core/annotations/colors.js';
 import type {
@@ -37,7 +38,7 @@ export interface AnnotationsRootProps {
 	/** Active palette key. Bindable. */
 	color?: string;
 	onColorChange?: (color: string) => void;
-	/** Palette (bindable): custom colours picked by users are appended to it. */
+	/** Palette (bindable): custom colors picked by users are appended to it. */
 	palette?: PaletteColor[];
 	onPaletteChange?: (palette: PaletteColor[]) => void;
 	/** Show annotations (also `store.annotationsVisible`). */
@@ -58,6 +59,8 @@ export interface AnnotationsRootProps {
 	selectOn?: SelectOn;
 	/** Open the note of a new annotation for typing (Enter keeps, Esc discards). Default true. */
 	editOnCreate?: boolean;
+	/** Pen stroke smoothing: 'smooth' (default), 'steady', 'pen' (variable width) or 'raw'. */
+	inkSmoothing?: InkSmoothing;
 	/** Keyboard shortcuts, merged over `defaultKeymap`. */
 	keymap?: Partial<Keymap>;
 	/** Load the annotations stored in the PDF (ours losslessly, others per `foreign`). */
@@ -75,7 +78,7 @@ export interface AnnotationSnippetProps {
 	selected: boolean;
 	hovered: boolean;
 	editable: boolean;
-	/** CSS colour for the current page theme. */
+	/** CSS color for the current page theme. */
 	color: string;
 }
 
@@ -87,7 +90,7 @@ export type AnnotationsLayerProps = DivPartProps<{
 }>;
 
 /** Shared by every floating part: transitions via `forceMount` + `open`, and open-state callbacks. */
-export interface FloatingProps {
+interface FloatingProps {
 	/** Keep rendering `child` while closed (with `open: false`) so you can run exit transitions. */
 	forceMount?: boolean;
 	onOpenChange?: (open: boolean) => void;
@@ -132,10 +135,16 @@ export type AnnotationsMarginProps = DivPartProps<{
 	side?: PageSide;
 	/**
 	 * Notes never overflow the view: they shrink to the room beside the page
-	 * (`viewer.sideRoom`), and below this width (px) turn into compact markers
-	 * that show the note on hover and open it on click. Default 160.
+	 * (`viewer.sideRoom`) plus the page's blank margin (they cover it, never
+	 * its text, when the view is tight), and below this width (px) turn into
+	 * compact markers that show the note on hover and open it on click. Default 140.
 	 */
 	minWidth?: number;
+	/**
+	 * Space (px) notes keep from the edge of the view, e.g. to clear a
+	 * `Toc.Rail` laid over it. Default 8.
+	 */
+	edge?: number;
 	/** Force a layout instead of adapting to the room. Default 'auto'. */
 	layout?: MarginLayout;
 	note?: Snippet<[MarginNoteSnippetProps]>;

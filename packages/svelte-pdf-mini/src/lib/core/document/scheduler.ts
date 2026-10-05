@@ -7,6 +7,8 @@ export interface Job {
 	key: string;
 	priority: number;
 	run: (signal: AbortSignal) => Promise<void>;
+	/** Called when the job is cancelled before it started (`run` never runs). */
+	onCancel?: () => void;
 }
 
 interface Entry extends Job {
@@ -44,12 +46,14 @@ export class RenderScheduler {
 
 	clear() {
 		for (const e of [...this.#queue, ...this.#running.values()]) e.controller.abort();
+		for (const e of this.#queue) e.onCancel?.();
 		this.#queue = [];
 		this.#running.clear();
 	}
 
 	#cancelEntry(entry: Entry) {
 		entry.controller.abort();
+		if (this.#queue.includes(entry)) entry.onCancel?.();
 		this.#queue = this.#queue.filter((q) => q !== entry);
 		if (this.#running.get(entry.key) === entry) this.#running.delete(entry.key);
 		this.#pump();

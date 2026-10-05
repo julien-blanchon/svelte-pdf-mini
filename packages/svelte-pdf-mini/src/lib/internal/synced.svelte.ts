@@ -14,7 +14,9 @@ export interface SyncedOptions<T> {
  */
 export class Synced<T> {
 	#getter: Getter<T> | null;
-	#internal = $state<T>() as T;
+	// Raw: values are replaced, never mutated in place, and stay plain objects
+	// (structuredClone / postMessage / IndexedDB reject $state proxies).
+	#internal = $state.raw<T>() as T;
 	#onChange?: (value: T) => void;
 	#equals: (a: T, b: T) => boolean;
 

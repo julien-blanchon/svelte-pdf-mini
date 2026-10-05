@@ -1,50 +1,166 @@
 name: Release
 
-# Changesets: pending changesets on main open (or update) a "Version packages"
-# pull request; merging it publishes the new version to npm with provenance.
+# Publishes svelte-pdf-mini to npm and creates the GitHub release.
+# Trigger: push a tag `vX.Y.Z` matching packages/svelte-pdf-mini/package.json
+# (or run it by hand with the tag). See RELEASING.md.
+#
+# npm auth: trusted publishing (OIDC) bound to THIS file name (release.yml);
+# keep the name. An NPM_TOKEN repository secret is used as a fallback if set.
 on:
   push:
-    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release, e.g. v0.3.0'
+        required: true
+      dry-run:
+        description: 'Build and `npm publish --dry-run` only; no npm publish, no GitHub release'
+        type: boolean
+        default: false
 
 concurrency:
-  group: release
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
-  id-token: write # npm trusted publishing + provenance
+  contents: read
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  PKG_DIR: packages/svelte-pdf-mini
 
 jobs:
-  release:
+  verify:
+    name: Verify, test & pack
     if: github.repository == 'julien-blanchon/svelte-pdf-mini'
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tarball: ${{ steps.pack.outputs.tarball }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Tag matches package.json version
+        id: version
+        run: |
+          VERSION=$(jq -r .version "$PKG_DIR/package.json")
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Tag $TAG does not match $PKG_DIR/package.json version $VERSION (expected v$VERSION)."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: package.json
-      # npm ≥ 11.5 for trusted publishing (OIDC).
       - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
 
-      # Only needed until npm trusted publishing is configured for the package
-      # (first publish): add an NPM_TOKEN repository secret, remove it afterwards.
-      - name: npm token (fallback)
-        if: ${{ env.NPM_TOKEN != '' }}
-        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      - name: Lint
+        run: bun run lint
+      - name: Type check (library + docs)
+        run: bun run check
+      - name: Build (svelte-package + publint)
+        run: bun --filter svelte-pdf-mini build
+
+      - uses: actions/cache@v6
+        with:
+          path: fixtures/cache
+          key: fixtures-${{ hashFiles('fixtures/papers.json') }}
+      - run: bun run fixtures
+      - name: Install Chromium (vitest browser project)
+        run: bunx playwright install --with-deps chromium
+      - name: Unit tests (fast + slow)
+        run: bun run test:full
+
+      # dist/ comes from the Build step (prepack: svelte-package + publint);
+      # scripts are skipped so their output can't corrupt `--json`. The same
+      # tarball is published to npm and attached to the GitHub release.
+      - name: Pack
+        id: pack
+        working-directory: ${{ env.PKG_DIR }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pack"
+          TARBALL=$(npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/pack" --json | jq -r '.[0].filename')
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          tar -tzf "$RUNNER_TEMP/pack/$TARBALL" | sort > "$RUNNER_TEMP/pack/contents.txt"
+          echo "Packed $TARBALL ($(wc -l < "$RUNNER_TEMP/pack/contents.txt") files)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/pack/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish to npm & GitHub release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # GitHub release
+      id-token: write # npm trusted publishing + provenance
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      TARBALL: ${{ needs.verify.outputs.tarball }}
+      DRY_RUN: ${{ inputs.dry-run || false }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      # npm >= 11.5 for trusted publishing (OIDC).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/pack
+
+      - name: npm publish
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Trusted publishing (OIDC) by default; NPM_TOKEN only as a fallback.
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          fi
+          # Prereleases (x.y.z-beta.n) go to the `next` dist-tag, not `latest`.
+          case "$VERSION" in *-*) DIST_TAG=next ;; *) DIST_TAG=latest ;; esac
+          if [ "$DRY_RUN" = "true" ]; then
+            npm publish "$RUNNER_TEMP/pack/$TARBALL" --provenance --access public --tag "$DIST_TAG" --dry-run
+            exit 0
+          fi
+          # Re-runs: the version may already be on npm.
+          if npm view "svelte-pdf-mini@$VERSION" version >/dev/null 2>&1; then
+            echo "::notice::svelte-pdf-mini@$VERSION is already on npm; skipping publish."
+          else
+            npm publish "$RUNNER_TEMP/pack/$TARBALL" --provenance --access public --tag "$DIST_TAG"
+          fi
 
-      - uses: changesets/action@v2
-        with:
-          version-script: bun run version
-          publish-script: bun run release
-          commit-message: 'chore: version packages'
-          pr-title: 'chore: version packages'
-          create-github-releases: true
+      - name: GitHub release
+        if: env.DRY_RUN != 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SECTION=$(.github/scripts/changelog-section.sh "$VERSION" "$PKG_DIR/CHANGELOG.md")
+          NOTES="$RUNNER_TEMP/notes.md"
+          {
+            if [ -n "$SECTION" ]; then printf '%s\n\n' "$SECTION"; fi
+            echo "npm: https://www.npmjs.com/package/svelte-pdf-mini/v/$VERSION"
+          } > "$NOTES"
+          set -- "$TAG" "$RUNNER_TEMP/pack/$TARBALL" --verify-tag \
+            --title "svelte-pdf-mini $TAG" --notes-file "$NOTES"
+          case "$VERSION" in *-*) set -- "$@" --prerelease ;; esac
+          # No CHANGELOG section: GitHub-generated notes (appended to the npm link).
+          if [ -z "$SECTION" ]; then set -- "$@" --generate-notes; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists (re-run): replacing the tarball."
+            gh release upload "$TAG" "$RUNNER_TEMP/pack/$TARBALL" --clobber
+          else
+            gh release create "$@"
+          fi

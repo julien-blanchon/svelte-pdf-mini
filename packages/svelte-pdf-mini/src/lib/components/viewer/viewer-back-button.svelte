@@ -13,7 +13,7 @@
 	const viewer = ViewerContext.get();
 	const refAttachment = attachRef<HTMLButtonElement>((node) => (ref = node));
 	/** Where "back" goes: the top of the back stack. */
-	const to = $derived(viewer.backStack.at(-1) ?? null);
+	const to = $derived(viewer.history.back.at(-1) ?? null);
 	const snippetProps = $derived({
 		page: to?.page ?? null,
 		label: to ? viewer.document.pageLabel(to.page) : ''

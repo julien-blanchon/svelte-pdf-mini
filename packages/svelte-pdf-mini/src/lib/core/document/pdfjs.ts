@@ -51,6 +51,11 @@ export function createWorker(pdfjs: PdfJsModule): InstanceType<PdfJsModule['PDFW
 
 /** Configure pdf.js once, before the first document loads. */
 export function configurePdf(next: PdfConfig): void {
+	// The worker is set up on first load; later worker settings would be silently ignored.
+	if (modulePromise && (next.workerSrc !== undefined || next.workerPort !== undefined))
+		console.warn(
+			'[svelte-pdf-mini] configurePdf: the worker is already set up; call it before the first document loads.'
+		);
 	config = { ...config, ...next };
 }
 

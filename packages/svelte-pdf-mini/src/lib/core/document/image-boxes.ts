@@ -30,6 +30,8 @@ export function pageGraphics(page: PDFPageProxy): Promise<PageGraphics> {
 	if (!p) {
 		p = compute(page);
 		cache.set(page, p);
+		// A failed (or cancelled) run is retried next time.
+		p.catch(() => cache.delete(page));
 	}
 	return p;
 }

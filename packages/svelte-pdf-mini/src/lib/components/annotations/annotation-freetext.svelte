@@ -82,55 +82,57 @@
 </div>
 
 <style>
-	[data-pdf-annotation-freetext] {
-		position: absolute;
-		left: var(--pdf-left);
-		top: var(--pdf-top);
-		width: var(--pdf-width);
-		height: var(--pdf-height);
-		font-size: calc(var(--pdf-scale) * var(--pdf-font-size));
-		font-family: Helvetica, Arial, sans-serif;
-		font-weight: 400;
-		font-style: normal;
-		line-height: 1.25;
-		color: var(--annotation-color);
-		pointer-events: none;
-		z-index: 0;
-	}
-	[data-font='Times'] {
-		font-family:
-			Times New Roman,
-			serif;
-	}
-	[data-font='Courier'] {
-		font-family:
-			Courier New,
-			monospace;
-	}
-	[data-bold] {
-		font-weight: 700;
-	}
-	[data-italic] {
-		font-style: italic;
-	}
-	/* Above the other boxes and clickable while typing. */
-	[data-editing] {
-		pointer-events: auto;
-		z-index: 2;
-	}
-	textarea {
-		all: unset;
-		box-sizing: border-box;
-		width: 100%;
-		height: 100%;
-		white-space: pre-wrap;
-		color: inherit;
-		cursor: text;
-	}
-	[data-part='text'] {
-		white-space: pre-wrap;
-		overflow: hidden;
-		width: 100%;
-		height: 100%;
+	@layer svelte-pdf-mini {
+		[data-pdf-annotation-freetext] {
+			position: absolute;
+			left: var(--pdf-left);
+			top: var(--pdf-top);
+			width: var(--pdf-width);
+			height: var(--pdf-height);
+			font-size: calc(var(--pdf-scale) * var(--pdf-font-size));
+			font-family: Helvetica, Arial, sans-serif;
+			font-weight: 400;
+			font-style: normal;
+			line-height: 1.25;
+			color: var(--annotation-color);
+			pointer-events: none;
+			z-index: 0;
+		}
+		[data-font='Times'] {
+			font-family:
+				Times New Roman,
+				serif;
+		}
+		[data-font='Courier'] {
+			font-family:
+				Courier New,
+				monospace;
+		}
+		[data-bold] {
+			font-weight: 700;
+		}
+		[data-italic] {
+			font-style: italic;
+		}
+		/* Above the other boxes and clickable while typing. */
+		[data-editing] {
+			pointer-events: auto;
+			z-index: 2;
+		}
+		textarea {
+			all: unset;
+			box-sizing: border-box;
+			width: 100%;
+			height: 100%;
+			white-space: pre-wrap;
+			color: inherit;
+			cursor: text;
+		}
+		[data-part='text'] {
+			white-space: pre-wrap;
+			overflow: hidden;
+			width: 100%;
+			height: 100%;
+		}
 	}
 </style>

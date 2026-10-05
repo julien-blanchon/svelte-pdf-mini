@@ -11,7 +11,7 @@
 	const active = $derived(store.color === color);
 	function pick() {
 		store.color = color;
-		// Recolour the selection too, like most editors.
+		// Recolor the selection too, like most editors.
 		if (store.selectedIds.length) store.recolor(store.selectedIds, color);
 	}
 	const refAttachment = attachRef<HTMLButtonElement>((node) => (ref = node));

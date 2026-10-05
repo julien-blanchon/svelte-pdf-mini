@@ -138,7 +138,7 @@ export function unionRect(rects: PdfRect[]): PdfRect | null {
 }
 
 /** Approximate relative glyph advance (proportional fonts), for positions inside an item. */
-export function glyphWeight(ch: string): number {
+function glyphWeight(ch: string): number {
 	if (ch === ' ') return 0.27;
 	if (/[iljtfr.,;:'!|()[\]]/.test(ch)) return 0.32;
 	if (/[I1]/.test(ch)) return 0.4;
@@ -149,7 +149,7 @@ export function glyphWeight(ch: string): number {
 }
 
 /** x offsets (start of each char + end) of an item, using glyph weights. */
-export function charEdges(str: string, width: number): number[] {
+function charEdges(str: string, width: number): number[] {
 	const w = [...str].map(glyphWeight);
 	const total = w.reduce((a, b) => a + b, 0) || 1;
 	const edges = [0];

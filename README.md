@@ -28,9 +28,11 @@ bun add svelte-pdf-mini   # or npm i / pnpm add
 
 ```ts
 // vite.config.ts: required for `vite dev` (the pdf.js worker can't be pre-bundled)
-optimizeDeps: {
-  exclude: ["pdfjs-dist"];
-}
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  optimizeDeps: { exclude: ['pdfjs-dist'] }
+});
 ```
 
 ```svelte

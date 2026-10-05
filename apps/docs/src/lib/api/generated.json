@@ -1,5 +1,5 @@
 {
-	"generatedAt": "2026-10-04",
+	"generatedAt": "2026-10-05",
 	"namespaces": [
 		{
 			"name": "Document",
@@ -322,7 +322,8 @@
 						},
 						{
 							"name": "keyboard",
-							"type": "boolean",
+							"type": "boolean | 'document'",
+							"description": "Shortcuts on the viewport (default), anywhere but text fields and dialogs ('document'), or off.",
 							"required": false,
 							"bindable": false
 						},
@@ -521,7 +522,15 @@
 							"bindable": false
 						}
 					],
-					"snippetProps": [],
+					"snippetProps": [
+						{
+							"name": "links",
+							"type": "Snippet",
+							"description": "The link hotspots: render them inside your own element (`child`).",
+							"required": true,
+							"bindable": false
+						}
+					],
 					"dataAttributes": [
 						"data-kind",
 						"data-pdf-link",
@@ -604,6 +613,7 @@
 						}
 					],
 					"dataAttributes": [
+						"data-force-mount",
 						"data-kind",
 						"data-loading",
 						"data-part",
@@ -867,7 +877,7 @@
 						{
 							"name": "regex",
 							"type": "boolean",
-							"description": "Treat the query as a regular expression (applied to normalised text).",
+							"description": "Treat the query as a regular expression (applied to normalized text).",
 							"required": false,
 							"bindable": false
 						}
@@ -1331,7 +1341,7 @@
 						{
 							"name": "palette",
 							"type": "PaletteColor[]",
-							"description": "Palette (bindable): custom colours picked by users are appended to it.",
+							"description": "Palette (bindable): custom colors picked by users are appended to it.",
 							"required": false,
 							"bindable": true,
 							"default": "defaultPalette"
@@ -1411,6 +1421,13 @@
 							"bindable": false
 						},
 						{
+							"name": "inkSmoothing",
+							"type": "InkSmoothing",
+							"description": "Pen stroke smoothing: 'smooth' (default), 'steady', 'pen' (variable width) or 'raw'.",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "keymap",
 							"type": "Partial<Keymap>",
 							"description": "Keyboard shortcuts, merged over `defaultKeymap`.",
@@ -1473,6 +1490,7 @@
 					],
 					"snippetProps": [],
 					"dataAttributes": [
+						"data-active",
 						"data-drawing",
 						"data-pdf-annotation-focus",
 						"data-pdf-annotation-label",
@@ -1484,7 +1502,8 @@
 						"data-pdf-draw-surface",
 						"data-selected",
 						"data-theme",
-						"data-tool"
+						"data-tool",
+						"data-underlay"
 					]
 				},
 				{
@@ -1555,6 +1574,7 @@
 					],
 					"dataAttributes": [
 						"data-color",
+						"data-force-mount",
 						"data-part",
 						"data-pdf-annotation-ui",
 						"data-pdf-selection-menu",
@@ -1643,13 +1663,14 @@
 						{
 							"name": "color",
 							"type": "string",
-							"description": "CSS colour for the current page theme.",
+							"description": "CSS color for the current page theme.",
 							"required": true,
 							"bindable": false
 						}
 					],
 					"dataAttributes": [
 						"data-active",
+						"data-force-mount",
 						"data-kind",
 						"data-part",
 						"data-pdf-annotation-popover",
@@ -1720,7 +1741,7 @@
 						{
 							"name": "color",
 							"type": "string",
-							"description": "CSS colour for the current page theme.",
+							"description": "CSS color for the current page theme.",
 							"required": true,
 							"bindable": false
 						},
@@ -1732,6 +1753,7 @@
 						}
 					],
 					"dataAttributes": [
+						"data-force-mount",
 						"data-part",
 						"data-pdf-annotation-hover-card",
 						"data-state"
@@ -1769,10 +1791,18 @@
 						{
 							"name": "minWidth",
 							"type": "number",
-							"description": "Notes never overflow the view: they shrink to the room beside the page\n(`viewer.sideRoom`), and below this width (px) turn into compact markers\nthat show the note on hover and open it on click. Default 160.",
+							"description": "Notes never overflow the view: they shrink to the room beside the page\n(`viewer.sideRoom`) plus the page's blank margin (they cover it, never\nits text, when the view is tight), and below this width (px) turn into\ncompact markers that show the note on hover and open it on click. Default 140.",
 							"required": false,
 							"bindable": false,
-							"default": "160"
+							"default": "140"
+						},
+						{
+							"name": "edge",
+							"type": "number",
+							"description": "Space (px) notes keep from the edge of the view, e.g. to clear a\n`Toc.Rail` laid over it. Default 8.",
+							"required": false,
+							"bindable": false,
+							"default": "8"
 						},
 						{
 							"name": "layout",
@@ -2076,7 +2106,7 @@
 						{
 							"name": "auto",
 							"type": "boolean",
-							"description": "Analyse automatically on load. Default true.",
+							"description": "Analyze automatically on load. Default true.",
 							"required": false,
 							"bindable": false
 						},
@@ -2278,6 +2308,7 @@
 					],
 					"dataAttributes": [
 						"data-compact",
+						"data-force-mount",
 						"data-layout",
 						"data-part",
 						"data-pdf-citation-card",
@@ -2347,6 +2378,7 @@
 						}
 					],
 					"dataAttributes": [
+						"data-force-mount",
 						"data-kind",
 						"data-part",
 						"data-pdf-crossref-preview",
@@ -2417,6 +2449,7 @@
 						}
 					],
 					"dataAttributes": [
+						"data-force-mount",
 						"data-part",
 						"data-pdf-backlinks",
 						"data-state"
@@ -2567,7 +2600,7 @@
 						{
 							"name": "empty",
 							"type": "Snippet<[{ status: PaperState['status'] }]>",
-							"description": "Shown while analysing or when no sections were found.",
+							"description": "Shown while analyzing or when no sections were found.",
 							"required": false,
 							"bindable": false
 						}
@@ -2606,7 +2639,7 @@
 						{
 							"name": "empty",
 							"type": "Snippet<[{ status: PaperState['status'] }]>",
-							"description": "Shown while analysing or when no sections were found.",
+							"description": "Shown while analyzing or when no sections were found.",
 							"required": false,
 							"bindable": false
 						}
@@ -2745,7 +2778,7 @@
 						{
 							"name": "variant",
 							"type": "MinimapVariant",
-							"description": "Look of the strip:\n- 'pages': bitmap previews (blocks when pages get too small to read),\n- 'blocks': plain page blocks with numbers,\n- 'text': structure drawn from the text index (lines, headings, figures),\n- 'spine': coloured section bands with labels (needs Paper.Root),\n- 'heatmap': no pages, only markers / Minimap.Heatmap.\nDefault 'pages'.",
+							"description": "Look of the strip:\n- 'pages': bitmap previews (blocks when pages get too small to read),\n- 'blocks': plain page blocks with numbers,\n- 'text': structure drawn from the text index (lines, headings, figures),\n- 'spine': colored section bands with labels (needs Paper.Root),\n- 'heatmap': no pages, only markers / Minimap.Heatmap.\nDefault 'pages'.",
 							"required": false,
 							"bindable": false,
 							"default": "'pages'"
@@ -2908,7 +2941,7 @@
 						{
 							"name": "color",
 							"type": "string",
-							"description": "CSS colour of the hottest bin.",
+							"description": "CSS color of the hottest bin.",
 							"required": false,
 							"bindable": false,
 							"default": "'var(--pdf-accent, rgb(37 99 235))'"
@@ -5594,22 +5627,6 @@
 			"default": "rgb(37 99 235)"
 		},
 		{
-			"name": "--pdf-backlink-hover",
-			"default": "rgb(139 92 246 / 0.12)"
-		},
-		{
-			"name": "--pdf-backlink-line",
-			"default": "rgb(139 92 246 / 0.6)"
-		},
-		{
-			"name": "--pdf-citation-hover",
-			"default": "rgb(16 185 129 / 0.18)"
-		},
-		{
-			"name": "--pdf-crossref-hover",
-			"default": "rgb(59 130 246 / 0.16)"
-		},
-		{
 			"name": "--pdf-find-current",
 			"default": "rgb(255 120 0 / 0.55)"
 		},
@@ -5632,6 +5649,10 @@
 		{
 			"name": "--pdf-focus-ring",
 			"default": "Highlight"
+		},
+		{
+			"name": "--pdf-highlight-underlay-opacity",
+			"default": "0.6"
 		},
 		{
 			"name": "--pdf-marker-width",
@@ -5704,6 +5725,10 @@
 		{
 			"name": "--pdf-rail-width",
 			"default": "14px"
+		},
+		{
+			"name": "--pdf-ref-hover",
+			"default": "rgb(59 130 246 / 0.16)"
 		},
 		{
 			"name": "--pdf-selection",

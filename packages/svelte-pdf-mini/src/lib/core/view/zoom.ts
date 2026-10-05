@@ -43,7 +43,7 @@ export function fitZoom(
 			z = Math.min(byWidth, byHeight);
 			break;
 		case 'auto':
-			// pdf.js behaviour: fit width for portrait, but never above 125%.
+			// pdf.js behavior: fit width for portrait, but never above 125%.
 			z = page.width > page.height ? Math.min(byHeight, byWidth) : Math.min(1.25, byWidth);
 			break;
 	}

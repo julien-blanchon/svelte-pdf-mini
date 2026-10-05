@@ -1,951 +1,966 @@
 /*
  * svelte-pdf-mini base styles (optional, structural only).
  * Import once: `import 'svelte-pdf-mini/styles.css'`.
+ * Everything sits in the `svelte-pdf-mini` cascade layer, so any unlayered app
+ * CSS overrides it. With Tailwind v4, declare the layer order first:
+ * `@layer theme, base, svelte-pdf-mini, components, utilities;`
  * The text layer rules are adapted from pdf.js (Apache-2.0, Mozilla Foundation).
  */
 
-[data-pdf-page] {
-	background: var(--pdf-page-bg, #fff);
-	border-radius: var(--pdf-page-radius, 0);
-	box-shadow: var(--pdf-page-shadow, 0 1px 3px rgb(0 0 0 / 0.15), 0 4px 12px rgb(0 0 0 / 0.08));
-	/* Not paint containment: side notes and markers live outside the page box. */
-	contain: layout;
-}
+@layer svelte-pdf-mini {
+	[data-pdf-page] {
+		background: var(--pdf-page-bg, #fff);
+		border-radius: var(--pdf-page-radius, 0);
+		box-shadow: var(--pdf-page-shadow, 0 1px 3px rgb(0 0 0 / 0.15), 0 4px 12px rgb(0 0 0 / 0.08));
+		/* Not paint containment: side notes and markers live outside the page box. */
+		contain: layout;
+	}
 
-[data-pdf-page] [data-pdf-canvas] {
-	border-radius: inherit;
-	/* WebKit doesn't clip GPU-composited canvases to border-radius + overflow; clip-path does. */
-	clip-path: inset(0 round var(--pdf-page-radius, 0));
-}
-/* Page frame presets (Viewer.Root pageFrame) */
-[data-page-frame='border'] [data-pdf-page] {
-	--pdf-page-shadow: 0 0 0 1px var(--pdf-page-border, rgb(0 0 0 / 0.12));
-}
-[data-page-frame='rounded'] [data-pdf-page] {
-	--pdf-page-radius: 10px;
-	--pdf-page-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 6px 24px -8px rgb(0 0 0 / 0.18);
-}
-[data-page-frame='flat'] [data-pdf-page] {
-	--pdf-page-shadow: none;
-}
-[data-page-frame='none'] [data-pdf-page] {
-	--pdf-page-shadow: none;
-	--pdf-page-bg: transparent;
-}
-[data-pdf-viewport]:focus-visible {
-	outline: 2px solid var(--pdf-focus-ring, Highlight);
-	outline-offset: -2px;
-}
+	[data-pdf-page] [data-pdf-canvas] {
+		border-radius: inherit;
+		/* WebKit doesn't clip GPU-composited canvases to border-radius + overflow; clip-path does. */
+		clip-path: inset(0 round var(--pdf-page-radius, 0));
+	}
+	/* Page frame presets (Viewer.Root pageFrame) */
+	[data-page-frame='border'] [data-pdf-page] {
+		--pdf-page-shadow: 0 0 0 1px var(--pdf-page-border, rgb(0 0 0 / 0.12));
+	}
+	[data-page-frame='rounded'] [data-pdf-page] {
+		--pdf-page-radius: 10px;
+		--pdf-page-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 6px 24px -8px rgb(0 0 0 / 0.18);
+	}
+	[data-page-frame='flat'] [data-pdf-page] {
+		--pdf-page-shadow: none;
+	}
+	[data-page-frame='none'] [data-pdf-page] {
+		--pdf-page-shadow: none;
+		--pdf-page-bg: transparent;
+	}
+	/* Hand tool (set on the viewport by the annotation store): drag to scroll. */
+	:where([data-pdf-viewport][data-pan]) {
+		cursor: grab;
+		user-select: none;
+	}
+	:where([data-pdf-viewport][data-panning]) {
+		cursor: grabbing;
+	}
+	[data-pdf-viewport]:focus-visible {
+		outline: 2px solid var(--pdf-focus-ring, Highlight);
+		outline-offset: -2px;
+	}
 
-/* ── Focus highlight ───────────────────────────────────────────────────── */
-/* data-highlight: pulse | outline | spotlight | <your own>; --pdf-focus-duration is set inline. */
-[data-pdf-focus] {
-	z-index: 3;
-	border-radius: 4px;
-	--pdf-focus-color: var(--pdf-accent, rgb(37 99 235));
-	animation-duration: var(--pdf-focus-duration, 1.8s);
-	animation-fill-mode: forwards;
-}
-[data-pdf-focus][data-highlight='pulse'] {
-	animation-name: pdf-focus-pulse;
-	animation-timing-function: ease-out;
-}
-[data-pdf-focus][data-highlight='outline'] {
-	outline: 2px solid var(--pdf-focus-color);
-	outline-offset: 3px;
-	animation-name: pdf-focus-fade;
-	animation-timing-function: ease-in;
-}
-[data-pdf-focus][data-highlight='spotlight'] {
-	/* Dims the rest of the page (clipped to the page by Viewer.Focus's wrapper). */
-	box-shadow: 0 0 0 200vmax rgb(0 0 0 / 0.38);
-	outline: 2px solid color-mix(in srgb, var(--pdf-focus-color) 70%, white);
-	animation-name: pdf-focus-fade;
-	animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
-}
-@keyframes pdf-focus-pulse {
-	0% {
-		background: color-mix(in srgb, var(--pdf-focus-color) 32%, transparent);
-		box-shadow: 0 0 0 0 color-mix(in srgb, var(--pdf-focus-color) 55%, transparent);
+	/* ── Focus highlight ───────────────────────────────────────────────────── */
+	/* data-highlight: pulse | outline | spotlight | <your own>; --pdf-focus-duration is set inline. */
+	[data-pdf-focus] {
+		z-index: 3;
+		border-radius: 4px;
+		--pdf-focus-color: var(--pdf-accent, rgb(37 99 235));
+		animation-duration: var(--pdf-focus-duration, 1.8s);
+		animation-fill-mode: forwards;
 	}
-	12% {
-		box-shadow: 0 0 0 12px transparent;
+	[data-pdf-focus][data-highlight='pulse'] {
+		animation-name: pdf-focus-pulse;
+		animation-timing-function: ease-out;
 	}
-	22% {
-		box-shadow: 0 0 0 0 color-mix(in srgb, var(--pdf-focus-color) 45%, transparent);
+	[data-pdf-focus][data-highlight='outline'] {
+		outline: 2px solid var(--pdf-focus-color);
+		outline-offset: 3px;
+		animation-name: pdf-focus-fade;
+		animation-timing-function: ease-in;
 	}
-	36% {
-		box-shadow: 0 0 0 12px transparent;
+	[data-pdf-focus][data-highlight='spotlight'] {
+		/* Dims the rest of the page (clipped to the page by Viewer.Focus's wrapper). */
+		box-shadow: 0 0 0 200vmax rgb(0 0 0 / 0.38);
+		outline: 2px solid color-mix(in srgb, var(--pdf-focus-color) 70%, white);
+		animation-name: pdf-focus-fade;
+		animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
 	}
-	70% {
-		background: color-mix(in srgb, var(--pdf-focus-color) 22%, transparent);
+	@keyframes pdf-focus-pulse {
+		0% {
+			background: color-mix(in srgb, var(--pdf-focus-color) 32%, transparent);
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--pdf-focus-color) 55%, transparent);
+		}
+		12% {
+			box-shadow: 0 0 0 12px transparent;
+		}
+		22% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--pdf-focus-color) 45%, transparent);
+		}
+		36% {
+			box-shadow: 0 0 0 12px transparent;
+		}
+		70% {
+			background: color-mix(in srgb, var(--pdf-focus-color) 22%, transparent);
+		}
+		100% {
+			background: transparent;
+			box-shadow: 0 0 0 0 transparent;
+		}
 	}
-	100% {
+	@keyframes pdf-focus-fade {
+		75% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		[data-pdf-focus][data-highlight='pulse'] {
+			animation-name: pdf-focus-fade;
+			background: color-mix(in srgb, var(--pdf-focus-color) 25%, transparent);
+		}
+	}
+
+	/* ── Text layer (from pdf.js) ────────────────────────────────────────────── */
+	/*
+	 * Performance: while a zoom animates, text layers leave rendering, so their
+	 * spans (sized from --pdf-scale) aren't re-styled and re-laid out every frame.
+	 * They come back once the zoom settles. Not while text is selected: hiding
+	 * them would hide the selection too.
+	 */
+	[data-pdf-viewport][data-zooming]:not([data-has-selection]) [data-pdf-text-layer] {
+		display: none;
+	}
+
+	[data-pdf-text-layer].textLayer {
+		color-scheme: only light;
+		position: absolute;
+		text-align: initial;
+		inset: 0;
+		overflow: clip;
+		opacity: 1;
+		line-height: 1;
+		letter-spacing: normal;
+		word-spacing: normal;
+		text-size-adjust: none;
+		forced-color-adjust: none;
+		transform-origin: 0 0;
+		caret-color: CanvasText;
+		z-index: 1;
+		--min-font-size: 1;
+		--text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+		--min-font-size-inv: calc(1 / var(--min-font-size));
+
+		:is(span, br) {
+			color: transparent;
+			position: absolute;
+			white-space: pre;
+			cursor: text;
+			transform-origin: 0% 0%;
+			user-select: text;
+		}
+		> :not(.markedContent),
+		.markedContent span:not(.markedContent) {
+			z-index: 1;
+			--font-height: 0;
+			font-size: calc(var(--text-scale-factor) * var(--font-height));
+			--scale-x: 1;
+			--rotate: 0deg;
+			transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+		}
+		.markedContent {
+			display: contents;
+		}
+		span[role='img'] {
+			user-select: none;
+			cursor: default;
+		}
+		::selection {
+			background: var(--pdf-selection, color-mix(in srgb, AccentColor, transparent 60%));
+			color: transparent;
+		}
+		br::selection {
+			background: transparent;
+		}
+		.endOfContent {
+			display: block;
+			position: absolute;
+			inset: 100% 0 0;
+			z-index: 0;
+			cursor: default;
+			user-select: none;
+		}
+		&.selecting .endOfContent {
+			top: 0;
+		}
+	}
+
+	/* ── Find matches ────────────────────────────────────────────────────────── */
+	[data-pdf-find-match] {
+		fill: var(--pdf-find-match, rgb(255 200 0 / 0.38));
+	}
+	[data-pdf-find-match][data-current] {
+		fill: var(--pdf-find-current, rgb(255 120 0 / 0.55));
+		stroke: var(--pdf-find-current-stroke, rgb(230 90 0));
+		stroke-width: 0.6;
+	}
+
+	/* ── Annotations (optional defaults; every value is a CSS variable) ─────── */
+	[data-pdf-viewer] {
+		--pdf-ui-bg: #fff;
+		--pdf-ui-fg: #1c1917;
+		--pdf-ui-muted: #78716c;
+		--pdf-ui-border: rgb(0 0 0 / 0.1);
+		--pdf-ui-shadow: 0 8px 28px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.1);
+		--pdf-ui-radius: 10px;
+	}
+	[data-pdf-viewer][data-theme='dark'] {
+		--pdf-ui-bg: #1c1c1e;
+		--pdf-ui-fg: #e7e5e4;
+		--pdf-ui-muted: #a8a29e;
+		--pdf-ui-border: rgb(255 255 255 / 0.12);
+	}
+	/* Pointer cursor over anything clickable (set by Annotations.Layer's hit test). */
+	[data-pdf-page][data-annotation-hover],
+	[data-pdf-page][data-annotation-hover]
+		:is([data-pdf-text-layer], [data-pdf-text-layer] span, [data-pdf-canvas]) {
+		cursor: pointer;
+	}
+	[data-pdf-annotation][data-selected] [data-part='highlight'],
+	[data-pdf-annotation][data-hovered] [data-part='highlight'],
+	[data-pdf-annotation-underlay] [data-active] {
+		filter: saturate(1.4) brightness(0.95);
+	}
+	/* Highlight fills under the page bitmap (see Annotations.Layer). */
+	[data-pdf-annotation-underlay] {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+		fill-opacity: var(--pdf-highlight-underlay-opacity, 0.6);
+	}
+	[data-pdf-annotation][data-selected] :is(rect, ellipse, path, line):not([data-part='highlight']) {
+		filter: drop-shadow(0 0 1.5px var(--annotation-color));
+	}
+	[data-pdf-annotation-handles] [data-part='body'] {
+		outline: 1.5px dashed var(--pdf-accent, rgb(37 99 235));
+		outline-offset: 3px;
+		border-radius: 2px;
+	}
+	[data-pdf-annotation-layer] [data-part='handle'] {
+		width: 10px;
+		height: 10px;
+		border-radius: 3px;
+		background: #fff;
+		border: 1.5px solid var(--pdf-accent, rgb(37 99 235));
+	}
+	[data-pdf-annotation-label] {
+		font:
+			600 11px/1.2 system-ui,
+			sans-serif;
+		padding: 2px 6px;
+		margin-bottom: 2px;
+		border-radius: 4px 4px 4px 0;
+		color: #1c1917;
+		background: var(--annotation-color);
+		white-space: nowrap;
+	}
+	[data-pdf-annotation-note][data-selected] {
+		outline: 2px solid var(--pdf-accent, rgb(37 99 235));
+		outline-offset: 1px;
+		border-radius: 3px;
+	}
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover], [data-pdf-annotation-hover-card]) {
+		background: var(--pdf-ui-bg);
+		color: var(--pdf-ui-fg);
+		border: 1px solid var(--pdf-ui-border);
+		border-radius: var(--pdf-ui-radius);
+		box-shadow: var(--pdf-ui-shadow);
+		font:
+			13px/1.45 system-ui,
+			sans-serif;
+	}
+	[data-pdf-selection-menu] {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 5px;
+	}
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) button {
+		all: unset;
+		box-sizing: border-box;
+		display: grid;
+		place-items: center;
+		min-width: 26px;
+		height: 26px;
+		border-radius: 6px;
+		cursor: pointer;
+	}
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) button:hover {
+		background: color-mix(in srgb, var(--pdf-ui-fg) 8%, transparent);
+	}
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) [data-part='swatches'] {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		padding: 0 3px;
+	}
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) [data-part='swatch'] {
+		width: 18px;
+		min-width: 18px;
+		height: 18px;
+		border-radius: 999px;
+		background: var(--swatch);
+		box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.14);
+	}
+	[data-pdf-selection-menu] [data-part='swatch'] {
+		margin: 0 2px;
+	}
+	/* Selected ring stays inside the 7px gap: 1.5px page-colored halo + 1.5px accent. */
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) [data-part='swatch'][data-active] {
+		box-shadow:
+			inset 0 0 0 1px rgb(0 0 0 / 0.14),
+			0 0 0 1.5px var(--pdf-ui-bg),
+			0 0 0 3px var(--pdf-accent, rgb(37 99 235));
+	}
+	:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) button:focus-visible {
+		outline: 2px solid var(--pdf-accent, rgb(37 99 235));
+		outline-offset: 1px;
+	}
+	[data-pdf-selection-menu] [data-part='sep'] {
+		width: 1px;
+		height: 18px;
+		margin: 0 2px;
+		background: var(--pdf-ui-border);
+	}
+	[data-pdf-annotation-popover] [data-part='kinds'] {
+		display: flex;
+		gap: 2px;
+	}
+	[data-pdf-annotation-popover] {
+		width: 300px;
+		padding: 8px;
+		display: grid;
+		gap: 8px;
+	}
+	[data-pdf-annotation-popover] [data-part='toolbar'] {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 3px;
+	}
+	[data-pdf-annotation-popover] [data-part='kind'][data-active] {
+		background: color-mix(in srgb, var(--pdf-ui-fg) 12%, transparent);
+		font-weight: 700;
+	}
+	[data-pdf-annotation-popover] [data-part='sep'] {
+		width: 1px;
+		height: 18px;
+		margin: 0 3px;
+		background: var(--pdf-ui-border);
+	}
+	[data-pdf-annotation-popover] [data-part='label'] {
+		font: inherit;
+		padding: 4px 8px;
+		border-radius: 6px;
+		border: 1px solid var(--pdf-ui-border);
 		background: transparent;
-		box-shadow: 0 0 0 0 transparent;
+		color: inherit;
 	}
-}
-@keyframes pdf-focus-fade {
-	75% {
+	[data-pdf-annotation-popover] [data-part='quote'] {
+		margin: 0;
+		padding-left: 8px;
+		border-left: 3px solid var(--annotation-color, var(--pdf-ui-border));
+		color: var(--pdf-ui-muted);
+		font-family: Georgia, serif;
+		max-height: 7em;
+		overflow: auto;
+	}
+	[data-pdf-annotation-popover] [data-pdf-annotation-comment] {
+		padding: 6px 8px;
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--pdf-ui-fg) 5%, transparent);
+	}
+	[data-pdf-annotation-popover] [data-part='meta'],
+	[data-pdf-annotation-hover-card] [data-part='meta'] {
+		margin: 0;
+		font-size: 11px;
+		color: var(--pdf-ui-muted);
+	}
+	[data-pdf-annotation-hover-card] {
+		max-width: 320px;
+		padding: 8px 10px;
+		border-left: 4px solid var(--annotation-color);
+	}
+	[data-pdf-annotation-hover-card] [data-part='contents'] {
+		margin: 2px 0;
+	}
+	/* Rendered notes (Markdown + KaTeX). */
+	[data-pdf-markdown] {
+		overflow-wrap: anywhere;
+	}
+	[data-pdf-markdown] > :first-child {
+		margin-top: 0;
+	}
+	[data-pdf-markdown] > :last-child {
+		margin-bottom: 0;
+	}
+	[data-pdf-markdown] :is(p, ul, ol, blockquote, pre) {
+		margin: 0.35em 0;
+	}
+	[data-pdf-markdown] :is(ul, ol) {
+		padding-left: 1.25em;
+	}
+	[data-pdf-markdown] code {
+		font:
+			0.92em ui-monospace,
+			monospace;
+		padding: 0 0.25em;
+		border-radius: 4px;
+		background: color-mix(in srgb, currentColor 9%, transparent);
+	}
+	[data-pdf-markdown] a {
+		color: var(--pdf-accent, rgb(37 99 235));
+	}
+	[data-pdf-markdown] .katex-display {
+		margin: 0.4em 0;
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+	[data-pdf-annotation-comment] [data-part='view'] {
+		cursor: text;
+		border-radius: 4px;
+	}
+	[data-pdf-annotation-comment] [data-part='view']:focus-visible {
+		outline: 2px solid var(--pdf-accent, rgb(37 99 235));
+		outline-offset: 2px;
+	}
+	[data-pdf-margin-note] {
+		box-sizing: border-box;
+		padding: 6px 9px;
+		border-radius: 8px;
+		border-left: 3px solid var(--annotation-color);
+		background: var(--pdf-ui-bg, #fff);
+		color: var(--pdf-ui-fg);
+		box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+		font:
+			12.5px/1.45 system-ui,
+			sans-serif;
+		cursor: pointer;
+		transition:
+			top 0.18s ease,
+			box-shadow 0.15s;
+	}
+	/* While zooming, notes must follow their page in the same frame (no easing lag). */
+	[data-pdf-viewport][data-zooming] [data-pdf-margin-note] {
+		transition: none;
+	}
+	[data-pdf-margin-note]:is([data-hovered], [data-selected]) {
+		box-shadow:
+			0 0 0 2px var(--annotation-color),
+			0 4px 12px rgb(0 0 0 / 0.12);
+	}
+	[data-pdf-margin-note] [data-part='label'] {
+		display: block;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--pdf-ui-muted);
+		padding-bottom: 4px;
+		margin-bottom: 5px;
+		border-bottom: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
+	}
+	[data-pdf-line-marker] {
+		all: unset;
+		position: absolute;
+		box-sizing: border-box;
+		width: var(--pdf-marker-width, 3px);
+		border-radius: 2px;
+		background: var(--annotation-color);
+		opacity: 0.8;
+		cursor: pointer;
+		transition:
+			transform 0.12s,
+			opacity 0.12s;
+	}
+	/* A wider invisible hit area so thin bars stay easy to click. */
+	[data-pdf-line-marker]::before {
+		content: '';
+		position: absolute;
+		inset: 0 -3px;
+	}
+	[data-pdf-line-marker]:is(:hover, [data-hovered], [data-selected], :focus-visible) {
+		transform: scaleX(1.8);
 		opacity: 1;
 	}
-	100% {
-		opacity: 0;
+	[data-pdf-line-marker]:focus-visible {
+		outline: 2px solid var(--pdf-accent, rgb(37 99 235));
+		outline-offset: 2px;
 	}
-}
-@media (prefers-reduced-motion: reduce) {
-	[data-pdf-focus][data-highlight='pulse'] {
-		animation-name: pdf-focus-fade;
-		background: color-mix(in srgb, var(--pdf-focus-color) 25%, transparent);
-	}
-}
 
-/* ── Text layer (from pdf.js) ────────────────────────────────────────────── */
-/*
- * Performance: while a zoom animates, text layers leave rendering, so their
- * spans (sized from --pdf-scale) aren't re-styled and re-laid out every frame.
- * They come back once the zoom settles.
- */
-[data-pdf-viewport][data-zooming] [data-pdf-text-layer] {
-	display: none;
-}
-
-[data-pdf-text-layer].textLayer {
-	color-scheme: only light;
-	position: absolute;
-	text-align: initial;
-	inset: 0;
-	overflow: clip;
-	opacity: 1;
-	line-height: 1;
-	letter-spacing: normal;
-	word-spacing: normal;
-	text-size-adjust: none;
-	forced-color-adjust: none;
-	transform-origin: 0 0;
-	caret-color: CanvasText;
-	z-index: 1;
-	--min-font-size: 1;
-	--text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
-	--min-font-size-inv: calc(1 / var(--min-font-size));
-
-	:is(span, br) {
-		color: transparent;
-		position: absolute;
-		white-space: pre;
-		cursor: text;
-		transform-origin: 0% 0%;
-		user-select: text;
+	/* ── Research-paper aids ─────────────────────────────────────────────────── */
+	/* Anything that links elsewhere (citations, cross-refs, labels mentioned
+	   elsewhere) shares one hover tint. */
+	:is([data-pdf-citation], [data-pdf-crossref], [data-pdf-backlink-target]) {
+		border-radius: 2px;
+		cursor: pointer;
 	}
-	> :not(.markedContent),
-	.markedContent span:not(.markedContent) {
-		z-index: 1;
-		--font-height: 0;
-		font-size: calc(var(--text-scale-factor) * var(--font-height));
-		--scale-x: 1;
-		--rotate: 0deg;
-		transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+	:is([data-pdf-citation], [data-pdf-crossref], [data-pdf-backlink-target]):is(
+		:hover,
+		[data-hovered]
+	) {
+		background: var(--pdf-ref-hover, rgb(59 130 246 / 0.16));
 	}
-	.markedContent {
-		display: contents;
-	}
-	span[role='img'] {
-		user-select: none;
-		cursor: default;
-	}
-	::selection {
-		background: var(--pdf-selection, color-mix(in srgb, AccentColor, transparent 60%));
-		color: transparent;
-	}
-	br::selection {
-		background: transparent;
-	}
-	.endOfContent {
-		display: block;
-		position: absolute;
-		inset: 100% 0 0;
-		z-index: 0;
-		cursor: default;
-		user-select: none;
-	}
-	&.selecting .endOfContent {
-		top: 0;
-	}
-}
-
-/* ── Find matches ────────────────────────────────────────────────────────── */
-[data-pdf-find-match] {
-	fill: var(--pdf-find-match, rgb(255 200 0 / 0.38));
-}
-[data-pdf-find-match][data-current] {
-	fill: var(--pdf-find-current, rgb(255 120 0 / 0.55));
-	stroke: var(--pdf-find-current-stroke, rgb(230 90 0));
-	stroke-width: 0.6;
-}
-
-/* ── Annotations (optional defaults; every value is a CSS variable) ─────── */
-[data-pdf-viewer] {
-	--pdf-ui-bg: #fff;
-	--pdf-ui-fg: #1c1917;
-	--pdf-ui-muted: #78716c;
-	--pdf-ui-border: rgb(0 0 0 / 0.1);
-	--pdf-ui-shadow: 0 8px 28px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.1);
-	--pdf-ui-radius: 10px;
-}
-[data-pdf-viewer][data-theme='dark'] {
-	--pdf-ui-bg: #1c1c1e;
-	--pdf-ui-fg: #e7e5e4;
-	--pdf-ui-muted: #a8a29e;
-	--pdf-ui-border: rgb(255 255 255 / 0.12);
-}
-/* Pointer cursor over anything clickable (set by Annotations.Layer's hit test). */
-[data-pdf-page][data-annotation-hover],
-[data-pdf-page][data-annotation-hover]
-	:is([data-pdf-text-layer], [data-pdf-text-layer] span, [data-pdf-canvas]) {
-	cursor: pointer;
-}
-[data-pdf-annotation][data-selected] [data-part='highlight'],
-[data-pdf-annotation][data-hovered] [data-part='highlight'] {
-	filter: saturate(1.4) brightness(0.95);
-}
-[data-pdf-annotation][data-selected] :is(rect, ellipse, path, line):not([data-part='highlight']) {
-	filter: drop-shadow(0 0 1.5px var(--annotation-color));
-}
-[data-pdf-annotation-handles] [data-part='body'] {
-	outline: 1.5px dashed var(--pdf-accent, rgb(37 99 235));
-	outline-offset: 3px;
-	border-radius: 2px;
-}
-[data-pdf-annotation-layer] [data-part='handle'] {
-	width: 10px;
-	height: 10px;
-	border-radius: 3px;
-	background: #fff;
-	border: 1.5px solid var(--pdf-accent, rgb(37 99 235));
-}
-[data-pdf-annotation-label] {
-	font:
-		600 11px/1.2 system-ui,
-		sans-serif;
-	padding: 2px 6px;
-	margin-bottom: 2px;
-	border-radius: 4px 4px 4px 0;
-	color: #1c1917;
-	background: var(--annotation-color);
-	white-space: nowrap;
-}
-[data-pdf-annotation-note][data-selected] {
-	outline: 2px solid var(--pdf-accent, rgb(37 99 235));
-	outline-offset: 1px;
-	border-radius: 3px;
-}
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover], [data-pdf-annotation-hover-card]) {
-	background: var(--pdf-ui-bg);
-	color: var(--pdf-ui-fg);
-	border: 1px solid var(--pdf-ui-border);
-	border-radius: var(--pdf-ui-radius);
-	box-shadow: var(--pdf-ui-shadow);
-	font:
-		13px/1.45 system-ui,
-		sans-serif;
-}
-[data-pdf-selection-menu] {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	padding: 5px;
-}
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) button {
-	all: unset;
-	box-sizing: border-box;
-	display: grid;
-	place-items: center;
-	min-width: 26px;
-	height: 26px;
-	border-radius: 6px;
-	cursor: pointer;
-}
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) button:hover {
-	background: color-mix(in srgb, var(--pdf-ui-fg) 8%, transparent);
-}
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) [data-part='swatches'] {
-	display: flex;
-	align-items: center;
-	gap: 7px;
-	padding: 0 3px;
-}
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) [data-part='swatch'] {
-	width: 18px;
-	min-width: 18px;
-	height: 18px;
-	border-radius: 999px;
-	background: var(--swatch);
-	box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.14);
-}
-[data-pdf-selection-menu] [data-part='swatch'] {
-	margin: 0 2px;
-}
-/* Selected ring stays inside the 7px gap: 1.5px page-coloured halo + 1.5px accent. */
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) [data-part='swatch'][data-active] {
-	box-shadow:
-		inset 0 0 0 1px rgb(0 0 0 / 0.14),
-		0 0 0 1.5px var(--pdf-ui-bg),
-		0 0 0 3px var(--pdf-accent, rgb(37 99 235));
-}
-:is([data-pdf-selection-menu], [data-pdf-annotation-popover]) button:focus-visible {
-	outline: 2px solid var(--pdf-accent, rgb(37 99 235));
-	outline-offset: 1px;
-}
-[data-pdf-selection-menu] [data-part='sep'] {
-	width: 1px;
-	height: 18px;
-	margin: 0 2px;
-	background: var(--pdf-ui-border);
-}
-[data-pdf-annotation-popover] [data-part='kinds'] {
-	display: flex;
-	gap: 2px;
-}
-[data-pdf-annotation-popover] {
-	width: 300px;
-	padding: 8px;
-	display: grid;
-	gap: 8px;
-}
-[data-pdf-annotation-popover] [data-part='toolbar'] {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 3px;
-}
-[data-pdf-annotation-popover] [data-part='kind'][data-active] {
-	background: color-mix(in srgb, var(--pdf-ui-fg) 12%, transparent);
-	font-weight: 700;
-}
-[data-pdf-annotation-popover] [data-part='sep'] {
-	width: 1px;
-	height: 18px;
-	margin: 0 3px;
-	background: var(--pdf-ui-border);
-}
-[data-pdf-annotation-popover] [data-part='label'] {
-	font: inherit;
-	padding: 4px 8px;
-	border-radius: 6px;
-	border: 1px solid var(--pdf-ui-border);
-	background: transparent;
-	color: inherit;
-}
-[data-pdf-annotation-popover] [data-part='quote'] {
-	margin: 0;
-	padding-left: 8px;
-	border-left: 3px solid var(--annotation-color, var(--pdf-ui-border));
-	color: var(--pdf-ui-muted);
-	font-family: Georgia, serif;
-	max-height: 7em;
-	overflow: auto;
-}
-[data-pdf-annotation-popover] [data-pdf-annotation-comment] {
-	padding: 6px 8px;
-	border-radius: 6px;
-	background: color-mix(in srgb, var(--pdf-ui-fg) 5%, transparent);
-}
-[data-pdf-annotation-popover] [data-part='meta'],
-[data-pdf-annotation-hover-card] [data-part='meta'] {
-	margin: 0;
-	font-size: 11px;
-	color: var(--pdf-ui-muted);
-}
-[data-pdf-annotation-hover-card] {
-	max-width: 320px;
-	padding: 8px 10px;
-	border-left: 4px solid var(--annotation-color);
-}
-[data-pdf-annotation-hover-card] [data-part='contents'] {
-	margin: 2px 0;
-}
-/* Rendered notes (Markdown + KaTeX). */
-[data-pdf-markdown] {
-	overflow-wrap: anywhere;
-}
-[data-pdf-markdown] > :first-child {
-	margin-top: 0;
-}
-[data-pdf-markdown] > :last-child {
-	margin-bottom: 0;
-}
-[data-pdf-markdown] :is(p, ul, ol, blockquote, pre) {
-	margin: 0.35em 0;
-}
-[data-pdf-markdown] :is(ul, ol) {
-	padding-left: 1.25em;
-}
-[data-pdf-markdown] code {
-	font:
-		0.92em ui-monospace,
-		monospace;
-	padding: 0 0.25em;
-	border-radius: 4px;
-	background: color-mix(in srgb, currentColor 9%, transparent);
-}
-[data-pdf-markdown] a {
-	color: var(--pdf-accent, rgb(37 99 235));
-}
-[data-pdf-markdown] .katex-display {
-	margin: 0.4em 0;
-	overflow-x: auto;
-	overflow-y: hidden;
-}
-[data-pdf-annotation-comment] [data-part='view'] {
-	cursor: text;
-	border-radius: 4px;
-}
-[data-pdf-annotation-comment] [data-part='view']:focus-visible {
-	outline: 2px solid var(--pdf-accent, rgb(37 99 235));
-	outline-offset: 2px;
-}
-[data-pdf-margin-note] {
-	box-sizing: border-box;
-	padding: 6px 9px;
-	border-radius: 8px;
-	border-left: 3px solid var(--annotation-color);
-	background: var(--pdf-ui-bg, #fff);
-	color: var(--pdf-ui-fg);
-	box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
-	font:
-		12.5px/1.45 system-ui,
-		sans-serif;
-	cursor: pointer;
-	transition:
-		top 0.18s ease,
-		box-shadow 0.15s;
-}
-/* While zooming, notes must follow their page in the same frame (no easing lag). */
-[data-pdf-viewport][data-zooming] [data-pdf-margin-note] {
-	transition: none;
-}
-[data-pdf-margin-note]:is([data-hovered], [data-selected]) {
-	box-shadow:
-		0 0 0 2px var(--annotation-color),
-		0 4px 12px rgb(0 0 0 / 0.12);
-}
-[data-pdf-margin-note] [data-part='label'] {
-	display: block;
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--pdf-ui-muted);
-	padding-bottom: 4px;
-	margin-bottom: 5px;
-	border-bottom: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
-}
-[data-pdf-line-marker] {
-	all: unset;
-	position: absolute;
-	box-sizing: border-box;
-	width: var(--pdf-marker-width, 3px);
-	border-radius: 2px;
-	background: var(--annotation-color);
-	opacity: 0.8;
-	cursor: pointer;
-	transition:
-		transform 0.12s,
-		opacity 0.12s;
-}
-/* A wider invisible hit area so thin bars stay easy to click. */
-[data-pdf-line-marker]::before {
-	content: '';
-	position: absolute;
-	inset: 0 -3px;
-}
-[data-pdf-line-marker]:is(:hover, [data-hovered], [data-selected], :focus-visible) {
-	transform: scaleX(1.8);
-	opacity: 1;
-}
-[data-pdf-line-marker]:focus-visible {
-	outline: 2px solid var(--pdf-accent, rgb(37 99 235));
-	outline-offset: 2px;
-}
-
-/* ── Research-paper aids ─────────────────────────────────────────────────── */
-[data-pdf-citation],
-[data-pdf-crossref] {
-	border-radius: 2px;
-	cursor: pointer;
-}
-:is([data-pdf-citation], [data-pdf-crossref]):hover,
-[data-pdf-citation][data-hovered] {
-	background: var(--pdf-citation-hover, rgb(16 185 129 / 0.18));
-}
-[data-pdf-crossref]:hover {
-	background: var(--pdf-crossref-hover, rgb(59 130 246 / 0.16));
-}
-/* A label mentioned elsewhere (backlinks): a subtle dotted underline on hover. */
-[data-pdf-backlink-target] {
-	cursor: pointer;
-	border-radius: 2px;
-}
-[data-pdf-backlink-target]:hover,
-[data-pdf-backlink-target][data-hovered] {
-	background: var(--pdf-backlink-hover, rgb(139 92 246 / 0.12));
-	box-shadow: inset 0 -1.5px 0 var(--pdf-backlink-line, rgb(139 92 246 / 0.6));
-}
-:is(
-	[data-pdf-citation-card],
-	[data-pdf-crossref-preview],
-	[data-pdf-link-preview],
-	[data-pdf-backlinks]
-) {
-	background: var(--pdf-ui-bg, #fff);
-	color: var(--pdf-ui-fg, #1c1917);
-	border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
-	border-radius: var(--pdf-ui-radius, 10px);
-	box-shadow: var(--pdf-ui-shadow, 0 8px 28px rgb(0 0 0 / 0.16));
-	font:
-		13px/1.45 system-ui,
-		sans-serif;
-	overflow: hidden;
-}
-[data-pdf-backlinks] {
-	padding: 8px;
-}
-[data-pdf-backlinks] [data-part='title'] {
-	margin: 0;
-	padding: 2px 6px 6px;
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.03em;
-	text-transform: uppercase;
-	color: var(--pdf-ui-muted, #78716c);
-}
-[data-pdf-backlinks] [data-part='list'] {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	max-height: 320px;
-	overflow-y: auto;
-}
-[data-pdf-backlinks] [data-part='mention'] {
-	all: unset;
-	box-sizing: border-box;
-	display: flex;
-	gap: 8px;
-	width: 100%;
-	padding: 6px;
-	border-radius: 6px;
-	cursor: pointer;
-}
-[data-pdf-backlinks] [data-part='mention']:is(:hover, :focus-visible) {
-	background: color-mix(in srgb, currentColor 7%, transparent);
-}
-[data-pdf-backlinks] [data-part='page'] {
-	flex: none;
-	min-width: 32px;
-	font-size: 11px;
-	color: var(--pdf-ui-muted, #78716c);
-}
-[data-pdf-backlinks] mark {
-	background: var(--pdf-backlink-hover, rgb(139 92 246 / 0.18));
-	color: inherit;
-	border-radius: 2px;
-	padding: 0 1px;
-}
-[data-pdf-citation-card] {
-	width: 380px;
-	padding: 10px 12px;
-	display: grid;
-	gap: 4px;
-}
-[data-pdf-citation-card] [data-part='header'] {
-	display: flex;
-	justify-content: space-between;
-	color: var(--pdf-ui-muted, #78716c);
-	font-size: 12px;
-}
-[data-pdf-citation-card] [data-part='pager'] button {
-	all: unset;
-	cursor: pointer;
-	padding: 0 4px;
-}
-[data-pdf-citation-card] [data-part='title'] {
-	margin: 0;
-	font-weight: 600;
-	font-family: Georgia, serif;
-	font-size: 14px;
-}
-[data-pdf-citation-card] :is([data-part='authors'], [data-part='abstract']) {
-	margin: 0;
-	color: var(--pdf-ui-muted, #57534e);
-}
-[data-pdf-citation-card] [data-part='abstract'] {
-	display: -webkit-box;
-	-webkit-line-clamp: 4;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
-	font-size: 12px;
-}
-[data-pdf-citation-card] [data-part='footer'] {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-	align-items: center;
-	margin-top: 4px;
-	font-size: 12px;
-}
-[data-pdf-citation-card] [data-part='footer'] :is(a, button) {
-	all: unset;
-	cursor: pointer;
-	color: var(--pdf-accent, rgb(37 99 235));
-}
-:is([data-pdf-crossref-preview], [data-pdf-link-preview]) [data-part='caption'] {
-	display: block;
-	padding: 6px 10px;
-	border-top: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
-	font-size: 12px;
-	color: var(--pdf-ui-muted, #78716c);
-}
-[data-pdf-toc-item] {
-	all: unset;
-	box-sizing: border-box;
-	display: block;
-	width: 100%;
-	cursor: pointer;
-	border-radius: 6px;
-	padding-block: 4px;
-	padding-right: 8px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-[data-pdf-toc-item]:hover {
-	background: color-mix(in srgb, currentColor 7%, transparent);
-}
-[data-pdf-toc-item]:is([data-active], [data-in-path]) {
-	color: var(--pdf-accent, rgb(37 99 235));
-}
-[data-pdf-toc-item][data-active] {
-	font-weight: 600;
-	background: color-mix(in srgb, var(--pdf-accent, rgb(37 99 235)) 10%, transparent);
-}
-[data-pdf-toc='breadcrumb'] {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	min-width: 0;
-}
-[data-pdf-toc='breadcrumb'] [data-pdf-toc-item] {
-	width: auto;
-	padding: 2px 6px;
-	flex: 0 1 auto;
-}
-[data-pdf-toc='progress'] {
-	height: var(--pdf-progress-height, 6px);
-	background: color-mix(in srgb, currentColor 10%, transparent);
-	border-radius: 999px;
-	overflow: hidden;
-}
-[data-pdf-toc='progress'] [data-part='fill'] {
-	background: var(--pdf-accent, rgb(37 99 235));
-	opacity: 0.85;
-	transition: width 0.15s;
-}
-[data-pdf-toc-segment] {
-	all: unset;
-	cursor: pointer;
-	box-shadow: inset -1px 0 0 color-mix(in srgb, var(--pdf-ui-bg, #fff) 85%, transparent);
-}
-[data-pdf-toc-segment]:hover {
-	background: color-mix(in srgb, currentColor 18%, transparent);
-}
-[data-pdf-toc='rail'] {
-	width: var(--pdf-rail-width, 14px);
-}
-[data-pdf-toc='rail']::before {
-	content: '';
-	position: absolute;
-	left: 50%;
-	top: 0;
-	bottom: 0;
-	width: 2px;
-	transform: translateX(-50%);
-	background: color-mix(in srgb, currentColor 14%, transparent);
-	border-radius: 2px;
-}
-[data-pdf-toc='rail'] [data-part='progress'] {
-	left: calc(50% - 1px);
-	width: 2px;
-	background: var(--pdf-accent, rgb(37 99 235));
-	border-radius: 2px;
-}
-[data-pdf-toc-dot] {
-	all: unset;
-	left: 50%;
-	width: 10px;
-	height: 10px;
-	margin-left: -5px;
-	border-radius: 999px;
-	cursor: pointer;
-	background: var(--pdf-ui-bg, #fff);
-	box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 35%, transparent);
-}
-[data-pdf-toc-dot][data-depth='2'] {
-	width: 6px;
-	height: 6px;
-	margin-left: -3px;
-}
-[data-pdf-toc-dot]:is([data-active], [data-in-path]) {
-	background: var(--pdf-accent, rgb(37 99 235));
-	box-shadow: 0 0 0 2px var(--pdf-accent, rgb(37 99 235));
-}
-[data-pdf-toc-dot] [data-part='label'] {
-	position: absolute;
-	right: calc(100% + 10px);
-	top: 50%;
-	transform: translateY(-50%);
-	white-space: nowrap;
-	padding: 3px 8px;
-	border-radius: 6px;
-	font:
-		12px/1.3 system-ui,
-		sans-serif;
-	background: var(--pdf-ui-fg, #1c1917);
-	color: var(--pdf-ui-bg, #fff);
-	opacity: 0;
-	pointer-events: none;
-	transition: opacity 0.12s;
-}
-[data-pdf-toc-dot]:hover [data-part='label'] {
-	opacity: 1;
-}
-
-/* ── Floating parts: default entry animation (use forceMount + child for exit transitions) ── */
-@keyframes pdf-pop-in {
-	from {
-		opacity: 0;
-		transform: translateY(4px) scale(0.98);
-	}
-}
-:is(
-	[data-pdf-citation-card],
-	[data-pdf-crossref-preview],
-	[data-pdf-link-preview],
-	[data-pdf-backlinks],
-	[data-pdf-annotation-popover],
-	[data-pdf-selection-menu],
-	[data-pdf-annotation-hover-card]
-)[data-state='open'] {
-	animation: pdf-pop-in 0.14s ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
 	:is(
 		[data-pdf-citation-card],
 		[data-pdf-crossref-preview],
 		[data-pdf-link-preview],
-		[data-pdf-annotation-popover],
-		[data-pdf-selection-menu],
-		[data-pdf-annotation-hover-card]
+		[data-pdf-backlinks]
 	) {
-		animation: none !important;
+		background: var(--pdf-ui-bg, #fff);
+		color: var(--pdf-ui-fg, #1c1917);
+		border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
+		border-radius: var(--pdf-ui-radius, 10px);
+		box-shadow: var(--pdf-ui-shadow, 0 8px 28px rgb(0 0 0 / 0.16));
+		font:
+			13px/1.45 system-ui,
+			sans-serif;
+		overflow: hidden;
 	}
-}
-[data-pdf-citation-card][data-layout='list'] {
-	width: 420px;
-	max-height: 420px;
-	overflow-y: auto;
-	gap: 0;
-	padding: 6px;
-}
-[data-pdf-citation-card][data-layout='list'] [data-part='header'] {
-	padding: 4px 6px 6px;
-}
-[data-pdf-citation-card] [data-part='reference'][data-compact] {
-	padding: 6px;
-	border-radius: 8px;
-}
-[data-pdf-citation-card] [data-part='reference'][data-compact]:hover {
-	background: color-mix(in srgb, currentColor 6%, transparent);
-}
-[data-pdf-citation-card] [data-part='reference'] button[data-part='title'] {
-	all: unset;
-	cursor: pointer;
-	display: block;
-	font-weight: 600;
-	font-family: Georgia, serif;
-	font-size: 14px;
-}
-[data-pdf-citation-card] [data-part='reference'][data-compact] button[data-part='title'] {
-	font-size: 13px;
-}
-[data-pdf-citation-card] [data-part='reference'] [data-part='label'] {
-	font:
-		500 11px system-ui,
-		sans-serif;
-	color: var(--pdf-ui-muted, #78716c);
-	margin-right: 6px;
-}
-[data-pdf-citation-card]
-	[data-part='reference'][data-compact]
-	:is([data-part='authors'], [data-part='footer']) {
-	font-size: 11.5px;
-	margin-top: 1px;
-}
-/* Non-current matches can be styled apart: [data-pdf-find-match][data-other] */
+	[data-pdf-backlinks] {
+		padding: 8px;
+	}
+	[data-pdf-backlinks] [data-part='title'] {
+		margin: 0;
+		padding: 2px 6px 6px;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: var(--pdf-ui-muted, #78716c);
+	}
+	[data-pdf-backlinks] [data-part='list'] {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		max-height: 320px;
+		overflow-y: auto;
+	}
+	[data-pdf-backlinks] [data-part='mention'] {
+		all: unset;
+		box-sizing: border-box;
+		display: flex;
+		gap: 8px;
+		width: 100%;
+		padding: 6px;
+		border-radius: 6px;
+		cursor: pointer;
+	}
+	[data-pdf-backlinks] [data-part='mention']:is(:hover, :focus-visible) {
+		background: color-mix(in srgb, currentColor 7%, transparent);
+	}
+	[data-pdf-backlinks] [data-part='page'] {
+		flex: none;
+		min-width: 32px;
+		font-size: 11px;
+		color: var(--pdf-ui-muted, #78716c);
+	}
+	[data-pdf-backlinks] mark {
+		background: var(--pdf-ref-hover, rgb(59 130 246 / 0.16));
+		color: inherit;
+		border-radius: 2px;
+		padding: 0 1px;
+	}
+	[data-pdf-citation-card] {
+		width: 380px;
+		padding: 10px 12px;
+		display: grid;
+		gap: 4px;
+	}
+	[data-pdf-citation-card] [data-part='header'] {
+		display: flex;
+		justify-content: space-between;
+		color: var(--pdf-ui-muted, #78716c);
+		font-size: 12px;
+	}
+	[data-pdf-citation-card] [data-part='pager'] button {
+		all: unset;
+		cursor: pointer;
+		padding: 0 4px;
+	}
+	[data-pdf-citation-card] [data-part='title'] {
+		margin: 0;
+		font-weight: 600;
+		font-family: Georgia, serif;
+		font-size: 14px;
+	}
+	[data-pdf-citation-card] :is([data-part='authors'], [data-part='abstract']) {
+		margin: 0;
+		color: var(--pdf-ui-muted, #57534e);
+	}
+	[data-pdf-citation-card] [data-part='abstract'] {
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		font-size: 12px;
+	}
+	[data-pdf-citation-card] [data-part='footer'] {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		align-items: center;
+		margin-top: 4px;
+		font-size: 12px;
+	}
+	[data-pdf-citation-card] [data-part='footer'] :is(a, button) {
+		all: unset;
+		cursor: pointer;
+		color: var(--pdf-accent, rgb(37 99 235));
+	}
+	:is([data-pdf-crossref-preview], [data-pdf-link-preview]) [data-part='caption'] {
+		display: block;
+		padding: 6px 10px;
+		border-top: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
+		font-size: 12px;
+		color: var(--pdf-ui-muted, #78716c);
+	}
+	[data-pdf-toc-item] {
+		all: unset;
+		box-sizing: border-box;
+		display: block;
+		width: 100%;
+		cursor: pointer;
+		border-radius: 6px;
+		padding-block: 4px;
+		padding-right: 8px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	[data-pdf-toc-item]:hover {
+		background: color-mix(in srgb, currentColor 7%, transparent);
+	}
+	[data-pdf-toc-item]:is([data-active], [data-in-path]) {
+		color: var(--pdf-accent, rgb(37 99 235));
+	}
+	[data-pdf-toc-item][data-active] {
+		font-weight: 600;
+		background: color-mix(in srgb, var(--pdf-accent, rgb(37 99 235)) 10%, transparent);
+	}
+	[data-pdf-toc='breadcrumb'] {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
+	}
+	[data-pdf-toc='breadcrumb'] [data-pdf-toc-item] {
+		width: auto;
+		padding: 2px 6px;
+		flex: 0 1 auto;
+	}
+	[data-pdf-toc='progress'] {
+		height: var(--pdf-progress-height, 6px);
+		background: color-mix(in srgb, currentColor 10%, transparent);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+	[data-pdf-toc='progress'] [data-part='fill'] {
+		background: var(--pdf-accent, rgb(37 99 235));
+		opacity: 0.85;
+		transition: width 0.15s;
+	}
+	[data-pdf-toc-segment] {
+		all: unset;
+		cursor: pointer;
+		box-shadow: inset -1px 0 0 color-mix(in srgb, var(--pdf-ui-bg, #fff) 85%, transparent);
+	}
+	[data-pdf-toc-segment]:hover {
+		background: color-mix(in srgb, currentColor 18%, transparent);
+	}
+	[data-pdf-toc='rail'] {
+		width: var(--pdf-rail-width, 14px);
+	}
+	[data-pdf-toc='rail']::before {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		transform: translateX(-50%);
+		background: color-mix(in srgb, currentColor 14%, transparent);
+		border-radius: 2px;
+	}
+	[data-pdf-toc='rail'] [data-part='progress'] {
+		left: calc(50% - 1px);
+		width: 2px;
+		background: var(--pdf-accent, rgb(37 99 235));
+		border-radius: 2px;
+	}
+	[data-pdf-toc-dot] {
+		all: unset;
+		left: 50%;
+		width: 10px;
+		height: 10px;
+		margin-left: -5px;
+		border-radius: 999px;
+		cursor: pointer;
+		background: var(--pdf-ui-bg, #fff);
+		box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 35%, transparent);
+	}
+	[data-pdf-toc-dot][data-depth='2'] {
+		width: 6px;
+		height: 6px;
+		margin-left: -3px;
+	}
+	[data-pdf-toc-dot]:is([data-active], [data-in-path]) {
+		background: var(--pdf-accent, rgb(37 99 235));
+		box-shadow: 0 0 0 2px var(--pdf-accent, rgb(37 99 235));
+	}
+	[data-pdf-toc-dot] [data-part='label'] {
+		position: absolute;
+		right: calc(100% + 10px);
+		top: 50%;
+		transform: translateY(-50%);
+		white-space: nowrap;
+		padding: 3px 8px;
+		border-radius: 6px;
+		font:
+			12px/1.3 system-ui,
+			sans-serif;
+		background: var(--pdf-ui-fg, #1c1917);
+		color: var(--pdf-ui-bg, #fff);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.12s;
+	}
+	[data-pdf-toc-dot]:hover [data-part='label'] {
+		opacity: 1;
+	}
 
-/* ── Minimap ──────────────────────────────────────────────────────────────── */
-[data-pdf-minimap] {
-	background: var(--pdf-minimap-bg, color-mix(in srgb, currentColor 5%, transparent));
-}
-[data-pdf-minimap]:focus-visible {
-	outline: 2px solid var(--pdf-focus-ring, Highlight);
-	outline-offset: 1px;
-}
-[data-pdf-minimap-page] {
-	display: grid;
-	place-items: center;
-	background: var(--pdf-page-bg, #fff);
-	box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12);
-	opacity: var(--pdf-minimap-page-opacity, 0.85);
-}
-[data-pdf-minimap-viewport] {
-	background: var(--pdf-minimap-viewport, rgb(100 116 139 / 0.22));
-	box-shadow: inset 0 0 0 1px rgb(100 116 139 / 0.35);
-	border-radius: 2px;
-	transition: background 0.12s;
-}
-[data-pdf-minimap]:hover [data-pdf-minimap-viewport],
-[data-pdf-minimap][data-dragging] [data-pdf-minimap-viewport] {
-	background: var(--pdf-minimap-viewport-active, rgb(100 116 139 / 0.32));
-}
-[data-pdf-minimap-marker] {
-	left: 0;
-	right: 0;
-	height: var(--pdf-minimap-marker-height, 2px);
-	background: var(--marker-color, var(--pdf-accent, rgb(37 99 235)));
-}
-[data-pdf-minimap-marker][data-kind='find'] {
-	background: var(--pdf-minimap-find, rgb(245 158 11 / 0.8));
-}
-[data-pdf-minimap-marker][data-kind='find-current'] {
-	background: var(--pdf-minimap-find-current, rgb(234 88 12));
-	height: var(--pdf-minimap-marker-height, 3px);
-}
-[data-pdf-minimap-marker][data-kind='annotation'] {
-	left: auto;
-	width: 4px;
-	border-radius: 2px;
-}
-[data-pdf-minimap-marker]:is([data-kind='section'], [data-kind='subsection']) {
-	right: auto;
-	width: 10px;
-	height: var(--pdf-minimap-marker-height, 2px);
-	background: var(--pdf-minimap-section, rgb(71 85 105));
-}
-[data-pdf-minimap-marker][data-kind='subsection'] {
-	width: 6px;
-	opacity: 0.6;
-}
-[data-pdf-annotation-popover] [data-part='hint'] {
-	margin: 0;
-	font-size: 11px;
-	color: var(--pdf-ui-muted);
-}
-[data-pdf-annotation-popover] kbd {
-	font:
-		10px/1 ui-monospace,
-		monospace;
-	padding: 1px 4px;
-	border-radius: 4px;
-	border: 1px solid var(--pdf-ui-border);
-}
+	/* ── Floating parts: default entry animation (none with forceMount: the app's own transitions run instead) ── */
+	@keyframes pdf-pop-in {
+		from {
+			opacity: 0;
+			transform: translateY(4px) scale(0.98);
+		}
+	}
+	:is(
+			[data-pdf-citation-card],
+			[data-pdf-crossref-preview],
+			[data-pdf-link-preview],
+			[data-pdf-backlinks],
+			[data-pdf-annotation-popover],
+			[data-pdf-selection-menu],
+			[data-pdf-annotation-hover-card]
+		)[data-state='open']:not([data-force-mount]) {
+		animation: pdf-pop-in 0.14s ease-out;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:is(
+			[data-pdf-citation-card],
+			[data-pdf-crossref-preview],
+			[data-pdf-link-preview],
+			[data-pdf-annotation-popover],
+			[data-pdf-selection-menu],
+			[data-pdf-annotation-hover-card]
+		) {
+			animation: none !important;
+		}
+	}
+	[data-pdf-citation-card][data-layout='list'] {
+		width: 420px;
+		max-height: 420px;
+		overflow-y: auto;
+		gap: 0;
+		padding: 6px;
+	}
+	[data-pdf-citation-card][data-layout='list'] [data-part='header'] {
+		padding: 4px 6px 6px;
+	}
+	[data-pdf-citation-card] [data-part='reference'][data-compact] {
+		padding: 6px;
+		border-radius: 8px;
+	}
+	[data-pdf-citation-card] [data-part='reference'][data-compact]:hover {
+		background: color-mix(in srgb, currentColor 6%, transparent);
+	}
+	[data-pdf-citation-card] [data-part='reference'] button[data-part='title'] {
+		all: unset;
+		cursor: pointer;
+		display: block;
+		font-weight: 600;
+		font-family: Georgia, serif;
+		font-size: 14px;
+	}
+	[data-pdf-citation-card] [data-part='reference'][data-compact] button[data-part='title'] {
+		font-size: 13px;
+	}
+	[data-pdf-citation-card] [data-part='reference'] [data-part='label'] {
+		font:
+			500 11px system-ui,
+			sans-serif;
+		color: var(--pdf-ui-muted, #78716c);
+		margin-right: 6px;
+	}
+	[data-pdf-citation-card]
+		[data-part='reference'][data-compact]
+		:is([data-part='authors'], [data-part='footer']) {
+		font-size: 11.5px;
+		margin-top: 1px;
+	}
+	/* Non-current matches can be styled apart: [data-pdf-find-match][data-other] */
 
-/* ── Annotation focus & selection (keyboard) ─────────────────────────────── */
-[data-pdf-annotation-focus] {
-	all: unset;
-	position: absolute;
-	border-radius: 3px;
-}
-[data-pdf-annotation-focus]:focus-visible {
-	outline: 2px solid var(--pdf-accent, rgb(37 99 235));
-	outline-offset: 2px;
-}
-[data-pdf-icon] {
-	display: block;
-}
-[data-pdf-minimap-page][data-current] {
-	box-shadow: 0 0 0 1px var(--pdf-accent, rgb(37 99 235));
-}
-[data-pdf-minimap-page] [data-part='number'] {
-	font:
-		600 9px/1 system-ui,
-		sans-serif;
-	color: var(--pdf-ui-muted, #78716c);
-}
-[data-pdf-minimap-band] {
-	display: flex;
-	align-items: flex-start;
-	padding: 2px 4px;
-	box-sizing: border-box;
-	background: var(--pdf-minimap-band, rgb(100 116 139 / 0.12));
-	border-top: 1px solid var(--pdf-minimap-band-edge, rgb(100 116 139 / 0.35));
-	overflow: hidden;
-}
-[data-pdf-minimap-band][data-index='1'] {
-	background: var(--pdf-minimap-band-alt, rgb(100 116 139 / 0.2));
-}
-[data-pdf-minimap-band][data-active] {
-	background: color-mix(in srgb, var(--pdf-accent, rgb(37 99 235)) 22%, transparent);
-}
-[data-pdf-minimap-band] [data-part='label'] {
-	font:
-		500 9px/1.15 system-ui,
-		sans-serif;
-	color: var(--pdf-ui-fg, #1c1917);
-	opacity: 0.8;
-	overflow: hidden;
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-}
+	/* ── Minimap ──────────────────────────────────────────────────────────────── */
+	[data-pdf-minimap] {
+		background: var(--pdf-minimap-bg, color-mix(in srgb, currentColor 5%, transparent));
+	}
+	[data-pdf-minimap]:focus-visible {
+		outline: 2px solid var(--pdf-focus-ring, Highlight);
+		outline-offset: 1px;
+	}
+	[data-pdf-minimap-page] {
+		display: grid;
+		place-items: center;
+		background: var(--pdf-page-bg, #fff);
+		box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12);
+		opacity: var(--pdf-minimap-page-opacity, 0.85);
+	}
+	[data-pdf-minimap-viewport] {
+		background: var(--pdf-minimap-viewport, rgb(100 116 139 / 0.22));
+		box-shadow: inset 0 0 0 1px rgb(100 116 139 / 0.35);
+		border-radius: 2px;
+		transition: background 0.12s;
+	}
+	[data-pdf-minimap]:hover [data-pdf-minimap-viewport],
+	[data-pdf-minimap][data-dragging] [data-pdf-minimap-viewport] {
+		background: var(--pdf-minimap-viewport-active, rgb(100 116 139 / 0.32));
+	}
+	[data-pdf-minimap-marker] {
+		left: 0;
+		right: 0;
+		height: var(--pdf-minimap-marker-height, 2px);
+		background: var(--marker-color, var(--pdf-accent, rgb(37 99 235)));
+	}
+	[data-pdf-minimap-marker][data-kind='find'] {
+		background: var(--pdf-minimap-find, rgb(245 158 11 / 0.8));
+	}
+	[data-pdf-minimap-marker][data-kind='find-current'] {
+		background: var(--pdf-minimap-find-current, rgb(234 88 12));
+		height: var(--pdf-minimap-marker-height, 3px);
+	}
+	[data-pdf-minimap-marker][data-kind='annotation'] {
+		left: auto;
+		width: 4px;
+		border-radius: 2px;
+	}
+	[data-pdf-minimap-marker]:is([data-kind='section'], [data-kind='subsection']) {
+		right: auto;
+		width: 10px;
+		height: var(--pdf-minimap-marker-height, 2px);
+		background: var(--pdf-minimap-section, rgb(71 85 105));
+	}
+	[data-pdf-minimap-marker][data-kind='subsection'] {
+		width: 6px;
+		opacity: 0.6;
+	}
+	[data-pdf-annotation-popover] [data-part='hint'] {
+		margin: 0;
+		font-size: 11px;
+		color: var(--pdf-ui-muted);
+	}
+	[data-pdf-annotation-popover] kbd {
+		font:
+			10px/1 ui-monospace,
+			monospace;
+		padding: 1px 4px;
+		border-radius: 4px;
+		border: 1px solid var(--pdf-ui-border);
+	}
 
-/* ── Shortcut hints ──────────────────────────────────────────────────────── */
-[data-pdf-shortcut] {
-	display: inline-flex;
-	gap: 2px;
-	font: inherit;
-}
-[data-pdf-key] {
-	min-width: 1.4em;
-	padding: 0 4px;
-	border-radius: 4px;
-	border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.15));
-	border-bottom-width: 2px;
-	font:
-		500 11px/1.5 ui-sans-serif,
-		system-ui,
-		sans-serif;
-	text-align: center;
-	color: var(--pdf-ui-muted, #78716c);
-	background: color-mix(in srgb, currentColor 4%, transparent);
-}
-/* Compact margin (too little room beside the page for notes): one marker per note. */
-[data-pdf-margin-marker] {
-	all: unset;
-	box-sizing: border-box;
-	display: grid;
-	place-items: center;
-	border-radius: 6px;
-	background: var(--pdf-ui-bg, #fff);
-	color: var(--pdf-ui-fg);
-	border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
-	border-left: 3px solid var(--annotation-color);
-	box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
-	cursor: pointer;
-	transition: top 0.18s ease;
-}
-[data-pdf-viewport][data-zooming] [data-pdf-margin-marker] {
-	transition: none;
-}
-[data-pdf-margin-marker]:is([data-hovered], [data-selected], :focus-visible) {
-	box-shadow: 0 0 0 2px var(--annotation-color);
+	/* ── Annotation focus & selection (keyboard) ─────────────────────────────── */
+	[data-pdf-annotation-focus] {
+		all: unset;
+		position: absolute;
+		border-radius: 3px;
+	}
+	[data-pdf-annotation-focus]:focus-visible {
+		outline: 2px solid var(--pdf-accent, rgb(37 99 235));
+		outline-offset: 2px;
+	}
+	[data-pdf-icon] {
+		display: block;
+	}
+	[data-pdf-minimap-page][data-current] {
+		box-shadow: 0 0 0 1px var(--pdf-accent, rgb(37 99 235));
+	}
+	[data-pdf-minimap-page] [data-part='number'] {
+		font:
+			600 9px/1 system-ui,
+			sans-serif;
+		color: var(--pdf-ui-muted, #78716c);
+	}
+	[data-pdf-minimap-band] {
+		display: flex;
+		align-items: flex-start;
+		padding: 2px 4px;
+		box-sizing: border-box;
+		background: var(--pdf-minimap-band, rgb(100 116 139 / 0.12));
+		border-top: 1px solid var(--pdf-minimap-band-edge, rgb(100 116 139 / 0.35));
+		overflow: hidden;
+	}
+	[data-pdf-minimap-band][data-index='1'] {
+		background: var(--pdf-minimap-band-alt, rgb(100 116 139 / 0.2));
+	}
+	[data-pdf-minimap-band][data-active] {
+		background: color-mix(in srgb, var(--pdf-accent, rgb(37 99 235)) 22%, transparent);
+	}
+	[data-pdf-minimap-band] [data-part='label'] {
+		font:
+			500 9px/1.15 system-ui,
+			sans-serif;
+		color: var(--pdf-ui-fg, #1c1917);
+		opacity: 0.8;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+	}
+
+	/* ── Shortcut hints ──────────────────────────────────────────────────────── */
+	[data-pdf-shortcut] {
+		display: inline-flex;
+		gap: 2px;
+		font: inherit;
+	}
+	[data-pdf-key] {
+		min-width: 1.4em;
+		padding: 0 4px;
+		border-radius: 4px;
+		border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.15));
+		border-bottom-width: 2px;
+		font:
+			500 11px/1.5 ui-sans-serif,
+			system-ui,
+			sans-serif;
+		text-align: center;
+		color: var(--pdf-ui-muted, #78716c);
+		background: color-mix(in srgb, currentColor 4%, transparent);
+	}
+	/* Compact margin (too little room beside the page for notes): one marker per note. */
+	[data-pdf-margin-marker] {
+		all: unset;
+		box-sizing: border-box;
+		display: grid;
+		place-items: center;
+		border-radius: 6px;
+		background: var(--pdf-ui-bg, #fff);
+		color: var(--pdf-ui-fg);
+		border: 1px solid var(--pdf-ui-border, rgb(0 0 0 / 0.1));
+		border-left: 3px solid var(--annotation-color);
+		box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+		cursor: pointer;
+		transition: top 0.18s ease;
+	}
+	[data-pdf-viewport][data-zooming] [data-pdf-margin-marker] {
+		transition: none;
+	}
+	[data-pdf-margin-marker]:is([data-hovered], [data-selected], :focus-visible) {
+		box-shadow: 0 0 0 2px var(--annotation-color);
+	}
 }

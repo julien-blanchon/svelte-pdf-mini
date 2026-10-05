@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { watch } from 'runed';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import type { Annotation, TextMarkupKind } from '../../core/annotations/model.js';
 	import { isTextMarkup, TEXT_MARKUP_KINDS } from '../../core/annotations/model.js';
@@ -32,7 +33,12 @@
 		return store.viewer.scrollEl?.querySelector(annotationSelector(annotation.id)) ?? null;
 	});
 	const open = $derived(!!annotation && !!reference);
-	$effect(() => onOpenChange?.(open));
+	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
+	watch(
+		() => open,
+		(o) => onOpenChange?.(o),
+		{ lazy: true }
+	);
 	/** Kept while closed so `forceMount` can run exit transitions. */
 	let lastAnnotation = $state.raw<Annotation | null>(null);
 	$effect(() => {
@@ -101,6 +107,8 @@
 			'data-pdf-annotation-popover': '',
 			'data-pending': dataAttr(!!annotation && annotation.id === store.pendingId),
 			'data-state': open ? 'open' : 'closed',
+			// The app runs its own transitions: no default entry animation.
+			'data-force-mount': forceMount ? '' : undefined,
 			'data-kind': annotation?.kind,
 			role: 'dialog',
 			'aria-label': store.viewer.t('annotation'),
@@ -207,11 +215,13 @@
 {/if}
 
 <style>
-	/* Positioned by floating-ui (fixed strategy). */
-	:global(:where([data-pdf-annotation-popover])) {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 40;
+	@layer svelte-pdf-mini {
+		/* Positioned by floating-ui (fixed strategy). */
+		:global(:where([data-pdf-annotation-popover])) {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 40;
+		}
 	}
 </style>

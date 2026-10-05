@@ -15,6 +15,7 @@ import {
 	canvasToPng,
 	copyCanvasImage,
 	copyRich,
+	copyText,
 	downloadCanvas
 } from '../core/document/clipboard.js';
 import type { RegionExtractor } from '../core/extract/types.js';
@@ -37,7 +38,7 @@ export interface PdfAction {
 	run?: () => unknown;
 	/** Submenu. */
 	items?: PdfAction[];
-	/** CSS colour for colour entries. */
+	/** CSS color for color entries. */
 	color?: string;
 	checked?: boolean;
 	danger?: boolean;
@@ -133,12 +134,7 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 			);
 		}
 		actions.push(
-			a(
-				'selection.copy',
-				t('copy'),
-				() => navigator.clipboard.writeText(ctx.selectedText),
-				'edit.copy'
-			),
+			a('selection.copy', t('copy'), () => copyText(ctx.selectedText), 'edit.copy'),
 			a(
 				'selection.copyFormatted',
 				t('copyFormatted'),
@@ -183,10 +179,7 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 					)
 				})
 			);
-		if (quote)
-			actions.push(
-				a('annotation.copyText', t('copyText'), () => navigator.clipboard.writeText(quote))
-			);
+		if (quote) actions.push(a('annotation.copyText', t('copyText'), () => copyText(quote)));
 		actions.push(
 			a('annotation.delete', t('delete'), () => store.remove(ann.id), 'delete', {
 				danger: true,
@@ -217,9 +210,7 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 						disabled: !opts.onOpenReference && !url
 					}
 				),
-				a('citation.bibtex', t('copyBibtex'), () =>
-					navigator.clipboard.writeText(referenceToBibtex(ref, data))
-				)
+				a('citation.bibtex', t('copyBibtex'), () => copyText(referenceToBibtex(ref, data)))
 			]
 		});
 	}
@@ -278,7 +269,7 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 			actions.push(
 				a('link.open', t('openLink'), () => window.open(link.url, '_self')),
 				a('link.openNewTab', t('openInNewTab'), () => window.open(link.url, '_blank', 'noopener')),
-				a('link.copy', t('copyUrl'), () => navigator.clipboard.writeText(link.url!))
+				a('link.copy', t('copyUrl'), () => copyText(link.url!))
 			);
 		} else if (link.dest) {
 			actions.push(
@@ -306,7 +297,9 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 			);
 		}
 		actions.push(
-			a('page.back', t('back'), () => viewer.back(), 'nav.back', { disabled: !viewer.canGoBack }),
+			a('page.back', t('back'), () => viewer.back(), 'nav.back', {
+				disabled: !viewer.history.canGoBack
+			}),
 			a('page.fitWidth', t('fitWidth'), () => (viewer.zoomMode = 'page-width'), 'view.fitWidth')
 		);
 		// Only show the page group alone, or after a more specific one when it adds something.

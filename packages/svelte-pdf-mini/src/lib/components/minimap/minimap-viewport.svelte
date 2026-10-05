@@ -32,12 +32,14 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-minimap-viewport])) {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: var(--pdf-minimap-indicator-top);
-		height: var(--pdf-minimap-indicator-height);
-		pointer-events: none;
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-minimap-viewport])) {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: var(--pdf-minimap-indicator-top);
+			height: var(--pdf-minimap-indicator-height);
+			pointer-events: none;
+		}
 	}
 </style>

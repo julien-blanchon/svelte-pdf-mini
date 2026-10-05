@@ -3,11 +3,11 @@ import type { Rgb } from './model.js';
 export interface PaletteColor {
 	key: string;
 	label: string;
-	/** Colour stored on the annotation / written to the PDF. */
+	/** Color stored on the annotation / written to the PDF. */
 	rgb: Rgb;
-	/** CSS colour in light UI. */
+	/** CSS color in light UI. */
 	light: string;
-	/** CSS colour in dark UI (night pages). */
+	/** CSS color in dark UI (night pages). */
 	dark: string;
 }
 
@@ -45,7 +45,7 @@ export function hexToRgb(h: string): Rgb {
 	return hex(h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h);
 }
 
-/** Closest palette entry for a colour (to recover `paletteKey` on foreign annotations). */
+/** Closest palette entry for a color (to recover `paletteKey` on foreign annotations). */
 export function nearestPaletteKey(
 	rgb: Rgb,
 	palette: PaletteColor[] = defaultPalette,

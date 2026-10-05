@@ -1,4 +1,5 @@
 import type { Annotation } from '../../core/annotations/model.js';
+import type { PdfRect } from '../../core/types.js';
 import type { AnnotationStore } from '../../state/annotations.svelte.js';
 import { annotationCss } from './color.js';
 import type { AnnotationSnippetProps } from './types.js';
@@ -48,12 +49,12 @@ export function unhoverAnnotation(store: AnnotationStore, id: string): void {
 	if (store.hoveredId === id) store.hoveredId = null;
 }
 
-/** CSS colour of an annotation for the store's current page theme. */
+/** CSS color of an annotation for the store's current page theme. */
 export function themedColor(store: AnnotationStore, a: Annotation): string {
 	return annotationCss(a, store.palette, !!store.viewer.pageTheme.dark);
 }
 
-/** The props every annotation snippet receives. `color` defaults to the themed colour. */
+/** The props every annotation snippet receives. `color` defaults to the themed color. */
 export function snippetPropsFor(
 	store: AnnotationStore,
 	a: Annotation,
@@ -66,4 +67,25 @@ export function snippetPropsFor(
 		editable: store.canEdit(a),
 		color
 	};
+}
+
+/**
+ * Bounding box (PDF space) of a page's horizontal text, or null without any:
+ * what lies outside it on the sides is the page's blank margin.
+ */
+export function textBoxOf(items: readonly unknown[]): PdfRect | null {
+	let x0 = Infinity,
+		y0 = Infinity,
+		x1 = -Infinity,
+		y1 = -Infinity;
+	for (const it of items) {
+		const t = it as { str?: string; transform?: number[]; width?: number; height?: number };
+		if (!t.str?.trim() || !t.transform || t.transform[1] || t.transform[2]) continue;
+		const [, , , , x, y] = t.transform;
+		x0 = Math.min(x0, x);
+		x1 = Math.max(x1, x + (t.width ?? 0));
+		y0 = Math.min(y0, y);
+		y1 = Math.max(y1, y + (t.height ?? 0));
+	}
+	return x0 < x1 ? [x0, y0, x1, y1] : null;
 }

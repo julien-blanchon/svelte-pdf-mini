@@ -1,5 +1,5 @@
 <!--
-	Colour swatches as an ARIA radio group (roving tabindex): Tab enters on the
+	Color swatches as an ARIA radio group (roving tabindex): Tab enters on the
 	checked swatch, arrows move and pick, Home/End jump. Used by the popover and
 	the selection menu; apps can build their own from store.palette.
 -->

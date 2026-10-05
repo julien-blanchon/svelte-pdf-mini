@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { watch } from 'runed';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import { float } from '../../internal/floating.js';
 	import Markdown from '../../internal/Markdown.svelte';
+	import { hasMarkup, renderMarkdown } from '../../internal/markdown.js';
 	import { AnnotationsContext } from '../../state/context.js';
 	import { annotationSelector, hasNote, snippetPropsFor } from './helpers.js';
 	import type { AnnotationsHoverCardProps } from './types.js';
@@ -24,10 +26,17 @@
 	let lastId = $state<string | null>(null);
 
 	// Show the hovered annotation's note after a short delay (not when it is selected: the popover shows it).
+	// A box's label is already drawn on the box, so a box with only a label has nothing more to show;
+	// neither has a side note, which already shows the whole note.
 	$effect(() => {
 		const id = store.hoveredId;
 		const a = id ? store.byId.get(id) : null;
-		const show = a && !store.isSelected(a.id) && hasNote(a) ? a.id : null;
+		const inNote = !!store.hoverAnchor?.closest('[data-pdf-margin-note]');
+		const more = a && !inNote && (a.kind === 'area' ? !!a.contents?.trim() : hasNote(a));
+		const show = a && more && !store.isSelected(a.id) ? a.id : null;
+		// Render the note during the delay, so the card opens at its final size.
+		if (show && a?.contents && hasMarkup(a.contents))
+			void renderMarkdown(a.contents).catch(() => {});
 		const t = setTimeout(
 			() => {
 				shownId = show;
@@ -38,7 +47,12 @@
 		return () => clearTimeout(t);
 	});
 	const open = $derived(!!shownId);
-	$effect(() => onOpenChange?.(open));
+	// Changes only (not the initial state), untracked: the callback's reads don't re-run it.
+	watch(
+		() => open,
+		(o) => onOpenChange?.(o),
+		{ lazy: true }
+	);
 
 	const annotationId = $derived(shownId ?? (forceMount ? lastId : null));
 	const annotation = $derived(annotationId ? (store.byId.get(annotationId) ?? null) : null);
@@ -64,6 +78,8 @@
 		mergeProps(rest, {
 			'data-pdf-annotation-hover-card': '',
 			'data-state': open ? 'open' : 'closed',
+			// The app runs its own transitions: no default entry animation.
+			'data-force-mount': forceMount ? '' : undefined,
 			role: 'tooltip',
 			...refAttachment
 		})
@@ -95,12 +111,14 @@
 {/if}
 
 <style>
-	/* Positioned by floating-ui (fixed strategy); never in the way of the pointer. */
-	:global(:where([data-pdf-annotation-hover-card])) {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 45;
-		pointer-events: none;
+	@layer svelte-pdf-mini {
+		/* Positioned by floating-ui (fixed strategy); never in the way of the pointer. */
+		:global(:where([data-pdf-annotation-hover-card])) {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 45;
+			pointer-events: none;
+		}
 	}
 </style>

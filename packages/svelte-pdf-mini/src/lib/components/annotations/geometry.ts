@@ -22,6 +22,20 @@ export const RESIZE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as co
 export type ResizeHandle = (typeof RESIZE_HANDLES)[number];
 /** End points of a line / arrow. */
 export type PointHandle = 'p0' | 'p1';
+
+/**
+ * The PDF-space handle for a handle drawn on screen: on a page shown rotated
+ * clockwise by `rotation` degrees, the screen's top edge is another PDF edge.
+ */
+export function pdfHandle(handle: ResizeHandle, rotation: number): ResizeHandle {
+	const steps = (((Math.round(rotation / 90) % 4) + 4) % 4) as 0 | 1 | 2 | 3;
+	if (!steps) return handle;
+	const compass = ['n', 'e', 's', 'w'];
+	const turned = [...handle].map((c) => compass[(compass.indexOf(c) - steps + 4) % 4]);
+	// Canonical order: north/south first ('ne', not 'en').
+	turned.sort((a, b) => Number('ew'.includes(a)) - Number('ew'.includes(b)));
+	return turned.join('') as ResizeHandle;
+}
 /** What a drag on a selected annotation does. */
 export type DragMode = 'move' | ResizeHandle | PointHandle;
 
@@ -63,13 +77,13 @@ export function movePoint(
 export interface ResizeOptions {
 	/** Corners keep the proportions, anchored at the opposite corner (Shift). */
 	keepRatio?: boolean;
-	/** Resize from the centre: the opposite edges mirror the moved ones (Alt). */
+	/** Resize from the center: the opposite edges mirror the moved ones (Alt). */
 	fromCenter?: boolean;
 }
 
 /**
  * `rect` resized by dragging `handle` by (dx, dy) in PDF space (y grows upwards:
- * 'n' moves y2, 's' moves y1). Returns a normalised rect.
+ * 'n' moves y2, 's' moves y1). Returns a normalized rect.
  */
 export function resizeRect(
 	rect: PdfRect,

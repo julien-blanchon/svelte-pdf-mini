@@ -27,7 +27,7 @@ describe('page themes', () => {
 });
 
 describe('paper theme', () => {
-	it('is a soft multiply tint in light mode and a recolour at night', () => {
+	it('is a soft multiply tint in light mode and a recolor at night', () => {
 		const light = pageThemes.paper({ color: '#e6eddc' });
 		expect(light.blend).toBe('multiply');
 		expect(light.background).toMatch(/^#/);
@@ -37,7 +37,7 @@ describe('paper theme', () => {
 		expect(paperTheme(paperColors[0], true).id).toContain('paperDark');
 	});
 
-	it('mixes colours and recolours ink', () => {
+	it('mixes colors and recolors ink', () => {
 		expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080');
 		expect(invertLightness('#ffffff', [0.1, 0.9], { background: '#141414' })).toBe('#141414');
 		expect(invertLightness('#000000', [0.1, 0.9])).toMatch(/^hsl\(.* 90\.0% \/ 1\)$/);

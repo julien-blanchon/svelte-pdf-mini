@@ -32,17 +32,20 @@
 		const p = page.pdfPage;
 		if (!p) return;
 		let alive = true;
-		p.getAnnotations({ intent: 'display' }).then((annots) => {
-			if (!alive) return;
-			links = annots
-				.filter((a) => a.subtype === 'Link' && (a.dest || a.url))
-				.map((a) => ({
-					rect: a.rect as PdfRect,
-					dest: a.dest ?? undefined,
-					url: a.url ?? undefined,
-					kind: a.url ? 'url' : classifyDest(a.dest)
-				}));
-		});
+		p.getAnnotations({ intent: 'display' })
+			.then((annots) => {
+				if (!alive) return;
+				links = annots
+					.filter((a) => a.subtype === 'Link' && (a.dest || a.url))
+					.map((a) => ({
+						rect: a.rect as PdfRect,
+						dest: a.dest ?? undefined,
+						url: a.url ?? undefined,
+						kind: a.url ? 'url' : classifyDest(a.dest)
+					}));
+			})
+			// The page was released (document change): nothing to show.
+			.catch(() => {});
 		return () => {
 			alive = false;
 		};
@@ -82,11 +85,9 @@
 	const mergedProps = $derived(mergeProps(rest, { 'data-pdf-link-layer': '', ...refAttachment }));
 </script>
 
-{#if child}
-	{@render child({ props: mergedProps })}
-{:else if page.viewport && links.length}
-	{@const vp = page.viewport}
-	<div {...mergedProps}>
+{#snippet hotspots()}
+	{#if page.viewport}
+		{@const vp = page.viewport}
 		{#each links as link, i (i)}
 			{@const box = pdfRectToPercent(vp, link.rect)}
 			<a
@@ -105,25 +106,36 @@
 				style:--pdf-hotspot-height="{box.height}%"
 				onclick={(e) => onClick(link, e)}
 				onpointerenter={(e) => onEnter(link, e.currentTarget)}
+				onfocus={(e) => onEnter(link, e.currentTarget)}
+				onblur={onLeave}
 				onpointerleave={onLeave}
 			></a>
 		{/each}
-	</div>
+	{/if}
+{/snippet}
+
+{#if child}
+	<!-- Your own element: render `links` (the hotspots) inside it. -->
+	{@render child({ props: mergedProps, links: hotspots })}
+{:else if page.viewport && links.length}
+	<div {...mergedProps}>{@render hotspots()}</div>
 {/if}
 
 <style>
-	:global(:where([data-pdf-link-layer])) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		z-index: 3;
-	}
-	:global(:where([data-pdf-link])) {
-		position: absolute;
-		pointer-events: auto;
-		left: var(--pdf-hotspot-left);
-		top: var(--pdf-hotspot-top);
-		width: var(--pdf-hotspot-width);
-		height: var(--pdf-hotspot-height);
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-link-layer])) {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+			z-index: 3;
+		}
+		:global(:where([data-pdf-link])) {
+			position: absolute;
+			pointer-events: auto;
+			left: var(--pdf-hotspot-left);
+			top: var(--pdf-hotspot-top);
+			width: var(--pdf-hotspot-width);
+			height: var(--pdf-hotspot-height);
+		}
 	}
 </style>

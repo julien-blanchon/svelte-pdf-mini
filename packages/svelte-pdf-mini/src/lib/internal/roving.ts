@@ -4,7 +4,7 @@
  * Enter / Space activate the focused one.
  */
 
-export type RovingOrientation = 'vertical' | 'horizontal' | 'both';
+type RovingOrientation = 'vertical' | 'horizontal' | 'both';
 
 export interface RovingOptions {
 	/** Which arrow keys move focus. Default 'vertical'. */

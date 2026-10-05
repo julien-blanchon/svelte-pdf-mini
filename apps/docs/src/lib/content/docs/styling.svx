@@ -24,6 +24,23 @@ Parts ship unstyled except for layout. Style them three ways, mixing freely:
 }
 ```
 
+## Cascade layer
+
+`styles.css` and every component's own style sit in the `svelte-pdf-mini` cascade layer, so any unlayered CSS of yours wins over them, whatever its specificity. With Tailwind v4, utilities should win too. Declare the layer order **in your HTML `<head>`, before any stylesheet**: a layer's rank is fixed by its first mention, and component styles can load before your CSS (a later declaration in `app.css` then comes too late, and Tailwind's base reset would override the library).
+
+```html
+<!-- app.html -->
+<style>
+	@layer theme, base, svelte-pdf-mini, components, utilities;
+</style>
+```
+
+```css
+/* app.css */
+@import 'tailwindcss';
+@import 'svelte-pdf-mini/styles.css';
+```
+
 ## Inner parts
 
 Default UIs (the selection menu, popover, citation card…) mark their pieces with `data-part="…"` — `title`, `label`, `swatch`, `footer`, `hint`… — so you can restyle without replacing them. Replace them entirely through `children` or `child` when you need different markup.

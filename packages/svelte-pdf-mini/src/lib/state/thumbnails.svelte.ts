@@ -18,6 +18,7 @@ export class ThumbnailCache {
 	readonly #scheduler = new RenderScheduler(1);
 	readonly #bitmaps = new LruCache<string, ImageBitmap>(64 * 1024 * 1024, (b) => b.close());
 	readonly #pending = new Map<string, Promise<ImageBitmap>>();
+	#fingerprint: string | null = null;
 
 	constructor(doc: PdfDocument) {
 		this.#doc = doc;
@@ -26,6 +27,11 @@ export class ThumbnailCache {
 	/** Bitmap of a page at a CSS width (device pixels handled internally). Do not transfer or close it. */
 	get(pageNumber: number, cssWidth: number, priority = 5): Promise<ImageBitmap> {
 		const dpr = globalThis.devicePixelRatio || 1;
+		// Another document in the same viewer: the old bitmaps and renders are of no use.
+		if (this.#fingerprint !== this.#doc.fingerprint) {
+			this.clear();
+			this.#fingerprint = this.#doc.fingerprint;
+		}
 		const key = `${this.#doc.fingerprint}:${pageNumber}:${Math.round(cssWidth * dpr)}`;
 		const hit = this.#bitmaps.get(key);
 		if (hit) return Promise.resolve(hit);
@@ -35,6 +41,10 @@ export class ThumbnailCache {
 				this.#scheduler.schedule({
 					key,
 					priority,
+					onCancel: () => {
+						this.#pending.delete(key);
+						reject(new DOMException('Thumbnail cancelled', 'AbortError'));
+					},
 					run: async (signal) => {
 						try {
 							const page = await this.#doc.getPage(pageNumber);

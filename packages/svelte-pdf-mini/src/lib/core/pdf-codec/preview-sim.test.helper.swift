@@ -1,7 +1,7 @@
 // Simulates Apple Preview with PDFKit (the framework Preview uses):
 //   swift preview-sim.test.helper.swift resave in.pdf out.pdf
 //   swift preview-sim.test.helper.swift highlight in.pdf out.pdf   (adds a highlight + a note on page 1, then saves)
-//   swift preview-sim.test.helper.swift recolor in.pdf out.pdf     (recolours every highlight to blue, then saves)
+//   swift preview-sim.test.helper.swift recolor in.pdf out.pdf     (recolors every highlight to blue, then saves)
 import Foundation
 import PDFKit
 

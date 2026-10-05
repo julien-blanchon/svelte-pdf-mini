@@ -45,7 +45,23 @@ describe('AnnotationStore workflow', () => {
 		cleanup();
 	});
 
-	it('digits recolour and Backspace discards only while the note is pristine', () => {
+	it('discarding one markup of a multi-page step keeps the others undoable', () => {
+		const { store, cleanup } = setup();
+		let first!: Annotation;
+		store.batch(() => {
+			first = store.create('area', { page: 1, rect: [0, 0, 10, 10] })!;
+			store.create('area', { page: 2, rect: [0, 0, 10, 10] });
+		});
+		store.pendingId = first.id;
+		store.discard();
+		expect(store.annotations).toHaveLength(1);
+		expect(store.canUndo).toBe(true);
+		store.undo();
+		expect(store.annotations).toHaveLength(0);
+		cleanup();
+	});
+
+	it('digits recolor and Backspace discards only while the note is pristine', () => {
 		const { store, cleanup } = setup();
 		const a = store.create('area', { page: 1, rect: [10, 10, 100, 100] })!;
 		expect(store.handleNoteKey(key('2', 'Digit2'), a)).toBe(true);
@@ -53,7 +69,7 @@ describe('AnnotationStore workflow', () => {
 		store.markTyped(a.id);
 		expect(store.handleNoteKey(key('3', 'Digit3'), a)).toBe(false); // types normally now
 		expect(store.handleNoteKey(key('Backspace', 'Backspace'), a)).toBe(false);
-		expect(store.handleNoteKey(key('3', 'Digit3', { altKey: true }), a)).toBe(true); // Alt always recolours
+		expect(store.handleNoteKey(key('3', 'Digit3', { altKey: true }), a)).toBe(true); // Alt always recolors
 		expect(store.handleNoteKey(key('Enter', 'Enter'), a)).toBe(true);
 		expect(store.pendingId).toBeNull();
 		expect(store.annotations).toHaveLength(1);
@@ -85,7 +101,7 @@ describe('AnnotationStore workflow', () => {
 		cleanup();
 	});
 
-	it('filters by colour and adds custom colours to the palette', () => {
+	it('filters by color and adds custom colors to the palette', () => {
 		const { store, cleanup } = setup();
 		store.create('area', { page: 1, rect: [0, 0, 10, 10] });
 		store.commit();
@@ -113,5 +129,12 @@ describe('note markdown', () => {
 		expect(html).toContain('katex');
 		expect(html).not.toContain('onerror');
 		expect(html).not.toContain('<script');
+	});
+
+	it('leaves prices alone and opens links in a new tab', async () => {
+		const html = await renderMarkdown('costs $5 and $10, see [docs](https://x.org)');
+		expect(html).not.toContain('katex');
+		expect(html).toContain('target="_blank"');
+		expect(html).toContain('rel="noopener noreferrer"');
 	});
 });

@@ -57,9 +57,11 @@
 </div>
 
 <style>
-	:global(:where([data-pdf-toc-group])) {
-		list-style: none;
-		margin: 0;
-		padding: 0;
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-toc-group])) {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+		}
 	}
 </style>

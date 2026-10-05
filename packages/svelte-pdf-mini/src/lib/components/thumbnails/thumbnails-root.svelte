@@ -102,7 +102,9 @@
 {/if}
 
 <style>
-	:global(:where([data-pdf-thumbnails])) {
-		overflow: auto;
+	@layer svelte-pdf-mini {
+		:global(:where([data-pdf-thumbnails])) {
+			overflow: auto;
+		}
 	}
 </style>

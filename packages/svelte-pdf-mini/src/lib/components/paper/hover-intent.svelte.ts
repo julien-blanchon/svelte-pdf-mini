@@ -19,7 +19,7 @@ const HIDE_DELAY = 120;
 /**
  * Hover intent for the paper's floating parts (citation card, cross-ref preview):
  * shows the hovered target of `kind` after a delay and hides it shortly after
- * the pointer leaves. Create during component initialisation.
+ * the pointer leaves. Create during component initialization.
  */
 export class PaperHoverIntent {
 	shown = $state.raw<ShownTarget | null>(null);

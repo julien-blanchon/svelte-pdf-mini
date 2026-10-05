@@ -1,0 +1,37 @@
+name: Version
+
+# Changesets: pending changesets on main open (or update) a "Version packages"
+# pull request that bumps packages/svelte-pdf-mini/package.json and writes
+# CHANGELOG.md. Merging it does NOT publish: push a `vX.Y.Z` tag afterwards
+# (see RELEASING.md), which runs release.yml.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: version
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  version-pr:
+    if: github.repository == 'julien-blanchon/svelte-pdf-mini'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+
+      # No `publish-script`: with no pending changesets the action does nothing.
+      - uses: changesets/action@v2
+        with:
+          version-script: bun run version
+          commit-message: 'chore: version packages'
+          pr-title: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

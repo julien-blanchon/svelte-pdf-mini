@@ -144,6 +144,8 @@ export class FindState {
 		let lastFlush = performance.now();
 		for (const page of order) {
 			if (gen !== this.#gen) return;
+			// Enough matches: stop reading pages too.
+			if (count >= this.#limit) break;
 			const text = await doc.getPageText(page).catch(() => null);
 			if (gen !== this.#gen) return;
 			if (text) {

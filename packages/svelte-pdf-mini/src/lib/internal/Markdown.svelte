@@ -1,13 +1,12 @@
 <script lang="ts">
-	import { hasMarkup, renderMarkdown } from './markdown.js';
+	import { cachedMarkdown, hasMarkup, renderMarkdown } from './markdown.js';
 
 	let { source }: { source: string } = $props();
-	/** Rendered HTML; null while loading or for plain text. */
-	let html = $state<string | null>(null);
+	/** Rendered HTML (from the cache right away when there); null while loading or for plain text. */
+	let html = $derived<string | null>(cachedMarkdown(source) ?? null);
 	$effect(() => {
 		const src = source;
-		html = null;
-		if (!hasMarkup(src)) return;
+		if (!hasMarkup(src) || html !== null) return;
 		let alive = true;
 		renderMarkdown(src).then(
 			(h) => alive && (html = h),
@@ -28,7 +27,7 @@
 {/if}
 
 <style>
-	/* Scoped (always our element): must beat app-wide paragraph margins. */
+	/* Scoped (always our element): must beat app-wide paragraph margins (so outside the library layer). */
 	p[data-plain] {
 		white-space: pre-wrap;
 		margin: 0;

@@ -147,7 +147,7 @@ function median(values: number[]): number {
  * the number sits well apart from the formula (the right-margin number, not
  * "… in Eq. (3)" prose). The box grows over the formula's other lines:
  * fraction / sub- and superscript lines overlapping it, and adjacent
- * narrow, centred lines (multi-line equations).
+ * narrow, centered lines (multi-line equations).
  */
 export function extractEquations(
 	ctx: DocContext,
@@ -176,7 +176,7 @@ export function extractEquations(
 			// Prose ending a sentence right before the number is a reference, not an equation.
 			if (/\b[a-z]{3,}[.,;:]?$/.test(bodyText) && !/[=+\-−·×<>≤≥∈)\]}]/.test(bodyText)) return;
 
-			// The text column: median width / centre of body lines around the number.
+			// The text column: median width / center of body lines around the number.
 			// Single-column page (many lines span over half the width), else the number's column.
 			const singleColumn =
 				lines.filter((x) => x.right - x.x > size.width * 0.5).length > lines.length * 0.3;
@@ -187,7 +187,7 @@ export function extractEquations(
 			);
 			const widths = inColumn.map((x) => x.right - x.x);
 			const textWidth = median(widths.filter((w) => w > median(widths) * 0.8)) || colR - colL;
-			const textCentre =
+			const textCenter =
 				median(
 					inColumn.filter((x) => x.right - x.x > textWidth * 0.9).map((x) => (x.x + x.right) / 2)
 				) || (colL + colR) / 2;
@@ -198,13 +198,13 @@ export function extractEquations(
 				Math.max(0, x.bottom - r[3], r[1] - x.top) < l.size * 1.1;
 			// Formula pieces (fraction parts, scripts) sit beside or over the formula, never at the
 			// column's left margin like prose.
-			const textLeft = textCentre - textWidth / 2;
+			const textLeft = textCenter - textWidth / 2;
 			const overlapsX = (x: Line, r: PdfRect) =>
 				x.x < numRect[0] && x.right > r[0] - l.size * 2 && x.x > textLeft + l.size;
-			// Narrow and centred like display math (punctuation can't tell: "… = b.").
+			// Narrow and centered like display math (punctuation can't tell: "… = b.").
 			const isDisplay = (x: Line) =>
 				x.right - x.x < textWidth * 0.8 &&
-				Math.abs((x.x + x.right) / 2 - textCentre) < textWidth * 0.15;
+				Math.abs((x.x + x.right) / 2 - textCenter) < textWidth * 0.15;
 			// Grow to a fixpoint over the lines around it (fragments of one equation are not
 			// neighbours in reading order: "softmax(", "QKᵀ", "√dₖ", ")V" share a baseline).
 			const body: Line[] = [l];
@@ -285,7 +285,7 @@ const STOPWORDS = new Set(
 );
 
 /** A running-text line (prose), as opposed to figure labels or table rows. */
-export function isProse(text: string): boolean {
+function isProse(text: string): boolean {
 	const words = text.trim().split(/\s+/);
 	if (words.length < 6) return false;
 	let stop = 0;

@@ -19,7 +19,7 @@ interface TocBase {
 	/** Deepest level shown (1 = top-level only). */
 	maxDepth?: number;
 	item?: Snippet<[TocItemSnippetProps]>;
-	/** Shown while analysing or when no sections were found. */
+	/** Shown while analyzing or when no sections were found. */
 	empty?: Snippet<[{ status: PaperState['status'] }]>;
 }
 

@@ -59,7 +59,7 @@ export interface ProviderBaseOptions {
 	fetch?: FetchLike;
 }
 
-/** Normalise a Reference or query into a query. */
+/** Normalize a Reference or query into a query. */
 export function toQuery(ref: Reference | ReferenceQuery): ReferenceQuery {
 	if ('parsed' in ref) {
 		const p = ref.parsed;

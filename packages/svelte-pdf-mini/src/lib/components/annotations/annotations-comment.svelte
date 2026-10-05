@@ -106,16 +106,18 @@
 {/if}
 
 <style>
-	/* A borderless textarea that reads like the note text it edits (scoped: only our own markup renders it). */
-	textarea {
-		width: 100%;
-		resize: none;
-		overflow: hidden;
-		font: inherit;
-		color: inherit;
-		background: transparent;
-		border: 0;
-		outline: none;
-		padding: 0;
+	@layer svelte-pdf-mini {
+		/* A borderless textarea that reads like the note text it edits (scoped: only our own markup renders it). */
+		textarea {
+			width: 100%;
+			resize: none;
+			overflow: hidden;
+			font: inherit;
+			color: inherit;
+			background: transparent;
+			border: 0;
+			outline: none;
+			padding: 0;
+		}
 	}
 </style>
