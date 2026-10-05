@@ -206,7 +206,8 @@ test('pages stay centred next to the side-note margin @smoke', async ({ page }) 
 	}
 });
 
-// Side notes never add a scrollbar: full notes when there is room, compact markers otherwise.
+// Side notes never add a scrollbar: full notes when there is room (beside the page, then
+// over its blank margin), compact markers otherwise.
 test('side notes adapt to the room beside the page @smoke', async ({ page }) => {
 	const overflow = () =>
 		page.evaluate(() => {
@@ -222,7 +223,7 @@ test('side notes adapt to the room beside the page @smoke', async ({ page }) => 
 	expect(await overflow()).toBeLessThanOrEqual(0);
 	await shot('notes-wide');
 
-	await page.setViewportSize({ width: 900, height: 900 });
+	await page.setViewportSize({ width: 480, height: 900 });
 	const marker = page.locator('[data-pdf-annotation-margin][data-layout=markers] [data-pdf-margin-marker]').first();
 	await expect(marker).toBeVisible();
 	expect(await overflow()).toBeLessThanOrEqual(0);
