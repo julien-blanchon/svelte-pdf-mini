@@ -12,6 +12,7 @@ import {
 import { isCancel } from '../core/document/scheduler.js';
 import type { PageSize } from '../core/types.js';
 import { dataAttr, type Getter } from '../internal/types.js';
+import { steerSelection } from './text-selection.js';
 import type { ViewerState } from './viewer.svelte.js';
 
 /** Per-page derived state shared by a page's layers. */
@@ -297,13 +298,12 @@ export class PageTextLayerState {
 	#key = createAttachmentKey();
 	#attach = (node: HTMLElement) => {
 		this.el = node;
+		// From the first press, the end-of-content element covers the page (styles.css);
+		// text-selection.ts steers it while dragging and resets it on release.
 		const onDown = () => node.classList.add('selecting');
-		const onUp = () => node.classList.remove('selecting');
 		node.addEventListener('pointerdown', onDown);
-		document.addEventListener('pointerup', onUp);
 		return () => {
 			node.removeEventListener('pointerdown', onDown);
-			document.removeEventListener('pointerup', onUp);
 			if (this.el === node) this.el = null;
 		};
 	};
@@ -320,6 +320,7 @@ export class PageTextLayerState {
 			// Level of detail: no selectable text on tiny pages (spreads zoomed far out).
 			if (!el || !doc || !near || !page.detailed) return;
 			let cancelled = false;
+			let unsteer: (() => void) | undefined;
 			(async () => {
 				const [pdfjs, pdfPage, text] = await Promise.all([
 					loadPdfJs(),
@@ -337,16 +338,19 @@ export class PageTextLayerState {
 				if (cancelled) return;
 				// Span i ↔ text item i: lets DOM selections map back to the text index.
 				layer.textDivs.forEach((div, i) => (div.dataset.idx = String(i)));
-				// pdf.js expects this sentinel to make selection behave at the end of the page.
+				// Selection sentinel (see text-selection.ts): keeps drags over gaps between
+				// lines from jumping to the page's start or end in WebKit.
 				const end = document.createElement('div');
 				end.className = 'endOfContent';
 				el.append(end);
+				unsteer = steerSelection(el, end);
 				this.rendered = true;
 			})().catch((err) => {
 				if (!cancelled && !isCancel(err)) console.error('[svelte-pdf-mini] text layer', err);
 			});
 			return () => {
 				cancelled = true;
+				unsteer?.();
 				this.#layer?.cancel();
 				this.#layer = null;
 				el.replaceChildren();

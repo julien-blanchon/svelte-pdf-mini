@@ -59,19 +59,37 @@ async function compute(page: PDFPageProxy): Promise<PageGraphics> {
 	const paths: PdfRect[] = [];
 	let ctm: Matrix = [1, 0, 0, 1, 0, 0];
 	let lineWidth = 1;
-	const stack: { ctm: Matrix; lineWidth: number }[] = [];
+	// Clip-path bounds: images are often placed larger than shown and clipped (a grid of
+	// samples cropped to a strip), and their unclipped box would swallow nearby figures.
+	let clip: PdfRect | null = null;
+	let clipping = false;
+	const stack: { ctm: Matrix; lineWidth: number; clip: PdfRect | null }[] = [];
+	const clipped = (r: PdfRect): PdfRect | null => {
+		if (!clip) return r;
+		const c: PdfRect = [
+			Math.max(r[0], clip[0]),
+			Math.max(r[1], clip[1]),
+			Math.min(r[2], clip[2]),
+			Math.min(r[3], clip[3])
+		];
+		return c[2] > c[0] && c[3] > c[1] ? c : null;
+	};
 	for (let i = 0; i < ops.fnArray.length; i++) {
 		const fn = ops.fnArray[i];
 		const args = ops.argsArray[i] as unknown[];
 		switch (fn) {
 			case OPS.save:
-				stack.push({ ctm, lineWidth });
+				stack.push({ ctm, lineWidth, clip });
 				break;
 			case OPS.restore: {
 				const s = stack.pop();
-				if (s) ({ ctm, lineWidth } = s);
+				if (s) ({ ctm, lineWidth, clip } = s);
 				break;
 			}
+			case OPS.clip:
+			case OPS.eoClip:
+				clipping = true;
+				break;
 			case OPS.transform:
 				ctm = mul(ctm, args as unknown as Matrix);
 				break;
@@ -79,40 +97,47 @@ async function compute(page: PDFPageProxy): Promise<PageGraphics> {
 				lineWidth = Number(args[0]) || 0;
 				break;
 			case OPS.paintFormXObjectBegin: {
-				stack.push({ ctm, lineWidth });
+				stack.push({ ctm, lineWidth, clip });
 				const matrix = args[0] as Matrix | null;
 				if (matrix) ctm = mul(ctm, matrix);
 				const bbox = args[1] as number[] | null;
 				if (bbox && bbox.length === 4) {
-					const r = boxOf(ctm, bbox[0], bbox[1], bbox[2], bbox[3]);
-					const area = (r[2] - r[0]) * (r[3] - r[1]);
+					const r = clipped(boxOf(ctm, bbox[0], bbox[1], bbox[2], bbox[3]));
+					const area = r ? (r[2] - r[0]) * (r[3] - r[1]) : 0;
 					// Ignore tiny glyph-like forms and full-page backgrounds.
-					if (area > 400 && area < pageArea * 0.9) images.push(r);
+					if (r && area > 400 && area < pageArea * 0.9) images.push(r);
 				}
 				break;
 			}
 			case OPS.paintFormXObjectEnd: {
 				const s = stack.pop();
-				if (s) ({ ctm, lineWidth } = s);
+				if (s) ({ ctm, lineWidth, clip } = s);
 				break;
 			}
 			case OPS.paintImageXObject:
 			case OPS.paintInlineImageXObject:
 			case OPS.paintImageMaskXObject:
 			case OPS.paintImageXObjectRepeat: {
-				const r = boxOf(ctm, 0, 0, 1, 1);
-				if ((r[2] - r[0]) * (r[3] - r[1]) > 100) images.push(r);
+				const r = clipped(boxOf(ctm, 0, 0, 1, 1));
+				if (r && (r[2] - r[0]) * (r[3] - r[1]) > 100) images.push(r);
 				break;
 			}
 			case OPS.constructPath: {
 				// pdf.js ≥ 5: [paintOp, pathData, minMax]
 				const paint = args[0] as number;
 				const mm = args[2] as ArrayLike<number> | null | undefined;
-				if (!PAINT.has(paint) || !mm || mm.length < 4 || !Number.isFinite(mm[0])) break;
+				const valid = !!mm && mm.length >= 4 && Number.isFinite(mm[0]);
+				// `W n`: this path becomes the clip (intersected with the current one).
+				if (clipping) {
+					clipping = false;
+					if (valid) clip = clipped(boxOf(ctm, mm[0], mm[1], mm[2], mm[3])) ?? [0, 0, 0, 0];
+				}
+				if (!PAINT.has(paint) || !valid) break;
 				const stroked = paint !== OPS.fill && paint !== OPS.eoFill;
 				const pad = stroked ? (lineWidth * Math.hypot(ctm[0], ctm[1])) / 2 : 0;
 				const r = boxOf(ctm, mm[0], mm[1], mm[2], mm[3]);
-				const box: PdfRect = [r[0] - pad, r[1] - pad, r[2] + pad, r[3] + pad];
+				const box = clipped([r[0] - pad, r[1] - pad, r[2] + pad, r[3] + pad]);
+				if (!box) break;
 				const w = box[2] - box[0];
 				const h = box[3] - box[1];
 				if (w * h > pageArea * 0.85) break; // page background

@@ -22,6 +22,23 @@ describe('attention.pdf figure boxes', async () => {
 		expect(t.rect[3]).toBeGreaterThanOrEqual(t.captionRect[3]);
 	});
 
+	it('display equations span their text column, number and formula included', () => {
+		const eqs = m.figures.filter((f) => f.kind === 'equation');
+		expect(eqs.length).toBeGreaterThanOrEqual(3);
+		for (const e of eqs) {
+			expect(e.rect[0]).toBeLessThan(115);
+			expect(e.rect[2]).toBeGreaterThan(500);
+			expect(e.rect[2]).toBeGreaterThanOrEqual(e.captionRect[2]);
+		}
+	});
+
+	it('Figure 1 keeps the labels beside the drawing ("Positional Encoding")', () => {
+		const f = fig(m, 'Figure 1');
+		expect(f.page).toBe(3);
+		expect(f.rect[2]).toBeGreaterThan(410);
+		expect(f.rect[0]).toBeLessThan(197);
+	});
+
 	it('every table box is taller than its caption', () => {
 		for (const f of m.figures.filter((f) => f.kind === 'table'))
 			expect(height(f.rect) - height(f.captionRect)).toBeGreaterThan(25);
@@ -42,7 +59,8 @@ describe.skipIf(!has(corpus('1810.04805')))('BERT (ACL, tables above captions)',
 	it('Table 1 body is the grid above the caption, not the paragraphs below', () => {
 		const t = fig(m, 'Table 1');
 		expect(t.rect[3]).toBeGreaterThan(t.captionRect[3] + 40);
-		expect(t.rect[1]).toBeGreaterThanOrEqual(t.captionRect[1] - 2);
+		// Boxes get 4pt of padding, not the paragraph below.
+		expect(t.rect[1]).toBeGreaterThanOrEqual(t.captionRect[1] - 5);
 	});
 });
 
