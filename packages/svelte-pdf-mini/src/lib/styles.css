@@ -57,8 +57,11 @@
 		) {
 		pointer-events: none !important;
 	}
+	/* The viewport takes focus so the keyboard scrolls it (and focus returns to it after
+	   find, menus…). A ring around the whole document reads as a glitch, so none by default;
+	   set --pdf-viewport-focus-ring (e.g. `2px solid Highlight`) to show one. */
 	[data-pdf-viewport]:focus-visible {
-		outline: 2px solid var(--pdf-focus-ring, Highlight);
+		outline: var(--pdf-viewport-focus-ring, none);
 		outline-offset: -2px;
 	}
 

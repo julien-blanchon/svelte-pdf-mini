@@ -7,3 +7,4 @@
 - **Zoom limits:** `Viewer.Root minZoom` / `maxZoom` (defaults 0.1 and 10) bound every way of zooming; `viewer.minZoom` / `viewer.maxZoom` expose them.
 - **One focus effect:** figures, tables and equations get the filled pulse, like references and citations; jumping to a note from `Annotations.List` scrolls to it and selects it, without a flash.
 - **Find:** ↓ / ↑ in `Find.Input` go to the next / previous match (as Enter / Shift+Enter).
+- **No focus ring around the document:** the viewport keeps keyboard focus without an outline (`--pdf-viewport-focus-ring` brings one back).

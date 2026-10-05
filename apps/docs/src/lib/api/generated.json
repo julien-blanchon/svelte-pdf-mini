@@ -334,6 +334,19 @@
 							"bindable": false
 						},
 						{
+							"name": "minZoom",
+							"type": "number",
+							"description": "Smallest and largest zoom any way of zooming reaches (pinch, wheel, steps, fit modes). Defaults 0.1 and 10.",
+							"required": false,
+							"bindable": false
+						},
+						{
+							"name": "maxZoom",
+							"type": "number",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "viewer",
 							"type": "ViewerState",
 							"description": "The viewer state (bind:viewer to call commands from outside).",
@@ -5757,6 +5770,10 @@
 		{
 			"name": "--pdf-ui-shadow",
 			"default": "0 8px 28px rgb(0 0 0 / 0.16)"
+		},
+		{
+			"name": "--pdf-viewport-focus-ring",
+			"default": "none"
 		}
 	]
 }
