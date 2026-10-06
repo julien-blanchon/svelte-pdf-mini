@@ -72,7 +72,8 @@ test('text boxes are typed on the page; the pen draws freehand strokes', async (
 	await page.mouse.down();
 	for (let k = 0; k < 20; k++) await page.mouse.move(x + k * 6, y + Math.sin(k / 3) * 20);
 	await page.mouse.up();
-	await expect(page.locator('[data-pdf-annotation][data-kind=ink] path[fill]:not([fill=none])')).toHaveCount(1);
+	// One stroke, drawn as a line (default smoothing) or a filled outline (the 'pen' style).
+	await expect(page.locator('[data-pdf-annotation][data-kind=ink] path[data-part=ink]')).toHaveCount(1);
 });
 
 test('annotations are reachable with the keyboard', async ({ page }) => {
