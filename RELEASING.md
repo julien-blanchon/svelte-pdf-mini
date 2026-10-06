@@ -7,7 +7,7 @@ A release publishes `packages/svelte-pdf-mini` to npm as [`svelte-pdf-mini`](htt
 ## Prerequisites
 
 - **npm trusted publishing** (current setup): on npmjs.com, the `svelte-pdf-mini` package → *Settings → Trusted publishing* lists GitHub Actions, repository `julien-blanchon/svelte-pdf-mini`, workflow **`release.yml`**, no environment. The workflow file must keep that name. No secret is needed.
-- **`NPM_TOKEN`** (optional fallback): an npm automation / granular token with publish rights. Used only if the repository secret exists; not set today (`gh secret list -R julien-blanchon/svelte-pdf-mini` is empty), which is fine while trusted publishing is configured.
+- **No npm token.** Publishing works only through trusted publishing, so a leaked token can't publish. On npmjs.com, *Settings → Publishing access*: "Require two-factor authentication and disallow tokens" (recommended). Third-party actions in the workflows are pinned to commit SHAs (the comment gives the tag).
 - `GITHUB_TOKEN` (automatic) creates the GitHub release.
 - Push access to `main` and permission to push tags.
 
@@ -76,7 +76,7 @@ The package page on npmjs.com shows the *Provenance* badge linking to the workfl
 
 - **Tag/version mismatch**: delete the tag (`git push --delete origin vX.Y.Z && git tag -d vX.Y.Z`), fix the version on `main`, tag again.
 - **Tests fail**: fix on `main`, bump to the next patch version, tag that. Never move a tag that was already published to npm (npm versions are immutable).
-- **npm publish fails with 401/403/404**: trusted publishing isn't matching (workflow name, repository, or package settings), or the package needs an `NPM_TOKEN` secret.
+- **npm publish fails with 401/403/404**: trusted publishing isn't matching (workflow name `release.yml`, repository, or the package's trusted publisher settings on npmjs.com).
 - **GitHub release step fails after npm succeeded**: re-run the failed jobs; publishing is skipped and the release is created.
 
 Older releases (≤ 0.2.0) were tagged `svelte-pdf-mini@X.Y.Z` by `changeset publish`; from now on tags are `vX.Y.Z`.

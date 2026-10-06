@@ -18,8 +18,8 @@ jobs:
     name: Check, test & build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
@@ -34,7 +34,7 @@ jobs:
         run: bun --filter svelte-pdf-mini build
 
       # arXiv PDFs used by the unit tests (not committed).
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: fixtures/cache
           key: fixtures-${{ hashFiles('fixtures/papers.json') }}
@@ -54,15 +54,15 @@ jobs:
     name: End-to-end (smoke)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
       - name: Smoke tests against the dev server
         run: bun run test:e2e
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
         with:
           name: playwright-report
@@ -81,10 +81,10 @@ jobs:
       !startsWith(github.head_ref, 'changeset-release/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
