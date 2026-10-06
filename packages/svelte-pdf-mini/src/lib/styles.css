@@ -170,7 +170,7 @@
 			transform-origin: 0% 0%;
 			user-select: text;
 		}
-		> :not(.markedContent),
+		> :not(.markedContent, .endOfContent),
 		.markedContent span:not(.markedContent) {
 			z-index: 1;
 			--font-height: 0;
@@ -204,6 +204,17 @@
 		&.selecting .endOfContent {
 			top: 0;
 		}
+	}
+	/* pdf.js lays the text out on the unrotated page (its size and `data-main-rotation`
+	   are set by TextLayer): rotate the layer onto the rotated page (from pdf_viewer.css). */
+	[data-pdf-text-layer][data-main-rotation='90'] {
+		transform: rotate(90deg) translateY(-100%);
+	}
+	[data-pdf-text-layer][data-main-rotation='180'] {
+		transform: rotate(180deg) translate(-100%, -100%);
+	}
+	[data-pdf-text-layer][data-main-rotation='270'] {
+		transform: rotate(270deg) translateX(-100%);
 	}
 
 	/* ── Find matches ────────────────────────────────────────────────────────── */

@@ -22,7 +22,7 @@ Zoom controls read the viewer from context. Every change eases (unless `smoothZo
 
 ## Usage
 
-`Zoom.In` and `Zoom.Out` are disabled at the ends of `zoomSteps`; `Zoom.Mode` exposes `data-active` and `aria-pressed`. For a slider, bind it to the viewer: `bind:value={() => viewer.zoom, (z) => viewer.zoomTo(z)}`.
+`Zoom.In` and `Zoom.Out` are disabled at the ends of `zoomSteps`, at the viewer's `minZoom` / `maxZoom`, and while `zoomLocked` is set; `Zoom.Mode` exposes `data-active` and `aria-pressed`. For a slider, bind it to the viewer: `bind:value={() => viewer.zoom, (z) => viewer.zoomTo(z)}`.
 
 ## API reference
 

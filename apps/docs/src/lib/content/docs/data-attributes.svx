@@ -23,4 +23,6 @@ Read by the optional `svelte-pdf-mini/styles.css`. Set them on `[data-pdf-viewer
 
 The viewer itself reads three layout variables: `--pdf-page-gap` (between pages, default 16px), `--pdf-pages-padding` (around them, default 16px) and `--pdf-pages-aside` (room fit modes leave beside the pages for side notes, default 0; see [Viewer layout](/docs/viewer-layout)).
 
+While a text selection is being dragged, the viewport has `data-selecting`: the default stylesheet lets the pointer through links, citations, cross-references and annotations then, so no preview opens and the selection can't jump to an overlay. The viewport has no focus ring by default (it takes focus for keyboard scrolling); set `--pdf-viewport-focus-ring` (e.g. `2px solid Highlight`) to show one.
+
 `--pdf-scale` (CSS pixels per PDF point) is set by the viewer on the pages container; read it in your own overlays. `--annotation-color` is set on each annotation element.

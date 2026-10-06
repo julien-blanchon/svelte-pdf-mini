@@ -24,6 +24,8 @@ description: Zoom and fit modes, eased transitions, scroll modes, columns and sp
 | `zoomSteps` | Steps used by `Zoom.In` / `Zoom.Out` and the keyboard |
 | `smoothZoom` | Ease zoom changes (default `true`; off with reduced motion) |
 | `wheelZoom` | Ctrl/⌘ + wheel and trackpad pinch (default `true`) |
+| `minZoom` · `maxZoom` | Limits for every way of zooming, fit modes included (defaults `0.1` and `10`); `viewer.minZoom` / `viewer.maxZoom` |
+| `zoomLocked` | User zooming (pinch, wheel, shortcuts, `zoomTo`, mode changes) does nothing; a fit mode keeps fitting the view as it resizes |
 
 - **Eased transitions.** `viewer.zoomTo(z)`, the zoom steps, `Zoom.Select` and fit-mode switches animate. Drive a slider with `bind:value={() => viewer.zoom, (z) => viewer.zoomTo(z)}`.
 - **Anchored zoom.** While pages are narrower than the view they stay centred; once wider, Ctrl/⌘ + wheel and pinch zoom around the cursor.
@@ -54,5 +56,5 @@ When the column count changes, pages slide to their new place instead of jumping
 | `detailMinWidth` | Pages narrower than this (default 260 px) skip text layers |
 
 <Callout title="Room for side notes">
-	Pages always stay centred and side notes never add a scrollbar. <a href="/components/annotations">Annotations.Margin</a> sizes itself from <code>viewer.sideRoom</code> (the free width beside the centred pages): full notes when they fit, narrower ones when space is tight (over the page's blank margin, never its text, if needed), and compact markers below <code>minWidth</code> (140 px by default). Hovering a marker shows the note, and clicking it opens the note in the popover. With fit-to-width, set <code>--pdf-pages-aside: 272px</code> on the viewport to keep that much room on each side for the notes (pages shrink by at most a quarter for it).
+	Pages always stay centred and side notes never add a scrollbar. <a href="/components/annotations">Annotations.Margin</a> sizes itself from <code>viewer.sideRoom</code> (the free width beside the centred pages): full notes when they fit, narrower ones when space is tight (over the page's blank margin, never its text, if needed), and compact markers below <code>minWidth</code> (140 px by default). Hovering a marker shows the note, and clicking it opens the note in the popover. With fit-to-width, set <code>--pdf-pages-aside: 272px</code> on the viewport to keep that much room on each side for the notes (pages shrink by at most a quarter for it). Next to another page (a spread, Auto's grid, a horizontal strip) and on thumbnail-sized pages, notes are always markers; beside a neighbor they sit just past the page's edge (<code>data-placement="gap"</code>), painted above it.
 </Callout>

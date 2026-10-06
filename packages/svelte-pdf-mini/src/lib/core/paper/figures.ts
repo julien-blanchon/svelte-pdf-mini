@@ -391,11 +391,12 @@ const columnsCache = new WeakMap<DocContext, Map<number, TextColumns | null>>();
  * A page's text columns; for a page without running text (a full-page figure),
  * the nearest page's that has some.
  */
-export function pageColumns(ctx: DocContext, page: number): TextColumns {
+function pageColumns(ctx: DocContext, page: number): TextColumns {
 	let cache = columnsCache.get(ctx);
 	if (!cache) columnsCache.set(ctx, (cache = new Map()));
 	const of = (p: number) => {
-		if (!cache.has(p)) cache.set(p, textColumns(ctx.lines[p - 1], ctx.body, ctx.src.pageSize(p)));
+		if (!cache.has(p))
+			cache.set(p, textColumns(ctx.lines[p - 1], ctx.body, ctx.src.pageSize(p), proseOf(ctx)));
 		return cache.get(p)!;
 	};
 	for (let d = 0; d < ctx.numPages; d++)
@@ -408,7 +409,8 @@ export function pageColumns(ctx: DocContext, page: number): TextColumns {
 export function textColumns(
 	lines: Line[],
 	body: number,
-	size: { width: number; height: number }
+	size: { width: number; height: number },
+	isRunning: (text: string) => boolean = isProse
 ): TextColumns | null {
 	const band = Math.max(36, size.height * 0.06);
 	const prose = lines.filter(
@@ -417,7 +419,7 @@ export function textColumns(
 			Math.abs(l.size - body) < 1 &&
 			l.y > band &&
 			l.y < size.height - band &&
-			isProse(l.text)
+			isRunning(l.text)
 	);
 	const block = (ls: Line[]): [number, number] => [
 		median(ls.map((l) => l.x)),
@@ -503,7 +505,7 @@ const STOPWORDS = new Set(
 	)
 );
 
-/** A running-text line (prose), as opposed to figure labels or table rows. */
+/** A running-text line (prose) in English, as opposed to figure labels or table rows. */
 function isProse(text: string): boolean {
 	const words = text.trim().split(/\s+/);
 	if (words.length < 6) return false;
@@ -515,6 +517,39 @@ function isProse(text: string): boolean {
 		if (/^[-+±]?[\d.,%×()]+$/.test(w)) numeric++;
 	}
 	return stop >= 2 && numeric / words.length < 0.3;
+}
+
+/**
+ * Running text by its shape, in any language: enough words (or characters, for
+ * scripts without spaces), mostly letters, few numbers.
+ */
+export function isShapedProse(text: string): boolean {
+	const t = text.trim();
+	const words = t.split(/\s+/);
+	const chars = t.replace(/\s/g, '');
+	const letters = chars.match(/\p{L}/gu)?.length ?? 0;
+	if (!chars.length || letters < chars.length * 0.7) return false;
+	const numeric = words.filter((w) => /^[-+±]?[\d.,%×()]+$/.test(w)).length;
+	if (numeric / words.length >= 0.3) return false;
+	return words.length >= 6 || (words.length <= 2 && chars.length >= 15);
+}
+
+const proseCache = new WeakMap<DocContext, (text: string) => boolean>();
+
+/**
+ * The document's running-text test: English stopwords for an English paper (the
+ * tuned case), the language-agnostic shape test otherwise (French, German, CJK…).
+ */
+function proseOf(ctx: DocContext): (text: string) => boolean {
+	let test = proseCache.get(ctx);
+	if (!test) {
+		const body = ctx.lines.flat().filter((l) => !l.rotated && Math.abs(l.size - ctx.body) < 1);
+		const shaped = body.filter((l) => isShapedProse(l.text));
+		const english = shaped.filter((l) => isProse(l.text)).length;
+		test = !shaped.length || english >= shaped.length * 0.25 ? isProse : isShapedProse;
+		proseCache.set(ctx, test);
+	}
+	return test;
 }
 
 const isHeadingLine = (ctx: DocContext, l: Line) =>
@@ -640,7 +675,10 @@ function regionBody(
 	const proseIn = (r: PdfRect) =>
 		lines.filter((l) => {
 			return (
-				!l.rotated && containedIn(lineRect(l), r) && l.size >= ctx.body - 0.6 && isProse(l.text)
+				!l.rotated &&
+				containedIn(lineRect(l), r) &&
+				l.size >= ctx.body - 0.6 &&
+				proseOf(ctx)(l.text)
 			);
 		}).length;
 	const boxes = [
@@ -685,7 +723,7 @@ function regionBody(
 				const caption = others.get(l);
 				// Smaller text (sub-captions, table cells, plot labels) and "(a) …" sub-captions never end a region.
 				const runningText =
-					l.size >= ctx.body - 0.6 && !/^\(?[a-z]\)\s/.test(l.text.trim()) && isProse(l.text);
+					l.size >= ctx.body - 0.6 && !/^\(?[a-z]\)\s/.test(l.text.trim()) && proseOf(ctx)(l.text);
 				const heading = isHeadingLine(ctx, l);
 				const stop = !!caption || (!inner && (runningText || heading));
 				return {
@@ -696,7 +734,7 @@ function regionBody(
 					inner,
 					caption,
 					heading,
-					short: !isProse(l.text),
+					short: !proseOf(ctx)(l.text),
 					body: l.size >= ctx.body - 0.6,
 					// "B.4 Inference for Table 1", in any size (small caps headings).
 					numbered: /^((?:\d{1,2}|[A-Z])(?:\.\d{1,2}){1,3})\.?\s+\p{Lu}/u.test(l.text.trim())

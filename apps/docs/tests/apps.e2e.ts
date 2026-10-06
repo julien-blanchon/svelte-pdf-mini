@@ -15,6 +15,19 @@ test('reader: contents, find and URL position @smoke', async ({ page }) => {
 	expect(errors).toEqual([]);
 });
 
+test('find: ↓ / ↑ in the input step through matches', async ({ page }) => {
+	await page.goto('/demo/reader?paper=1512.03385');
+	await rendered(page);
+	await page.keyboard.press('Control+f');
+	await page.keyboard.type('residual');
+	const count = page.locator('[data-pdf-find-count]');
+	await expect(count).toContainText(/^\s*1\s*\//, { timeout: 10_000 });
+	await page.locator('[data-pdf-find-input]').press('ArrowDown');
+	await expect(count).toContainText(/^\s*2\s*\//);
+	await page.locator('[data-pdf-find-input]').press('ArrowUp');
+	await expect(count).toContainText(/^\s*1\s*\//);
+});
+
 test('reader: highlight persists across reloads', async ({ page }) => {
 	await page.goto('/demo/reader?paper=1706.03762');
 	await rendered(page);

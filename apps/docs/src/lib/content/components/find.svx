@@ -30,7 +30,7 @@ description: Search the document ignoring case, accents, ligatures and line-brea
 
 - Options: `caseSensitive`, `diacritics`, `wholeWord`, `regex` — as props or `Find.Toggle`.
 - `Find.Layer show="all" | "current" | "none"` picks which matches are drawn; non-current matches carry `data-other`; the `match` snippet lets you draw them yourself.
-- Ctrl/⌘ + F focuses `Find.Input` (seeded with the selection); Enter and Shift + Enter step through matches.
+- Ctrl/⌘ + F focuses `Find.Input` (seeded with the selection); Enter / ↓ and Shift + Enter / ↑ step through matches (not while an input method is composing).
 - `Minimap.Markers find` shows every hit on a minimap.
 
 ## API reference

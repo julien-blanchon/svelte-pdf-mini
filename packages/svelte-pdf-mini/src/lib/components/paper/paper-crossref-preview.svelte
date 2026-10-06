@@ -55,6 +55,8 @@
 		const host = canvasHost;
 		const target = figure ? { page: figure.page, rect: figure.rect } : x?.target;
 		if (!x || !target || !host || !open) return;
+		// Read before the awaits: a theme change (night mode) re-renders the open preview.
+		const theme = paper.viewer.pageTheme;
 		const controller = new AbortController();
 		(async () => {
 			const page = await paper.viewer.document.getPage(target.page);
@@ -63,7 +65,7 @@
 				rect: regionOf(page.view as PdfRect, target, x.kind),
 				cssWidth: width,
 				signal: controller.signal,
-				theme: paper.viewer.pageTheme
+				theme
 			});
 			if (!controller.signal.aborted) host.replaceChildren(canvas);
 		})().catch(() => {});

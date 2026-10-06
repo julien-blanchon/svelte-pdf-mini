@@ -296,14 +296,11 @@ export class PageTextLayerState {
 	rendered = $state(false);
 	#layer: TextLayer | null = null;
 	#key = createAttachmentKey();
+	// The `selecting` state and the end-of-content element are managed by
+	// text-selection.ts once the layer is rendered (steerSelection below).
 	#attach = (node: HTMLElement) => {
 		this.el = node;
-		// From the first press, the end-of-content element covers the page (styles.css);
-		// text-selection.ts steers it while dragging and resets it on release.
-		const onDown = () => node.classList.add('selecting');
-		node.addEventListener('pointerdown', onDown);
 		return () => {
-			node.removeEventListener('pointerdown', onDown);
 			if (this.el === node) this.el = null;
 		};
 	};

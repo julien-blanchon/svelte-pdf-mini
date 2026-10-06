@@ -77,6 +77,8 @@
 			setTarget(l?.url ? { page: 0, kind: 'url', url: l.url } : null);
 			return;
 		}
+		// Read before the awaits: a theme change (night mode) re-renders the open preview.
+		const theme = viewer.pageTheme;
 		const controller = new AbortController();
 		const { signal } = controller;
 		const kind = classifyDest(l.dest);
@@ -92,7 +94,7 @@
 				rect,
 				cssWidth: width,
 				signal,
-				theme: viewer.pageTheme
+				theme
 			});
 			if (!signal.aborted) canvasHost?.replaceChildren(canvas);
 		})()

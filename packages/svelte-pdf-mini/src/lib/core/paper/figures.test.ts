@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { columnFor, frame, textColumns } from './figures.js';
+import { columnFor, frame, isShapedProse, textColumns } from './figures.js';
 import type { Line } from './lines.js';
 
 const page = { width: 612, height: 792 };
@@ -30,6 +30,20 @@ describe('textColumns', () => {
 	it('finds two columns from running text on both halves', () => {
 		const lines = [100, 200, 300, 400, 500].flatMap((y) => [line(54, 297, y), line(315, 558, y)]);
 		expect(textColumns(lines, 10, page)).toEqual([
+			[54, 297],
+			[315, 558]
+		]);
+	});
+
+	it('finds two columns in a non-English paper with the shape test', () => {
+		const fr = 'le modèle est entraîné sur un grand corpus de textes puis évalué sur trois tâches';
+		const lines = [100, 200, 300, 400, 500].flatMap((y) => [
+			line(54, 297, y, fr),
+			line(315, 558, y, fr)
+		]);
+		// The English test sees no running text; the language-agnostic one finds both columns.
+		expect(textColumns(lines, 10, page)).toBeNull();
+		expect(textColumns(lines, 10, page, isShapedProse)).toEqual([
 			[54, 297],
 			[315, 558]
 		]);
@@ -69,5 +83,16 @@ describe('frame', () => {
 	});
 	it('stays on the page', () => {
 		expect(frame([2, 1, 610, 791], [0, 612], page)).toEqual([0, 0, 612, 792]);
+	});
+});
+
+describe('isShapedProse', () => {
+	it('accepts running text in any language, refuses labels and numbers', () => {
+		expect(
+			isShapedProse('Das Modell wird auf einem großen Korpus trainiert und dann bewertet')
+		).toBe(true);
+		expect(isShapedProse('本研究では大規模な言語モデルの学習方法について報告する')).toBe(true);
+		expect(isShapedProse('Figure 3: samples')).toBe(false);
+		expect(isShapedProse('12.4 13.1 14.0 15.2 16.8 17.3 18.9')).toBe(false);
 	});
 });

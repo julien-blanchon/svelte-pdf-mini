@@ -61,6 +61,25 @@ test('focus() scrolls to a named destination', async ({ page }) => {
 	await expect(page.locator('[data-pdf-page="3"]')).toHaveAttribute('data-current', '');
 });
 
+test('rotated pages: the text layer lines up with the page', async ({ page }) => {
+	await page.goto('/demo/zoom');
+	await expect(page.locator('[data-pdf-text-layer][data-rendered]').first()).toBeAttached({ timeout: 40_000 });
+	await page.locator('[data-pdf-viewport]').first().focus();
+	await page.keyboard.press('ControlOrMeta+]');
+	const layer = page.locator('[data-pdf-page="1"] [data-pdf-text-layer]');
+	await expect(layer).toHaveAttribute('data-main-rotation', '90', { timeout: 10_000 });
+	await page.waitForTimeout(500);
+	const [l, p] = await Promise.all([
+		layer.boundingBox(),
+		page.locator('[data-pdf-page="1"]').boundingBox()
+	]);
+	// The rotated layer covers the rotated (landscape) page box.
+	expect(Math.abs(l!.x - p!.x)).toBeLessThan(3);
+	expect(Math.abs(l!.y - p!.y)).toBeLessThan(3);
+	expect(Math.abs(l!.width - p!.width)).toBeLessThan(3);
+	expect(Math.abs(l!.height - p!.height)).toBeLessThan(3);
+});
+
 test('ctrl+wheel zoom commits a new zoom @smoke', async ({ page }) => {
 	await page.goto('/demo/zoom');
 	await expect(page.locator('[data-pdf-canvas][data-rendered]').first()).toBeAttached({ timeout: 30_000 });

@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- - **Selection menu placement:** anchored to the box of the selected characters (not the last line, nor the text layer's oversized helper elements), centered above it; below it when there is no room above within the pages' area (it never covers the app's toolbars); kept inside the view for a selection taller than it. `float()` gains `clamp` and `boundary` options.
+- **Selection menu placement:** anchored to the box of the selected characters (not the last line, nor the text layer's oversized helper elements), centered above it; below it when there is no room above within the pages' area (it never covers the app's toolbars); kept inside the view for a selection taller than it.
   - **No previews while selecting:** while a text selection is dragged (`data-selecting` on the viewport), links, citations, cross-references, backlink targets and annotations let the pointer through, so no preview or hover card opens and the selection can't jump to an overlay's edge.
   - **Zoom limits:** `Viewer.Root minZoom` / `maxZoom` (defaults 0.1 and 10) bound every way of zooming; `viewer.minZoom` / `viewer.maxZoom` expose them.
   - **One focus effect:** figures, tables and equations get the filled pulse, like references and citations; jumping to a note from `Annotations.List` scrolls to it and selects it, without a flash.
@@ -22,7 +22,7 @@
 
 ### Minor Changes
 
-- - **Styles live in a cascade layer.** `styles.css` and every component style sit in `@layer svelte-pdf-mini`, so any unlayered app CSS, and Tailwind utilities once the layer order is declared, override them (`class="overflow-hidden"` on `Thumbnails.Root` now wins). With Tailwind v4, declare `@layer theme, base, svelte-pdf-mini, components, utilities;` in your HTML `<head>`, before any stylesheet loads (see README › Styling).
+- **Styles live in a cascade layer.** `styles.css` and every component style sit in `@layer svelte-pdf-mini`, so any unlayered app CSS, and Tailwind utilities once the layer order is declared, override them (`class="overflow-hidden"` on `Thumbnails.Root` now wins). With Tailwind v4, declare `@layer theme, base, svelte-pdf-mini, components, utilities;` in your HTML `<head>`, before any stylesheet loads (see README › Styling).
   - **New `svelte-pdf-mini/pdf-codec` entry point**: read and write annotations in PDF files (`importAnnotations`, `exportPdf`, JSON / Markdown serializers) without the Svelte components.
   - **Clipboard:** `setClipboard({ text, rich, image })` routes every copy through your writer (e.g. a desktop app's native clipboard); `copyText()` and `hasCustomClipboard()` are exported.
   - **Ink smoothing:** `Annotations.Root inkSmoothing` (`'smooth'` default, `'steady'`, `'pen'`, `'raw'`) and the `smoothStroke()` helper; the live stroke shows the same smoothing.

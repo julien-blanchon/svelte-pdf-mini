@@ -250,8 +250,9 @@ export class ViewerState {
 	readonly overscan = $derived(this.#opt('overscan') ?? 1);
 	readonly maxCanvasPixels = $derived(this.#opt('maxCanvasPixels') ?? 16_777_216);
 	readonly zoomSteps = $derived(this.#opt('zoomSteps') ?? ZOOM_STEPS);
-	readonly minZoom = $derived(this.#opt('minZoom') ?? MIN_ZOOM);
-	readonly maxZoom = $derived(this.#opt('maxZoom') ?? MAX_ZOOM);
+	/** Within the global limits; a `maxZoom` below `minZoom` is raised to it. */
+	readonly minZoom = $derived(clamp(this.#opt('minZoom') ?? MIN_ZOOM, MIN_ZOOM, MAX_ZOOM));
+	readonly maxZoom = $derived(clamp(this.#opt('maxZoom') ?? MAX_ZOOM, this.minZoom, MAX_ZOOM));
 	readonly zoomLocked = $derived(this.#opt('zoomLocked') ?? false);
 	/** Where shortcuts are listened to (see the `keyboard` option). */
 	readonly keyboard = $derived(this.#opt('keyboard') ?? true);
@@ -359,7 +360,13 @@ export class ViewerState {
 			// With a fixed column count, fit that many pages across.
 			const cols = this.columns === 'auto' ? 1 : untrack(() => this.effectiveColumns);
 			const gap = this.gap;
-			const z = fitZoom(mode, size, { width: (width - gap * (cols - 1)) / cols, height });
+			// Within this viewer's limits: an unclamped fit would differ from the stored
+			// zoom and read as a manual zoom (see below), dropping the fit mode.
+			const z = clamp(
+				fitZoom(mode, size, { width: (width - gap * (cols - 1)) / cols, height }),
+				this.minZoom,
+				this.maxZoom
+			);
 			this.#lastFitZoom = z;
 			// The container was resized (e.g. a side panel animating open).
 			const resized = this.#fitWidthBefore > 0 && width !== this.#fitWidthBefore;
@@ -375,6 +382,16 @@ export class ViewerState {
 					this.#setZoom(z);
 				}
 				this.#modeSwitched = false;
+			});
+		});
+
+		// New limits (or an initial / controlled zoom outside them): store the clamped zoom.
+		$effect(() => {
+			const min = this.minZoom;
+			const max = this.maxZoom;
+			untrack(() => {
+				const raw = this.#zoom.current;
+				if (raw < min || raw > max) this.#setZoom(raw);
 			});
 		});
 
@@ -463,7 +480,9 @@ export class ViewerState {
 	}
 
 	get zoom() {
-		return this.#zoom.current;
+		// A controlled or initial zoom outside the limits reads as clamped (the limits
+		// effect writes the clamped value back).
+		return clamp(this.#zoom.current, this.minZoom, this.maxZoom);
 	}
 	/** Setting zoom jumps there immediately and switches to manual mode. */
 	set zoom(z: number) {
@@ -957,9 +976,9 @@ export class ViewerState {
 		const n = this.document.numPages;
 		const cols = this.effectiveColumns;
 		if (cols <= 1 || !n) return [page];
+		// The cover alone: rows start one page later (page 1 sits alone in the last column).
 		const shift = this.firstPageAlone ? cols - 1 : 0;
-		const start =
-			page === 1 && shift ? 1 : Math.floor((page - 1 + shift) / cols) * cols - shift + 1;
+		const start = Math.floor((page - 1 + shift) / cols) * cols - shift + 1;
 		const first = Math.max(1, start);
 		const last = Math.min(n, start + cols - 1);
 		return Array.from({ length: last - first + 1 }, (_, i) => first + i);

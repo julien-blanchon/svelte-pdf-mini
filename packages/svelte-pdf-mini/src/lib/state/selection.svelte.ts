@@ -74,6 +74,8 @@ export class TextSelectionState {
 			scroller.addEventListener('pointerdown', onDown);
 			scroller.addEventListener('mousedown', onMouseDown);
 			document.addEventListener('pointerup', onUp);
+			// A touch pan cancels the pointer (no pointerup): the drag is over all the same.
+			document.addEventListener('pointercancel', onUp);
 			scroller.addEventListener('copy', onCopy);
 			return () => {
 				cancelAnimationFrame(this.#raf);
@@ -81,6 +83,7 @@ export class TextSelectionState {
 				scroller.removeEventListener('pointerdown', onDown);
 				scroller.removeEventListener('mousedown', onMouseDown);
 				document.removeEventListener('pointerup', onUp);
+				document.removeEventListener('pointercancel', onUp);
 				scroller.removeEventListener('copy', onCopy);
 			};
 		});
@@ -169,7 +172,9 @@ export class TextSelectionState {
 			});
 		}
 		this.ranges = out;
-		this.anchorRect = selectionBounds(range, scroller);
+		// Only the floating parts read the box, and they wait for the drag to end (the
+		// release re-measures): skip the layout work while selecting.
+		this.anchorRect = this.selecting ? null : selectionBounds(range, scroller);
 	}
 }
 
@@ -178,7 +183,7 @@ export class TextSelectionState {
  * Built from the text nodes of the text layer only: a range's own client rects
  * also include whole spans and pdf.js's oversized end-of-content element.
  */
-export function selectionBounds(range: Range, scroller: HTMLElement): DOMRect {
+function selectionBounds(range: Range, scroller: HTMLElement): DOMRect {
 	let left = Infinity,
 		top = Infinity,
 		right = -Infinity,
@@ -189,8 +194,12 @@ export function selectionBounds(range: Range, scroller: HTMLElement): DOMRect {
 		NodeFilter.SHOW_TEXT
 	);
 	const part = document.createRange();
-	// A selection is a few hundred text items at most; stop scanning past a generous cap.
-	for (let n = walker.nextNode(), seen = 0; n && seen < 5000; n = walker.nextNode(), seen++) {
+	// Walk the selected text only: from its start to its end, whatever the pages around it.
+	const start = range.startContainer;
+	walker.currentNode = start;
+	const first = start.nodeType === Node.TEXT_NODE ? start : walker.nextNode();
+	for (let n = first; n; n = walker.nextNode()) {
+		if (range.comparePoint(n, 0) > 0) break; // past the end
 		if (!range.intersectsNode(n) || !n.parentElement?.closest(ITEM_SPAN)) continue;
 		const len = n.textContent?.length ?? 0;
 		part.setStart(n, n === range.startContainer ? range.startOffset : 0);
@@ -218,43 +227,46 @@ export function selectionBounds(range: Range, scroller: HTMLElement): DOMRect {
 
 const ITEM_SPAN = 'span[data-idx]';
 
-/** The text-item span that is `el` or the first one inside it. */
-function itemSpanIn(el: HTMLElement): HTMLElement | null {
-	return el.matches(ITEM_SPAN) ? el : el.querySelector<HTMLElement>(ITEM_SPAN);
-}
-
 /** Raw offset for a DOM (node, offset) boundary inside a text layer. */
-function offsetIn(
+export function offsetIn(
 	layer: HTMLElement,
 	text: { itemStart: number[]; items: { str: string }[]; length: number },
 	node: Node,
 	offset: number,
 	isEnd: boolean
 ): number | null {
-	const spanOf = (n: Node | null) =>
-		(n instanceof Element ? n : n?.parentElement)?.closest<HTMLElement>(ITEM_SPAN);
-	if (node.nodeType === Node.TEXT_NODE) {
-		const span = spanOf(node);
-		if (!span) return null;
-		const i = Number(span.dataset.idx);
-		return text.itemStart[i] + Math.min(offset, text.items[i]?.str.length ?? 0);
+	// Inside a text item: that item, up to the boundary.
+	const inItem = (node instanceof Element ? node : node.parentElement)?.closest<HTMLElement>(
+		ITEM_SPAN
+	);
+	if (inItem && layer.contains(inItem)) {
+		const i = Number(inItem.dataset.idx);
+		const len = text.items[i]?.str.length ?? 0;
+		if (node.nodeType === Node.TEXT_NODE) return text.itemStart[i] + Math.min(offset, len);
+		return text.itemStart[i] + (offset > 0 ? len : 0);
 	}
-	// Element boundary: look at the child at/before the offset.
-	const el = node as Element;
-	if (el === layer || el.classList?.contains('markedContent')) {
-		const child = el.childNodes[offset] ?? null;
-		const prev = el.childNodes[offset - 1] ?? null;
-		const pick = isEnd ? (prev ?? child) : (child ?? prev);
-		const span = pick instanceof HTMLElement ? itemSpanIn(pick) : null;
-		if (!span) return isEnd ? text.length : 0;
-		const i = Number(span.dataset.idx);
-		const atEnd = isEnd ? pick === prev : pick !== child;
-		return text.itemStart[i] + (atEnd ? (text.items[i]?.str.length ?? 0) : 0);
+	// Between items (the layer, a marked-content group, or the end-of-content element
+	// that selection steering moves among them): the nearest item in document order.
+	if (!layer.contains(node)) return null;
+	const at = document.createRange();
+	at.setStart(node, offset);
+	const spans = layer.querySelectorAll<HTMLElement>(ITEM_SPAN);
+	// First item at or after the boundary (items keep document order).
+	let lo = 0;
+	let hi = spans.length;
+	while (lo < hi) {
+		const mid = (lo + hi) >> 1;
+		if (at.comparePoint(spans[mid], 0) < 0) lo = mid + 1;
+		else hi = mid;
 	}
-	const span = spanOf(el);
-	if (!span) return null;
-	const i = Number(span.dataset.idx);
-	return text.itemStart[i] + (offset > 0 ? (text.items[i]?.str.length ?? 0) : 0);
+	if (isEnd) {
+		const prev = spans[lo - 1];
+		if (!prev) return 0;
+		const i = Number(prev.dataset.idx);
+		return text.itemStart[i] + (text.items[i]?.str.length ?? 0);
+	}
+	const next = spans[lo];
+	return next ? text.itemStart[Number(next.dataset.idx)] : text.length;
 }
 
 /** DOM boundary for (item, char) in a text layer. */

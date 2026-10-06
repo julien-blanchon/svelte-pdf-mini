@@ -17,7 +17,6 @@ export const OPS = {
 	eoFillStroke: 25,
 	closeFillStroke: 26,
 	closeEOFillStroke: 27,
-	endPath: 28,
 	clip: 29,
 	eoClip: 30,
 	paintFormXObjectBegin: 74,

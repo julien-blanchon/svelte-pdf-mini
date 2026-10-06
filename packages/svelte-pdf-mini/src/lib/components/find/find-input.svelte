@@ -37,6 +37,8 @@
 	const oninput: FormEventHandler<HTMLInputElement> = (e) => (find.query = e.currentTarget.value);
 
 	const onkeydown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+		// An input method (Japanese, Chinese…) uses Enter and the arrows while composing.
+		if (e.isComposing || e.keyCode === 229) return;
 		// Enter / ↓: next match; Shift+Enter / ↑: previous.
 		if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			e.preventDefault();
