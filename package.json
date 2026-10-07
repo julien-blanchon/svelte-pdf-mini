@@ -18,8 +18,7 @@
 		"format": "bun --filter '*' format",
 		"fixtures": "bun fixtures/download.ts",
 		"changeset": "changeset",
-		"version": "changeset version && bun install",
-		"release": "bun --filter svelte-pdf-mini build && changeset publish"
+		"version": "changeset version && bun install"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^1.0.1",

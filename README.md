@@ -85,8 +85,8 @@ bun run test:e2e:full  # every end-to-end test (~30 s)
 Releases use [Changesets](https://github.com/changesets/changesets):
 
 1. In a pull request that changes the library, run `bun changeset` and describe the change for users (patch / minor / major). CI reminds you when it's missing.
-2. Once merged into `main`, the **Release** workflow opens a "version packages" pull request with the new version and changelog.
-3. Merging that pull request publishes to npm (with provenance) and creates a GitHub release.
+2. Once merged into `main`, the **Version** workflow opens a "chore: version packages" pull request with the new version and changelog. Merging it publishes nothing.
+3. Pushing a tag `vX.Y.Z` on the merge commit runs the **Release** workflow, which publishes to npm (trusted publishing, with provenance) and creates a GitHub release. See [RELEASING.md](RELEASING.md).
 
 The changelog lives in [`packages/svelte-pdf-mini/CHANGELOG.md`](packages/svelte-pdf-mini/CHANGELOG.md) (written by Changesets) and is published as the [Changelog page](https://julien-blanchon.github.io/svelte-pdf-mini/docs/changelog) of the docs.
 
