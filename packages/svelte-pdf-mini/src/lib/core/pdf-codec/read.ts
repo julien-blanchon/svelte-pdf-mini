@@ -26,9 +26,9 @@ import {
 	fromPdfDate,
 	importedModifiedAt,
 	loadPdfLib,
-	normalizeQuad,
-	toBytes
+	normalizeQuad
 } from './shared.js';
+import { openForRead, type SaveSupport } from './open.js';
 import { writtenRect } from './write.js';
 
 export interface ImportOptions {
@@ -36,6 +36,8 @@ export interface ImportOptions {
 	foreign?: boolean;
 	/** Text under markup quads (to fill `quote` on foreign highlights). */
 	textOf?: (page: number, quads: Quad[]) => string | Promise<string>;
+	/** Password of a file that needs one to open (owner-password-only files need none). */
+	password?: string;
 }
 
 export interface ImportResult {
@@ -45,6 +47,8 @@ export interface ImportResult {
 	/** Annotations of types we don't import (links, form fields, attachments…). */
 	unsupported: number;
 	warnings: string[];
+	/** Whether `exportPdf` can write this file (encrypted files may not be). */
+	saveSupport: SaveSupport;
 }
 
 const SUPPORTED = new Set([
@@ -87,10 +91,7 @@ export async function importAnnotations(
 	opts: ImportOptions = {}
 ): Promise<ImportResult> {
 	const lib = await loadPdfLib();
-	const doc = await lib.PDFDocument.load(toBytes(input), {
-		updateMetadata: false,
-		ignoreEncryption: true
-	});
+	const { doc, support } = await openForRead(input, opts.password);
 	const r = makeReaders(lib, doc.context);
 	const stored = readEmbeddedModel(doc);
 	const used = new Set<string>();
@@ -162,7 +163,9 @@ export async function importAnnotations(
 		const parent = refToId.get(refKey(irt));
 		if (parent) a.inReplyTo = parent;
 	}
-	return { annotations: out, foreign, unsupported, warnings };
+	if (!support.canSave && !doc.context.isDecrypted)
+		warnings.push('encrypted PDF that needs a password: annotation text could not be decrypted');
+	return { annotations: out, foreign, unsupported, warnings, saveSupport: support };
 }
 
 const refKey = (ref: PDFRef) => `${ref.objectNumber}-${ref.generationNumber}`;

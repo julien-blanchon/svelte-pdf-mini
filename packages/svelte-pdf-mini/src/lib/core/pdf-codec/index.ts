@@ -5,6 +5,7 @@
  */
 export { exportPdf, writtenRect, richText, type ExportOptions } from './write.js';
 export { importAnnotations, type ImportOptions, type ImportResult } from './read.js';
+export { saveSupport, PdfSaveError, type SaveSupport } from './open.js';
 export {
 	annotationsToJSON,
 	annotationsFromJSON,

@@ -7,9 +7,18 @@
  *   embedded `svelte-pdf-mini.json` holding the full model.
  * - Re-export replaces what we wrote before; foreign annotations stay as they
  *   are unless they are in the list (and changed).
- * - Incremental by default: the original bytes are kept as a prefix.
+ * - Incremental by default: the original bytes are kept as a prefix. Files
+ *   encrypted with an owner password only are decrypted and rewritten.
  */
-import type { PDFContext, PDFDict, PDFDocument, PDFFont, PDFPage, PDFRef } from '@cantoo/pdf-lib';
+import type {
+	PDFContext,
+	PDFDict,
+	PDFDocument,
+	PDFFont,
+	PDFInvalidObject,
+	PDFPage,
+	PDFRef
+} from '@cantoo/pdf-lib';
 import type { PdfRect } from '../types.js';
 import type {
 	Annotation,
@@ -20,6 +29,7 @@ import type {
 import { ANNOTATION_SCHEMA_VERSION, isTextMarkup } from '../annotations/model.js';
 import { quadsBounds } from '../text/text-index.js';
 import { appearanceOps, lineEndingsOf, type GraphicsState } from './appearance.js';
+import { lastXrefIsStream, openForWrite } from './open.js';
 import { makeReaders, readEmbeddedModel, type Readers } from './pdf-objects.js';
 import {
 	AnnotFlag,
@@ -33,7 +43,6 @@ import {
 	loadPdfLib,
 	n,
 	privateDataOf,
-	toBytes,
 	toPdfDate,
 	type PdfLib
 } from './shared.js';
@@ -99,19 +108,22 @@ const PRUNABLE = new Set([
 	'Ink'
 ]);
 
-/** Write `annotations` into the PDF and return the new file bytes. */
+/**
+ * Write `annotations` into the PDF and return the new file bytes. Throws
+ * `PdfSaveError` for files that need a password to open (see `saveSupport`).
+ */
 export async function exportPdf(
 	input: Uint8Array | ArrayBuffer,
 	annotations: Annotation[],
 	opts: ExportOptions = {}
 ): Promise<Uint8Array> {
 	const lib = await loadPdfLib();
-	const { PDFDocument, PDFName, PDFRef } = lib;
-	const mode = opts.mode ?? 'incremental';
-	const doc = await PDFDocument.load(toBytes(input), {
-		forIncrementalUpdate: mode === 'incremental',
-		updateMetadata: false
-	});
+	const { PDFName, PDFRef } = lib;
+	// Decrypted files and files whose offsets don't match their header are rewritten.
+	const { doc, bytes, incremental } = await openForWrite(
+		input,
+		(opts.mode ?? 'incremental') === 'incremental'
+	);
 	const ctx = doc.context;
 	const r = makeReaders(lib, ctx);
 	const pages = doc.getPages();
@@ -228,9 +240,44 @@ export async function exportPdf(
 	}
 	// Match the original's cross-reference format: appending an xref stream to a
 	// file that uses a classic xref table trips Apple's PDF parser (Preview).
-	return mode === 'incremental'
-		? doc.commit({ useObjectStreams: lastXrefIsStream(input) })
-		: doc.save({ useObjectStreams: false });
+	if (incremental) return doc.commit({ useObjectStreams: lastXrefIsStream(bytes) });
+	dropStaleObjects(lib, ctx);
+	return doc.save({ useObjectStreams: false, rewrite: true });
+}
+
+/**
+ * Before a full rewrite: the source's cross-reference streams and (once
+ * decrypted) its encryption dictionary would be copied as ordinary objects,
+ * and parsers that scan for them would pick up the stale trailer keys.
+ */
+function dropStaleObjects(lib: PdfLib, ctx: PDFContext) {
+	const { PDFDict, PDFInvalidObject, PDFName, PDFStream } = lib;
+	const key = (k: string) => PDFName.of(k);
+	for (const [ref, obj] of ctx.enumerateIndirectObjects()) {
+		// Decrypting an encrypted file leaves its (unencrypted) xref stream unparsed.
+		if (obj instanceof PDFInvalidObject) {
+			if (isRawXrefStream(obj)) ctx.delete(ref);
+			continue;
+		}
+		const dict = obj instanceof PDFStream ? obj.dict : undefined;
+		const target = obj instanceof PDFDict ? obj : dict;
+		if (!target) continue;
+		const isXref = target.get(key('Type')) === key('XRef');
+		const isEncrypt =
+			ctx.isDecrypted &&
+			target.get(key('Filter')) === key('Standard') &&
+			target.has(key('O')) &&
+			target.has(key('U'));
+		if (isXref || isEncrypt) ctx.delete(ref);
+	}
+}
+
+/** An unparsed object whose dictionary (before `stream`) says /Type /XRef. */
+function isRawXrefStream(obj: PDFInvalidObject): boolean {
+	const raw = new Uint8Array(obj.sizeInBytes());
+	obj.copyBytesInto(raw, 0);
+	const head = new TextDecoder('latin1').decode(raw.subarray(0, 1024)).split('stream')[0];
+	return /^\s*<</.test(head) && /\/Type\s*\/XRef\b/.test(head);
 }
 
 /** Written by us: has our private key, or its /NM is in the embedded model. */
@@ -557,15 +604,4 @@ async function buildAnnotDict(
 		PDFHexString.fromText(JSON.stringify(privateDataOf(a, ANNOTATION_SCHEMA_VERSION)))
 	);
 	return dict;
-}
-
-/** Whether the file's last cross-reference section is an xref stream (vs a classic table). */
-function lastXrefIsStream(input: Uint8Array | ArrayBuffer): boolean {
-	const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-	const tail = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 2048)));
-	const m = /startxref\s+(\d+)\s*%%EOF\s*$/.exec(tail) ?? /startxref\s+(\d+)/.exec(tail);
-	if (!m) return false;
-	const off = Number(m[1]);
-	const head = new TextDecoder('latin1').decode(bytes.subarray(off, off + 8));
-	return !head.startsWith('xref');
 }
