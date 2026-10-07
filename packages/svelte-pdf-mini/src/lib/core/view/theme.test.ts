@@ -4,6 +4,8 @@ import {
 	mixHex,
 	pageThemes,
 	paperColors,
+	paperHex,
+	paperSwatches,
 	paperTheme,
 	resolvePageTheme
 } from './theme.js';
@@ -35,6 +37,20 @@ describe('paper theme', () => {
 		expect(dark.dark).toBe(true);
 		expect(dark.wrapContext).toBeTypeOf('function');
 		expect(paperTheme(paperColors[0], true).id).toContain('paperDark');
+	});
+
+	it('resolves picker swatches to paper colors', () => {
+		expect(paperSwatches.map((s) => s.value)).toEqual([
+			'white',
+			'warm',
+			...paperColors.map((c) => c.name)
+		]);
+		expect(paperSwatches[2]).toEqual({ value: 'sage', color: '#e6eddc', label: 'Sage' });
+		expect(paperHex('sage')).toBe('#e6eddc');
+		expect(paperHex('sage', true)).toBe('#7fa36a');
+		expect(paperHex('white', true)).toBe('#9ca3af');
+		expect(paperHex('#123456', true)).toBe('#123456');
+		expect(paperHex('unknown')).toBe('#efe4cf');
 	});
 
 	it('mixes colors and recolors ink', () => {

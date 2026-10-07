@@ -19,7 +19,7 @@ The **UI theme** (`theme="light" | "dark" | "system"`, exposed as `data-theme`) 
 - **Night** — a tinted *vector recolour*: text and plot lines are redrawn light-on-dark with their hues kept, neutral ink takes the paper's hue, photos and raster figures are untouched.
 - **`strength`** (0–1) — how much of the colour shows. Keep it low for calm, matte pages.
 
-`paperColors` is a matte palette (sage, lavender, sand, sky, clay, rose, mint, stone) with `light`, `dark` and `accent` values; `paperTheme(paperColors[i], dark)` gives a category its own page colour.
+`paperColors` is a matte palette (sage, lavender, sand, sky, clay, rose, mint, stone) with `light`, `dark` and `accent` values; `paperTheme(paperColors[i], dark)` gives a category its own page colour. For a colour picker, `paperSwatches` lists white, warm paper and the palette, and `paperHex(value, dark)` turns a swatch value (or a `#hex`) into the colour for `pageThemes.paper`.
 
 <Demo example="page-themes" height={560} />
 

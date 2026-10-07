@@ -224,6 +224,35 @@ export const paperColors: PaperColor[] = [
 	{ name: 'stone', light: '#ebe9e4', dark: '#21201e', accent: '#8f8a80' }
 ];
 
+/** A choice in a paper color picker; `value` is what `paperHex` resolves. */
+export interface PaperSwatch {
+	value: string;
+	/** The light-mode color, for the swatch itself. */
+	color: string;
+	label: string;
+}
+
+/** Paper color picker swatches: white, warm paper, then the `paperColors` palette. */
+export const paperSwatches: PaperSwatch[] = [
+	{ value: 'white', color: '#ffffff', label: 'White' },
+	{ value: 'warm', color: '#efe4cf', label: 'Warm paper' },
+	...paperColors.map((c) => ({
+		value: c.name,
+		color: c.light,
+		label: c.name[0].toUpperCase() + c.name.slice(1)
+	}))
+];
+
+/** The color `pageThemes.paper` takes for a swatch value (or a #hex), by day or by night. */
+export function paperHex(value: string, dark = false): string {
+	if (value.startsWith('#')) return value;
+	if (value === 'white') return dark ? '#9ca3af' : '#ffffff';
+	if (value === 'warm') return dark ? '#c9a66b' : '#efe4cf';
+	const c = paperColors.find((p) => p.name === value);
+	if (!c) return '#efe4cf';
+	return dark ? c.accent : c.light;
+}
+
 /** Page theme for a palette entry: soft tint in light mode, tinted vector recolor at night. */
 export function paperTheme(color: PaperColor, dark = false, strength = 0.6): PageThemeStrategy {
 	return pageThemes.paper({

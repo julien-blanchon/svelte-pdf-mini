@@ -6,7 +6,8 @@
 	import ToggleGroup from '../ui/ToggleGroup.svelte';
 	import Tip from '../ui/Tip.svelte';
 	import { cn } from '../ui/cn.ts';
-	import { paperSwatches, type PageFrame, type ReadingTheme } from './reading-theme.svelte.ts';
+	import { paperSwatches } from 'svelte-pdf-mini';
+	import type { PageFrame, ReadingTheme } from './reading-theme.svelte.ts';
 
 	let { theme, frames = true, class: className }: { theme: ReadingTheme; frames?: boolean; class?: string } = $props();
 </script>

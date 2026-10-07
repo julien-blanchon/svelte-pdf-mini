@@ -9,8 +9,8 @@
 
 <script lang="ts">
 	import { Slider } from 'bits-ui';
-	import { Document, Viewer, pageThemes, type PageThemeStrategy } from 'svelte-pdf-mini';
-	import { ReadingTheme, paperSwatches, type PageFrame } from '#lib/demos/components/pdf/reading-theme.svelte.ts';
+	import { Document, Viewer, pageThemes, paperSwatches, type PageThemeStrategy } from 'svelte-pdf-mini';
+	import { ReadingTheme, type PageFrame } from '#lib/demos/components/pdf/reading-theme.svelte.ts';
 	import ColorPicker from '#lib/demos/components/ui/ColorPicker.svelte';
 	import ToggleGroup from '#lib/demos/components/ui/ToggleGroup.svelte';
 	import { arxivPdf } from '#lib/demos/papers.ts';

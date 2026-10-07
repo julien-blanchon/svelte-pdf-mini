@@ -12,7 +12,7 @@ description: Framework-agnostic TypeScript — text index, search, geometry, pag
 | Geometry | `pdfRectToViewport`, `quadToSvgPoints`, `pdfRectToPercent`, `clamp` |
 | Destinations | `resolveDestination`, `listNamedDestinations`, `classifyDest` |
 | Zoom | `fitZoom`, `nextZoomStep`, `ZOOM_STEPS` |
-| Page themes | `pageThemes`, `paperColors`, `paperTheme`, `mixHex`, `invertLightness` |
+| Page themes | `pageThemes`, `paperColors`, `paperSwatches`, `paperHex`, `paperTheme`, `mixHex`, `invertLightness` |
 | Rendering | `RenderScheduler`, `renderPageToCanvas`, `renderRegionToCanvas`, `releaseCanvas` |
 | Annotations | the `Annotation` model, `defaultPalette`, `hitTest`, `reanchorAll`, `defaultKeymap`, `comboLabel` |
 | PDF codec | `exportPdf`, `importAnnotations`, `annotationsToMarkdown`, `annotationsToJSON` |
