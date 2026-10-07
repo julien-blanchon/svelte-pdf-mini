@@ -37,7 +37,8 @@ import {
 	annotationsToMarkdown,
 	annotationsToJSON,
 	type ExportOptions,
-	type ImportResult
+	type ImportResult,
+	type SaveSupport
 } from '../core/pdf-codec/index.js';
 import { isMessageKey } from '../core/i18n/messages.js';
 import { Synced } from '../internal/synced.svelte.js';
@@ -143,6 +144,12 @@ export class AnnotationStore {
 	pendingTyped = $state(false);
 	/** Last message for screen readers (Annotations.Root renders it in a live region). */
 	announcement = $state('');
+	/**
+	 * Whether `exportPdf` can write the current document (null until known).
+	 * Set by `importFromPdf`; a PDF that needs a password to open can't be
+	 * saved, so warn before the user annotates it.
+	 */
+	saveSupport = $state.raw<SaveSupport | null>(null);
 
 	#list: Synced<Annotation[]>;
 	#tool: Synced<AnnotationTool>;
@@ -152,6 +159,8 @@ export class AnnotationStore {
 	#undo = $state.raw<AnnotationOp[][]>([]);
 	#redo = $state.raw<AnnotationOp[][]>([]);
 	#batch: AnnotationOp[] | null = null;
+	/** Ids of the foreign annotations read from the current document. */
+	#importedForeign = $state.raw<ReadonlySet<string>>(new Set());
 
 	readonly author = $derived(this.#opt('author'));
 	readonly readonly = $derived(this.#opt('readonly') ?? false);
@@ -161,6 +170,14 @@ export class AnnotationStore {
 
 	readonly canUndo = $derived(this.#undo.length > 0 && !this.readonly);
 	readonly canRedo = $derived(this.#redo.length > 0 && !this.readonly);
+	/**
+	 * Foreign annotations read from the PDF that the user deleted since. Pass
+	 * them as `exportPdf`'s `remove` option (`this.exportPdf` does) so the
+	 * deletion sticks; otherwise the writer keeps every annotation it didn't write.
+	 */
+	readonly removedForeign: string[] = $derived(
+		[...this.#importedForeign].filter((id) => !this.byId.has(id))
+	);
 	/** Visible annotations: not hidden, not filtered out by color/kind, foreign ones per policy. */
 	readonly visible = $derived.by(() => {
 		if (!this.annotationsVisible) return [];
@@ -274,6 +291,15 @@ export class AnnotationStore {
 					if (this.pendingId) this.commit();
 					if (this.selectedIds.length && !this.editingId) this.selectedIds = [];
 				});
+		});
+
+		// A new document: what was read from the previous one no longer applies.
+		$effect(() => {
+			void this.viewer.document.proxy;
+			untrack(() => {
+				this.#importedForeign = new Set();
+				this.saveSupport = null;
+			});
 		});
 
 		// Import the PDF's own annotations when asked.
@@ -509,6 +535,7 @@ export class AnnotationStore {
 	load(list: Annotation[]) {
 		this.#undo = [];
 		this.#redo = [];
+		this.#importedForeign = new Set();
 		this.#list.current = list;
 		this.#opts.onAnnotationsChange?.(list, []);
 	}
@@ -525,6 +552,10 @@ export class AnnotationStore {
 		// Another document opened meanwhile: these annotations belong to the old one.
 		if (doc.proxy !== proxy) return null;
 		this.load(result.annotations);
+		this.#importedForeign = new Set(
+			result.annotations.filter((a) => a.origin === 'foreign').map((a) => a.id)
+		);
+		this.saveSupport = result.saveSupport;
 		this.#opts.onImport?.(result);
 		return result;
 	}
@@ -563,8 +594,11 @@ export class AnnotationStore {
 	}
 
 	/** The PDF with the current annotations written in (standard PDF annotations, readable anywhere). */
-	async exportPdf(opts?: ExportOptions): Promise<Uint8Array> {
-		return exportPdf(await this.viewer.document.getData(), this.annotations, opts);
+	async exportPdf(opts: ExportOptions = {}): Promise<Uint8Array> {
+		return exportPdf(await this.viewer.document.getData(), this.annotations, {
+			...opts,
+			remove: [...this.removedForeign, ...(opts.remove ?? [])]
+		});
 	}
 
 	/** Markdown summary (grouped by page, or by section when given). */

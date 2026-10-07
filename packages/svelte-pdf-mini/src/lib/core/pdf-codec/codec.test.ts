@@ -89,6 +89,27 @@ describe('exportPdf / importAnnotations (fast)', () => {
 		const again = await importAnnotations(await exportPdf(original, [...imported, note]));
 		expect(again.annotations.map((a) => a.id).sort()).toEqual(['note-1', 'preview-hl']);
 	});
+
+	it('deletes a foreign annotation the user removed (with its popup), and it stays gone', async () => {
+		const original = await foreignPdf();
+		const { annotations } = await importAnnotations(original);
+		expect(annotations.map((a) => a.id)).toEqual(['preview-hl']);
+		const out = await exportPdf(original, [note], { remove: ['preview-hl'] });
+		const reimported = await importAnnotations(out);
+		expect(reimported.annotations.map((a) => a.id)).toEqual(['note-1']);
+		expect(reimported.foreign).toBe(0);
+		expect(await pdfjsAnnotations(out)).toEqual(['Text:mine', 'Popup:mine']);
+		// Saving again (from the saved file) keeps it deleted.
+		const twice = await exportPdf(out, reimported.annotations);
+		expect((await importAnnotations(twice)).annotations.map((a) => a.id)).toEqual(['note-1']);
+	});
+
+	it('`remove` never deletes an annotation that is still in the list', async () => {
+		const original = await foreignPdf();
+		const { annotations } = await importAnnotations(original);
+		const out = await exportPdf(original, annotations, { remove: ['preview-hl'] });
+		expect((await importAnnotations(out)).annotations.map((a) => a.id)).toEqual(['preview-hl']);
+	});
 });
 
 describe('encrypted PDFs', () => {
@@ -115,6 +136,10 @@ describe('encrypted PDFs', () => {
 			expect(await pdfjsAnnotations(out)).toEqual(
 				expect.arrayContaining(['Highlight:A note from Preview', 'Text:mine'])
 			);
+
+			// The foreign highlight can be deleted from an encrypted file too.
+			const removed = await exportPdf(bytes, [note], { remove: ['foreign-hl-1'] });
+			expect((await importAnnotations(removed)).annotations.map((a) => a.id)).toEqual(['note-1']);
 		});
 	}
 

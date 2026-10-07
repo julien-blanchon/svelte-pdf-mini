@@ -20,7 +20,7 @@ Without components: `exportPdf(pdfBytes, annotations, options)`, `importAnnotati
 1. **Standard annotations.** Every kind is written as its PDF counterpart (Highlight, Underline, StrikeOut, Squiggly with QuadPoints; Square, Circle, Line, PolyLine, Polygon, Ink, Text, FreeText, Stamp) **with an appearance stream**, plus `/Contents`, `/T` (author), dates, `/NM` (id), popups and reply links. Apple Preview, Acrobat, Chrome and Firefox show them.
 2. **Lossless round trip.** Fields PDF can't express (palette key, label, tags, quote, Markdown, `extra`) are stored in a private `/SPM_Data` key on each annotation and in an embedded `svelte-pdf-mini.json`. Opening the file again with `importFromPdf` gives back exactly what you exported.
 3. **Edits elsewhere win.** If someone recolours or moves an annotation in another app, the standard fields override the stored copy on import.
-4. **Foreign annotations** already in the PDF are kept; with `importFromPdf` they load as `origin: 'foreign'` (policy: the `foreign` prop — `'editable'`, `'readonly'` or `'hidden'`).
+4. **Foreign annotations** already in the PDF are kept; with `importFromPdf` they load as `origin: 'foreign'` (policy: the `foreign` prop — `'editable'`, `'readonly'` or `'hidden'`). Deleting an editable one sticks: the store lists it in `store.removedForeign`, and `store.exportPdf()` passes that list as the `remove` option. Exporting yourself (in a worker, say)? Pass `{ remove: store.removedForeign }`.
 
 ## Options
 
@@ -28,7 +28,8 @@ Without components: `exportPdf(pdfBytes, annotations, options)`, `importAnnotati
 | --- | --- | --- |
 | `mode` | `'incremental'` | Append an update and keep the original bytes, or `'full'` rewrite |
 | `flatten` | `false` | Burn annotations into page content (no longer editable) |
-| `prune` | `'ours'` | `'all'` also removes foreign annotations you deleted |
+| `prune` | `'ours'` | `'all'` also removes every foreign markup or shape annotation not in the list |
+| `remove` | — | Ids of foreign annotations to delete (the ones the user deleted: `store.removedForeign`) |
 | `producer` | — | Producer string written into the update |
 
 <Demo example="export-import" height={540} />
@@ -36,6 +37,19 @@ Without components: `exportPdf(pdfBytes, annotations, options)`, `importAnnotati
 <Callout title="Apple Preview">
 	Preview re-saves the whole file: it keeps <code>/SPM_Data</code> and appearance streams but drops <code>/NM</code>, <code>/CA</code>, <code>/RC</code>, <code>/IRT</code> and the embedded JSON. Import rebuilds from <code>/SPM_Data</code> and merges field by field, so a recolour made in Preview is picked up while labels and notes survive. Incremental updates match the original file's cross-reference format, which Preview requires.
 </Callout>
+
+## Encrypted PDFs
+
+Many publisher PDFs carry an owner password that only restricts permissions: they open without a password, and `exportPdf` decrypts them and writes a full, unencrypted copy (the restrictions go, like in pdf.js and Preview). A PDF that needs a password to open can't be saved: that would strip its protection, so `exportPdf` throws a `PdfSaveError` (`reason: 'password'`).
+
+Check before the user starts annotating: `store.saveSupport` (set by `importFromPdf`), `result.saveSupport` from `importAnnotations`, or `await saveSupport(bytes)`:
+
+```ts
+const support = await saveSupport(bytes); // { encrypted, canSave, saveBlockedReason? }
+if (!support.canSave) warn('Annotations on this PDF can’t be saved');
+```
+
+Bytes before the `%PDF-` header (some servers prepend them) are dropped on export.
 
 ## Re-anchoring
 

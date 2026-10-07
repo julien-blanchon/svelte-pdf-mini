@@ -4,15 +4,22 @@ import type { Annotation } from '../core/annotations/model.js';
 import { hitStack } from '../core/annotations/geometry.js';
 import { renderMarkdown } from '../internal/markdown.js';
 import { defaultKeymap } from '../core/i18n/keymap.js';
+import { importAnnotations } from '../core/pdf-codec/index.js';
+import { foreignPdf } from '../core/pdf-codec/foreign.test.helper.js';
 import { AnnotationStore } from './annotations.svelte.js';
 import type { ViewerState } from './viewer.svelte.js';
 
-/** Just enough of a viewer for the store. */
-function fakeViewer() {
+/** Just enough of a viewer for the store (`pdf`: a loaded document with these bytes). */
+function fakeViewer(pdf?: Uint8Array) {
 	return {
 		scrollEl: null,
 		selection: { selecting: false, isEmpty: true, ranges: [], clear() {} },
-		document: { proxy: null, pageTextSync: () => undefined },
+		document: {
+			proxy: pdf ? {} : null,
+			pageTextSync: () => undefined,
+			getData: async () => pdf!.slice(),
+			getPageText: async () => ({ textInQuads: () => '' })
+		},
 		hideNativeAnnotations: false,
 		keymap: defaultKeymap,
 		addContextResolver: () => () => {},
@@ -20,10 +27,10 @@ function fakeViewer() {
 	} as unknown as ViewerState;
 }
 
-function setup() {
+function setup(pdf?: Uint8Array) {
 	let store!: AnnotationStore;
 	const cleanup = $effect.root(() => {
-		store = new AnnotationStore({ viewer: fakeViewer() });
+		store = new AnnotationStore({ viewer: fakeViewer(pdf) });
 	});
 	flushSync();
 	return { store, cleanup };
@@ -115,6 +122,28 @@ describe('AnnotationStore workflow', () => {
 		expect(store.visible).toHaveLength(1);
 		store.annotationsVisible = false;
 		expect(store.visible).toHaveLength(0);
+		cleanup();
+	});
+});
+
+describe('AnnotationStore and the PDF', () => {
+	it('a deleted foreign annotation is removed on export; undoing the deletion keeps it', async () => {
+		const { store, cleanup } = setup(await foreignPdf());
+		await store.importFromPdf();
+		expect(store.saveSupport).toEqual({ encrypted: false, canSave: true });
+		const [foreign] = store.annotations;
+		expect(foreign.origin).toBe('foreign');
+		expect(store.removedForeign).toEqual([]);
+
+		store.remove([foreign.id]);
+		expect(store.removedForeign).toEqual([foreign.id]);
+		let reread = await importAnnotations(await store.exportPdf());
+		expect(reread.annotations).toEqual([]);
+
+		store.undo();
+		expect(store.removedForeign).toEqual([]);
+		reread = await importAnnotations(await store.exportPdf());
+		expect(reread.annotations.map((a) => a.id)).toEqual([foreign.id]);
 		cleanup();
 	});
 });

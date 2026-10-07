@@ -60,6 +60,11 @@ export interface ExportOptions {
 	 * also removes foreign markup/shape annotations (links and form fields are always kept).
 	 */
 	prune?: 'ours' | 'all';
+	/**
+	 * Ids of annotations in the PDF to delete although they are not ours: the
+	 * foreign annotations the user deleted (see `AnnotationStore.removedForeign`).
+	 */
+	remove?: readonly string[];
 }
 
 const SUBTYPE: Record<Annotation['kind'], string> = {
@@ -129,6 +134,7 @@ export async function exportPdf(
 	const pages = doc.getPages();
 	const stored = readEmbeddedModel(doc);
 	const listed = new Map(annotations.map((a) => [a.id, a]));
+	const deleted = new Set(opts.remove);
 
 	// 1. Scan existing annotations: remove ours, keep or replace foreign ones.
 	const existingRefById = new Map<string, PDFRef>();
@@ -137,15 +143,14 @@ export async function exportPdf(
 		const annots = page.node.Annots();
 		if (!annots) continue;
 		const remove: PDFRef[] = [];
+		const popups: [PDFRef, PDFRef | undefined][] = [];
 		for (const entry of annots.asArray()) {
 			if (!(entry instanceof PDFRef)) continue;
 			const dict = r.dictOf(entry);
 			if (!dict) continue;
 			const subtype = r.name(dict, 'Subtype');
 			if (subtype === 'Popup') {
-				// Popups follow their parent: drop them if the parent goes.
-				const parent = r.refOf(dict, 'Parent');
-				if (parent && isOurs(r, r.dictOf(parent), stored)) remove.push(entry);
+				popups.push([entry, r.refOf(dict, 'Parent')]);
 				continue;
 			}
 			const nm = r.text(dict, 'NM');
@@ -155,7 +160,8 @@ export async function exportPdf(
 				continue;
 			}
 			const wanted = listed.get(id);
-			if (wanted) {
+			if (deleted.has(id) && !wanted) remove.push(entry);
+			else if (wanted) {
 				// A foreign annotation edited in our UI is rewritten; unchanged ones are kept verbatim.
 				if (unchangedForeign(r, dict, wanted)) {
 					keep.add(id);
@@ -165,6 +171,10 @@ export async function exportPdf(
 				remove.push(entry);
 			} else existingRefById.set(id, entry);
 		}
+		// Popups follow their parent: drop them if the parent goes.
+		const gone = new Set(remove.map(refKey));
+		for (const [popup, parent] of popups)
+			if (parent && gone.has(refKey(parent))) remove.push(popup);
 		for (const ref of remove) removeAnnotation(lib, ctx, r, page, ref);
 	}
 
@@ -279,6 +289,8 @@ function isRawXrefStream(obj: PDFInvalidObject): boolean {
 	const head = new TextDecoder('latin1').decode(raw.subarray(0, 1024)).split('stream')[0];
 	return /^\s*<</.test(head) && /\/Type\s*\/XRef\b/.test(head);
 }
+
+const refKey = (ref: PDFRef) => `${ref.objectNumber}-${ref.generationNumber}`;
 
 /** Written by us: has our private key, or its /NM is in the embedded model. */
 function isOurs(r: Readers, dict: PDFDict | undefined, stored: Map<string, Annotation>) {
