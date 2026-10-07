@@ -146,11 +146,20 @@ export interface ShapeAnnotation extends AnnotationBase {
 	lineEndings?: [LineEnding, LineEnding];
 }
 
+/**
+ * A text box's font family. 'Helvetica', 'Times' and 'Courier' are the sans,
+ * serif and mono families (named after the standard PDF fonts other viewers
+ * get); 'Handwritten' is a hand-lettered family, written to PDF as Helvetica
+ * (the exact choice is kept in the private data). Apps pick the actual
+ * typefaces with CSS custom properties (see `freetextFontCss`).
+ */
+export type FreeTextFontFamily = 'Handwritten' | 'Helvetica' | 'Times' | 'Courier';
+
 export interface FreeTextAnnotation extends AnnotationBase {
 	kind: 'freetext';
 	text: string;
 	font: {
-		family: 'Helvetica' | 'Times' | 'Courier';
+		family: FreeTextFontFamily;
 		size: number;
 		bold?: boolean;
 		italic?: boolean;

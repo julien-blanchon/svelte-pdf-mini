@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { flushSync } from 'svelte';
-import type { Annotation } from '../core/annotations/model.js';
+import { flushSync, mount, unmount } from 'svelte';
+import type {
+	Annotation,
+	FreeTextAnnotation,
+	FreeTextFontFamily
+} from '../core/annotations/model.js';
 import { hitStack } from '../core/annotations/geometry.js';
 import { renderMarkdown } from '../internal/markdown.js';
 import { defaultKeymap } from '../core/i18n/keymap.js';
@@ -8,6 +12,9 @@ import { importAnnotations } from '../core/pdf-codec/index.js';
 import { foreignPdf } from '../core/pdf-codec/foreign.test.helper.js';
 import { defaultNoteEmojis } from '../core/annotations/emoji.js';
 import { AnnotationStore, type AnnotationStoreOptions } from './annotations.svelte.js';
+import { contextActions } from './actions.js';
+import { AnnotationsContext } from './context.js';
+import FreeText from '../components/annotations/annotation-freetext.svelte';
 import type { ViewerState } from './viewer.svelte.js';
 
 /** Just enough of a viewer for the store (`pdf`: a loaded document with these bytes). */
@@ -127,6 +134,108 @@ describe('AnnotationStore workflow', () => {
 		expect(store.visible).toHaveLength(1);
 		store.annotationsVisible = false;
 		expect(store.visible).toHaveLength(0);
+		cleanup();
+	});
+});
+
+describe('text box fonts', () => {
+	const rect = [10, 10, 200, 60] as [number, number, number, number];
+
+	it('new text boxes get the freetextFont option; existing ones keep theirs', () => {
+		let family = $state<'Handwritten' | 'Times'>('Handwritten');
+		const { store, cleanup } = setup(undefined, { freetextFont: () => family });
+		const first = store.create('freetext', { page: 1, rect, text: 'a' })!;
+		expect(first.font).toEqual({ family: 'Handwritten', size: 12 });
+		family = 'Times';
+		expect(store.byId.get(first.id)!).toMatchObject({ font: { family: 'Handwritten' } });
+		expect(store.create('freetext', { page: 1, rect, text: 'b' })!.font.family).toBe('Times');
+		cleanup();
+	});
+
+	it('defaults to Helvetica, and setFont changes text boxes only (one undo step)', () => {
+		const { store, cleanup } = setup();
+		const box = store.create('freetext', { page: 1, rect, text: 'a' })!;
+		store.commit();
+		expect(box.font.family).toBe('Helvetica');
+		const area = store.create('area', { page: 1, rect })!;
+		store.commit();
+		store.setFont([box.id, area.id], 'Courier');
+		expect(store.byId.get(box.id)).toMatchObject({ font: { family: 'Courier', size: 12 } });
+		expect(store.byId.get(area.id)).not.toHaveProperty('font');
+		store.undo();
+		expect(store.byId.get(box.id)).toMatchObject({ font: { family: 'Helvetica' } });
+		cleanup();
+	});
+
+	it('the context menu offers the four families, each in its own font, the current one checked', () => {
+		const { store, cleanup } = setup(undefined, { freetextFont: 'Handwritten' });
+		const box = store.create('freetext', { page: 1, rect, text: 'a' })!;
+		store.commit();
+		const ctx = {
+			source: 'pointer' as const,
+			clientX: 0,
+			clientY: 0,
+			page: 1,
+			point: null,
+			selection: [],
+			selectedText: '',
+			annotations: [box]
+		};
+		const viewer = { ...store.viewer, t: (k: string) => k, history: { canGoBack: false } };
+		const [group] = contextActions(ctx, { viewer: viewer as ViewerState, annotations: store });
+		const items = group.actions.find((x) => x.id === 'annotation.font')!.items!;
+		expect(items.map((i) => [i.label, i.checked])).toEqual([
+			['fontHandwritten', true],
+			['fontHelvetica', false],
+			['fontTimes', false],
+			['fontCourier', false]
+		]);
+		expect(items[0].font).toContain('var(--pdf-font-handwritten');
+		items[2].run!();
+		expect(store.byId.get(box.id)).toMatchObject({ font: { family: 'Times' } });
+		cleanup();
+	});
+
+	it('renders data-font and a font-family from the CSS custom property', () => {
+		const { store, cleanup } = setup();
+		const box = store.create('freetext', { page: 1, rect, text: 'Hello' })!;
+		store.commit();
+		const target = document.createElement('div');
+		document.body.append(target);
+		document.documentElement.style.setProperty('--pdf-font-mono', 'Menlo, monospace');
+		const render = (family: FreeTextFontFamily) => {
+			store.setFont([box.id], family);
+			const cmp = mount(FreeText, {
+				target,
+				props: {
+					annotation: store.byId.get(box.id) as FreeTextAnnotation,
+					box: { left: 0, top: 0, width: 50, height: 10 },
+					ink: 'rgb(0 0 0)',
+					selected: false
+				},
+				context: new Map([[AnnotationsContext.key, store]])
+			});
+			flushSync();
+			const el = target.querySelector<HTMLElement>('[data-pdf-annotation-freetext]')!;
+			const out = {
+				font: el.dataset.font,
+				css: el.style.fontFamily,
+				computed: getComputedStyle(el).fontFamily,
+				text: el.textContent
+			};
+			unmount(cmp);
+			return out;
+		};
+		expect(render('Handwritten')).toMatchObject({
+			font: 'Handwritten',
+			css: expect.stringContaining('var(--pdf-font-handwritten'),
+			text: 'Hello'
+		});
+		expect(render('Times').css).toContain('var(--pdf-font-serif');
+		// The app's family wins over the fallbacks.
+		expect(render('Courier')).toMatchObject({ font: 'Courier', computed: 'Menlo, monospace' });
+		document.documentElement.style.removeProperty('--pdf-font-mono');
+		target.remove();
 		cleanup();
 	});
 });

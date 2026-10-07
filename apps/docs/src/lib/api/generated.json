@@ -1467,6 +1467,13 @@
 							"bindable": false
 						},
 						{
+							"name": "freetextFont",
+							"type": "FreeTextFontFamily",
+							"description": "Font family of new text boxes: 'Handwritten', 'Helvetica' (sans, default), 'Times' (serif) or 'Courier' (mono).",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "keymap",
 							"type": "Partial<Keymap>",
 							"description": "Keyboard shortcuts, merged over `defaultKeymap`.",

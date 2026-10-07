@@ -1,6 +1,7 @@
 <!-- A text box on the page; its text is typed right here while editing. Internal to Annotations.Layer. -->
 <script lang="ts">
 	import type { Attachment } from 'svelte/attachments';
+	import { freetextFontCss } from '../../core/annotations/fonts.js';
 	import type { FreeTextAnnotation } from '../../core/annotations/model.js';
 	import { dataAttr } from '../../internal/types.js';
 	import { AnnotationsContext } from '../../state/context.js';
@@ -61,6 +62,7 @@
 	style:--pdf-width="{box.width}%"
 	style:--pdf-height="{box.height}%"
 	style:--pdf-font-size="{a.font.size}px"
+	style:font-family={freetextFontCss(a.font.family)}
 	style:--annotation-ink={ink}
 >
 	{#if editing}
@@ -91,23 +93,12 @@
 			width: var(--pdf-width);
 			height: var(--pdf-height);
 			font-size: calc(var(--pdf-scale) * var(--pdf-font-size));
-			font-family: Helvetica, Arial, sans-serif;
 			font-weight: 400;
 			font-style: normal;
 			line-height: 1.25;
 			color: var(--annotation-ink);
 			pointer-events: none;
 			z-index: 0;
-		}
-		[data-font='Times'] {
-			font-family:
-				Times New Roman,
-				serif;
-		}
-		[data-font='Courier'] {
-			font-family:
-				Courier New,
-				monospace;
 		}
 		[data-bold] {
 			font-weight: 700;

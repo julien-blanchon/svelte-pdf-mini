@@ -23,11 +23,13 @@ import type { PdfRect } from '../types.js';
 import type {
 	Annotation,
 	FreeTextAnnotation,
+	FreeTextFontFamily,
 	LineEnding,
 	StampAnnotation
 } from '../annotations/model.js';
 import { ANNOTATION_SCHEMA_VERSION, isTextMarkup } from '../annotations/model.js';
 import { noteIconFor } from '../annotations/emoji.js';
+import { standardFontOf } from '../annotations/fonts.js';
 import { quadsBounds } from '../text/text-index.js';
 import { appearanceOps, lineEndingsOf, type GraphicsState } from './appearance.js';
 import { lastXrefIsStream, openForWrite } from './open.js';
@@ -354,14 +356,14 @@ class FontCache {
 		private doc: PDFDocument,
 		private lib: PdfLib
 	) {}
-	get(family: 'Helvetica' | 'Times' | 'Courier', bold = false, italic = false): Promise<PDFFont> {
+	get(family: FreeTextFontFamily, bold = false, italic = false): Promise<PDFFont> {
 		const S = this.lib.StandardFonts;
 		const table = {
 			Helvetica: [S.Helvetica, S.HelveticaBold, S.HelveticaOblique, S.HelveticaBoldOblique],
 			Times: [S.TimesRoman, S.TimesRomanBold, S.TimesRomanItalic, S.TimesRomanBoldItalic],
 			Courier: [S.Courier, S.CourierBold, S.CourierOblique, S.CourierBoldOblique]
 		} as const;
-		const font = table[family][(bold ? 1 : 0) + (italic ? 2 : 0)];
+		const font = table[standardFontOf(family)][(bold ? 1 : 0) + (italic ? 2 : 0)];
 		let p = this.#fonts.get(font);
 		if (!p) {
 			p = this.doc.embedFont(font);
@@ -597,11 +599,13 @@ async function buildAnnotDict(
 			break;
 		case 'freetext': {
 			const [r, g, b] = a.textColor ?? [0, 0, 0];
-			const fam = DA_FONT_NAMES[a.font.family];
+			// Other viewers get the closest standard font; the exact family is in /SPM_Data.
+			const standard = standardFontOf(a.font.family);
+			const fam = DA_FONT_NAMES[standard];
 			entries.DA = PDFHexString.fromText(`/${fam} ${n(a.font.size)} Tf ${n(r)} ${n(g)} ${n(b)} rg`);
 			const fontStyle = `${a.font.italic ? 'italic ' : ''}${a.font.bold ? 'bold ' : ''}`;
 			const rgb255 = [r, g, b].map((c) => Math.round(c * 255)).join(',');
-			const css = `font: ${fontStyle}${n(a.font.size)}pt ${a.font.family}; color: rgb(${rgb255})`;
+			const css = `font: ${fontStyle}${n(a.font.size)}pt ${standard}; color: rgb(${rgb255})`;
 			entries.DS = PDFHexString.fromText(css);
 			entries.Q = QUADDING[a.align ?? 'left'];
 			entries.Contents = PDFHexString.fromText(a.text + (a.contents ? `\n\n${a.contents}` : ''));

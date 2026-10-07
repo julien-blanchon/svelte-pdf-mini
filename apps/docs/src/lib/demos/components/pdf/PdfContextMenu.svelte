@@ -36,7 +36,7 @@
 	{:else}
 		<ContextMenu.Item class="{item} {action.danger ? 'text-red-600 dark:text-red-400' : ''}" disabled={action.disabled} onSelect={() => action.run?.()}>
 			{#if action.color}<span class="size-3.5 rounded-full ring-1 ring-black/10" style:background={action.color}></span>{/if}
-			<span class="flex-1">{action.label}</span>
+			<span class="flex-1" style:font-family={action.font}>{action.label}</span>
 			{#if action.checked}<span class="icon-[lucide--check] size-3.5"></span>{/if}
 			{#if action.keys}<Kbd>{action.keys}</Kbd>{/if}
 		</ContextMenu.Item>

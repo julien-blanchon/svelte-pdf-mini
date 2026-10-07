@@ -5,6 +5,7 @@ import type {
 	Annotation,
 	AnnotationOp,
 	Author,
+	FreeTextFontFamily,
 	TextMarkupKind
 } from '../../core/annotations/model.js';
 import type { ButtonPartProps, DivPartProps } from '../../internal/component-types.js';
@@ -69,6 +70,8 @@ export interface AnnotationsRootProps {
 	editOnCreate?: boolean;
 	/** Pen stroke smoothing: 'smooth' (default), 'steady', 'pen' (variable width) or 'raw'. */
 	inkSmoothing?: InkSmoothing;
+	/** Font family of new text boxes: 'Handwritten', 'Helvetica' (sans, default), 'Times' (serif) or 'Courier' (mono). */
+	freetextFont?: FreeTextFontFamily;
 	/** Keyboard shortcuts, merged over `defaultKeymap`. */
 	keymap?: Partial<Keymap>;
 	/** Load the annotations stored in the PDF (ours losslessly, others per `foreign`). */

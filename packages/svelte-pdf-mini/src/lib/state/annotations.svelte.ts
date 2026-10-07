@@ -24,6 +24,7 @@ import type {
 	AnnotationOp,
 	AnnotationPatch,
 	Author,
+	FreeTextFontFamily,
 	TextMarkupAnnotation,
 	TextMarkupKind,
 	TextQuote
@@ -106,6 +107,8 @@ export interface AnnotationStoreOptions {
 	selectOn?: MaybeGetter<'click' | 'dblclick' | undefined>;
 	/** How pen strokes are smoothed (see `smoothStroke`). Default 'smooth'. */
 	inkSmoothing?: MaybeGetter<InkSmoothing | undefined>;
+	/** Font family of new text boxes (existing ones keep theirs). Default 'Helvetica'. */
+	freetextFont?: MaybeGetter<FreeTextFontFamily | undefined>;
 	/** New annotations open their note for typing (Enter keeps, Esc discards). Default true. */
 	editOnCreate?: MaybeGetter<boolean | undefined>;
 	/** Override keyboard shortcuts (merged over the defaults). */
@@ -177,6 +180,8 @@ export class AnnotationStore {
 	readonly foreign: ForeignPolicy = $derived(this.#opt('foreign') ?? 'editable');
 	readonly selectOn: 'click' | 'dblclick' = $derived(this.#opt('selectOn') ?? 'click');
 	readonly inkSmoothing: InkSmoothing = $derived(this.#opt('inkSmoothing') ?? 'smooth');
+	/** Font family new text boxes get (the `freetextFont` option). */
+	readonly freetextFont: FreeTextFontFamily = $derived(this.#opt('freetextFont') ?? 'Helvetica');
 	/** Emoji notes can show (the `noteEmojis` option); empty when notes only use the icon. */
 	readonly noteEmojis: readonly string[] = $derived(this.#opt('noteEmojis') ?? []);
 
@@ -556,6 +561,17 @@ export class AnnotationStore {
 		);
 	}
 
+	/** Set the font family of text boxes (other kinds are skipped). */
+	setFont(ids: string[], family: FreeTextFontFamily) {
+		this.batch(() =>
+			ids.forEach((id) => {
+				const a = this.byId.get(id);
+				if (a?.kind === 'freetext' && a.font.family !== family)
+					this.update(id, { font: { ...a.font, family } });
+			})
+		);
+	}
+
 	/** Make `emoji` the active note emoji, and give it to the selected (else pending) notes. */
 	pickNoteEmoji(emoji: string) {
 		this.noteEmoji = emoji;
@@ -899,6 +915,7 @@ export class AnnotationStore {
 			}),
 			...createDefaults(kind),
 			...(kind === 'note' && this.noteEmoji ? { emoji: this.noteEmoji } : {}),
+			...(kind === 'freetext' ? { font: { family: this.freetextFont, size: 12 } } : {}),
 			kind,
 			...fields
 		} as Annotation;
@@ -1098,7 +1115,7 @@ function createDefaults(kind: AnnotationKind): object {
 		case 'note':
 			return { icon: 'Comment' };
 		case 'freetext':
-			return { text: '', font: { family: 'Helvetica', size: 12 } };
+			return { text: '' };
 		default:
 			return {};
 	}

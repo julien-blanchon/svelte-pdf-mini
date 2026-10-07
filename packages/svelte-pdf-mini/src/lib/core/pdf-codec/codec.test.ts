@@ -8,7 +8,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import type { Annotation, NoteAnnotation } from '../annotations/model.js';
+import type { Annotation, FreeTextAnnotation, NoteAnnotation } from '../annotations/model.js';
+import { FREETEXT_FONT_FAMILIES } from '../annotations/fonts.js';
 import {
 	annotationsToMarkdown,
 	exportPdf,
@@ -123,6 +124,53 @@ describe('exportPdf / importAnnotations (fast)', () => {
 			'/Comment',
 			'/Insert'
 		]);
+	});
+
+	it('round-trips text box fonts, with the closest standard font in /DA and the appearance', async () => {
+		const boxes = FREETEXT_FONT_FAMILIES.map((family, i): FreeTextAnnotation => ({
+			id: `box-${family}`,
+			page: 1,
+			kind: 'freetext',
+			color: [0.6, 0.7, 0.9],
+			opacity: 1,
+			createdAt: T0,
+			modifiedAt: T0,
+			origin: 'local',
+			rect: [20, 100 + i * 40, 220, 130 + i * 40],
+			text: `In ${family}`,
+			font: { family, size: 11, ...(i === 0 ? { bold: true, italic: true } : {}) },
+			textColor: [0.1, 0.2, 0.5]
+		}));
+		const out = await exportPdf(await foreignPdf(), boxes);
+		const { annotations } = await importAnnotations(out);
+		for (const b of boxes) expect(annotations.find((a) => a.id === b.id)).toEqual(b);
+
+		const { PDFDocument, PDFDict, PDFHexString, PDFName, PDFStream, PDFString } =
+			await import('@cantoo/pdf-lib');
+		const doc = await PDFDocument.load(out);
+		const dicts = doc
+			.getPage(0)
+			.node.Annots()!
+			.asArray()
+			.map((ref) => doc.context.lookup(ref, PDFDict))
+			.filter((d) => d.get(PDFName.of('Subtype')) === PDFName.of('FreeText'));
+		const text = (d: (typeof dicts)[number], key: string) =>
+			d.lookup(PDFName.of(key), PDFString, PDFHexString).decodeText();
+		expect(dicts.map((d) => text(d, 'DA'))).toEqual([
+			'/Helv 11 Tf 0.1 0.2 0.5 rg',
+			'/Helv 11 Tf 0.1 0.2 0.5 rg',
+			'/TiRo 11 Tf 0.1 0.2 0.5 rg',
+			'/Cour 11 Tf 0.1 0.2 0.5 rg'
+		]);
+		expect(text(dicts[0], 'DS')).toBe('font: italic bold 11pt Helvetica; color: rgb(26,51,128)');
+		// The appearance draws with the matching standard font (Handwritten: Helvetica).
+		const baseFonts = dicts.map((d) => {
+			const ap = d.lookup(PDFName.of('AP'), PDFDict).lookup(PDFName.of('N'), PDFStream);
+			const res = ap.dict.lookup(PDFName.of('Resources'), PDFDict);
+			const f0 = res.lookup(PDFName.of('Font'), PDFDict).lookup(PDFName.of('F0'), PDFDict);
+			return f0.get(PDFName.of('BaseFont'))?.toString();
+		});
+		expect(baseFonts).toEqual(['/Helvetica-BoldOblique', '/Helvetica', '/Times-Roman', '/Courier']);
 	});
 
 	it('keeps foreign annotations it is not told to remove (read-only policy)', async () => {

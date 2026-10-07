@@ -5,6 +5,7 @@
  * the same shortcut the keyboard uses) and a `run`. Render them with any menu
  * component (bits-ui / melt ContextMenu, a command palette, a toolbar…).
  */
+import { FREETEXT_FONT_FAMILIES, freetextFontCss } from '../core/annotations/fonts.js';
 import {
 	TEXT_MARKUP_KINDS,
 	isTextMarkupKind,
@@ -40,6 +41,8 @@ export interface PdfAction {
 	items?: PdfAction[];
 	/** CSS color for color entries. */
 	color?: string;
+	/** CSS font-family for font entries (show the label in its own font). */
+	font?: string;
 	checked?: boolean;
 	danger?: boolean;
 	disabled?: boolean;
@@ -175,6 +178,18 @@ export function contextActions(ctx: PdfContext, opts: ContextActionsOptions): Pd
 					items: TEXT_MARKUP_KINDS.map((k: TextMarkupKind) =>
 						a(`annotation.type.${k}`, t(k), () => store.update(ann.id, { kind: k }), undefined, {
 							checked: ann.kind === k
+						})
+					)
+				})
+			);
+		if (ann.kind === 'freetext')
+			actions.push(
+				a('annotation.font', t('font'), undefined, undefined, {
+					disabled: !editable,
+					items: FREETEXT_FONT_FAMILIES.map((f) =>
+						a(`annotation.font.${f}`, t(`font${f}`), () => store.setFont([ann.id], f), undefined, {
+							font: freetextFontCss(f),
+							checked: ann.font.family === f
 						})
 					)
 				})

@@ -33,7 +33,7 @@ Annotations are plain, JSON-serialisable objects in PDF user space. The store ho
 | `highlight` · `underline` · `strikeout` · `squiggly` | `quads` (8 numbers per line: TL, TR, BL, BR) and `quote` (`exact`, `prefix`, `suffix`, offsets) |
 | `area` | `fill`, `fillOpacity`, `width`, optional `quote` — a box around a figure, equation or table |
 | `note` | `icon` (Comment, Note, Key…), `emoji` (shown instead of the icon; written as the closest `icon`, kept exactly in svelte-pdf-mini's private data) |
-| `freetext` | `text`, `font` (`family`, `size`, `bold`, `italic`), `align`, `textColor`, `fill` |
+| `freetext` | `text`, `font` (`family`: `'Handwritten'` · `'Helvetica'` (sans) · `'Times'` (serif) · `'Courier'` (mono); `size`, `bold`, `italic`), `align`, `textColor`, `fill` |
 | `ink` | `paths` (`points`, optional `pressure`), `width` |
 | `rect` · `ellipse` · `line` · `arrow` · `polygon` · `polyline` | `width`, `fill`, `fillOpacity`, `dash`, `points`, `lineEndings` |
 | `stamp` | `name`, `image` (data URL) |
@@ -54,5 +54,22 @@ Persist the list, or apply `ops` to a server for collaborative or incremental sa
 ## Palette
 
 `defaultPalette` has eight entries (yellow, green, blue, pink, purple, orange, red, gray), each with `rgb` (stored on the annotation), `light` and `dark` CSS colours. Pass your own with the `palette` prop; `nearestPaletteKey(rgb)` recovers a key for annotations imported from other apps.
+
+## Text box fonts
+
+A text box's `font.family` is one of `FREETEXT_FONT_FAMILIES`: `'Handwritten'`, `'Helvetica'` (sans), `'Times'` (serif) and `'Courier'` (mono). The library ships no font files: the text box takes its typeface from a CSS custom property, so your app picks (and bundles) the faces:
+
+```css
+:root {
+	--pdf-font-handwritten: 'Shantell Sans', sans-serif; /* default: Shantell Sans if installed, else a system marker face */
+	--pdf-font-sans: 'Atkinson Hyperlegible Next', sans-serif; /* default: Helvetica, Arial */
+	--pdf-font-serif: Charter, serif; /* default: Times New Roman */
+	--pdf-font-mono: ui-monospace, monospace; /* default: Courier New */
+}
+```
+
+`freetextFontCss(family)` returns the `font-family` value a text box uses (handy to show each choice in its own font); the context menu's *Font* entries carry it as `action.font`. New text boxes get the `freetextFont` option (`Annotations.Root` prop, default `'Helvetica'`); `store.setFont(ids, family)` changes existing ones.
+
+In the PDF, `/DA` and the appearance stream use the closest standard font (`standardFontOf`): Helvetica for handwritten and sans, Times for serif, Courier for mono. The exact family is kept in the private data, so svelte-pdf-mini reads it back. The chosen typeface is not embedded: a subset of a handwritten face adds about 5–11 KB per font style to each PDF and needs fontkit in the export worker (about 390 KB minified, 155 KB gzipped) plus TrueType copies of the fonts (fontkit cannot read WOFF2 or variable fonts), and viewers that edit the box redraw it from `/DA` anyway.
 
 Text boxes draw their text in an ink shade of their color, so pastel fills still read as text: `paletteInk(entry, dark)` gives the entry's optional `ink` (light) or `inkDark` (dark) value, by default `inkCss(color, dark)`, which keeps the hue and chroma and sets the lightness to at most 0.5 by day and at least 0.75 by night.

@@ -34,13 +34,13 @@ export const AnnotFlag = {
 } as const;
 
 type TextAlign = NonNullable<FreeTextAnnotation['align']>;
-type FontFamily = FreeTextAnnotation['font']['family'];
+type StandardFamily = 'Helvetica' | 'Times' | 'Courier';
 
 /** FreeText /Q quadding (PDF 32000 §12.7.4.3). */
 export const QUADDING: Record<TextAlign, number> = { left: 0, center: 1, right: 2 };
 
-/** Font resource names used in FreeText /DA strings. */
-export const DA_FONT_NAMES: Record<FontFamily, string> = {
+/** Font resource names used in FreeText /DA strings (see `standardFontOf`). */
+export const DA_FONT_NAMES: Record<StandardFamily, string> = {
 	Helvetica: 'Helv',
 	Times: 'TiRo',
 	Courier: 'Cour'
@@ -54,7 +54,7 @@ export function alignFromQuadding(q: number): 'center' | 'right' | undefined {
 }
 
 /** Font family of a /DA font resource name ("TiRo", "Cour", "Helv"…). */
-export function fontFamilyOf(fontName: string): FontFamily {
+export function fontFamilyOf(fontName: string): StandardFamily {
 	if (/^(Ti|Times)/i.test(fontName)) return 'Times';
 	if (/^Cour/i.test(fontName)) return 'Courier';
 	return 'Helvetica';
