@@ -1,4 +1,4 @@
-export class SearchState {
+class SearchState {
 	isOpen = $state(false);
 
 	toggle() {

@@ -34,5 +34,3 @@ export const siteConfig = {
 	}
 };
 
-/** Inferred type for strongly-typed consumers of `siteConfig`. */
-export type SiteConfig = typeof siteConfig;

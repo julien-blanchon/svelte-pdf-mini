@@ -27,7 +27,7 @@ const latin1 = new TextDecoder('latin1');
 const HEADER_SEARCH = 1024;
 
 /** Index of `%PDF-` (0 when absent: let the parser report it). */
-export function headerOffset(bytes: Uint8Array): number {
+function headerOffset(bytes: Uint8Array): number {
 	const i = latin1.decode(bytes.subarray(0, HEADER_SEARCH)).indexOf('%PDF-');
 	return Math.max(0, i);
 }

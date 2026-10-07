@@ -103,7 +103,7 @@ export type ContentUiConfig = SectionUiConfig & {
 /**
  * Default section-level UI configuration shared across content sections.
  */
-export const sectionUiDefaults: SectionUiConfig = {
+const sectionUiDefaults: SectionUiConfig = {
 	search: {
 		enabled: true,
 		triggerPlaceholder: 'Search...',

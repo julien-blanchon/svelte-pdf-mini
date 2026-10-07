@@ -1,31 +1,56 @@
 <script module lang="ts">
+	// mdsvex replaces each Markdown element with the component exported under its tag name.
 	import MarkdownPre from './markdown/MarkdownPre.svelte';
+	import Blockquote from './markdown/Blockquote.svelte';
+	import Code from './markdown/Code.svelte';
+	import Divider from './markdown/Divider.svelte';
+	import H1 from './markdown/H1.svelte';
+	import H2 from './markdown/H2.svelte';
+	import H3 from './markdown/H3.svelte';
+	import H4 from './markdown/H4.svelte';
+	import Link from './markdown/Link.svelte';
+	import ListItem from './markdown/ListItem.svelte';
+	import OrderedList from './markdown/OrderedList.svelte';
+	import Paragraph from './markdown/Paragraph.svelte';
+	import Pre from './markdown/Pre.svelte';
+	import Strong from './markdown/Strong.svelte';
+	import Table from './markdown/Table.svelte';
+	import Tbody from './markdown/Tbody.svelte';
+	import Td from './markdown/Td.svelte';
+	import Th from './markdown/Th.svelte';
+	import Thead from './markdown/Thead.svelte';
+	import Tr from './markdown/Tr.svelte';
+	import UnorderedList from './markdown/UnorderedList.svelte';
+	import Steps from './markdown/Steps.svelte';
+	import Step from './markdown/Step.svelte';
 
 	Reflect.set(globalThis, '__MarkdownPre', MarkdownPre);
 
-	export { default as blockquote } from './markdown/Blockquote.svelte';
-	export { default as code } from './markdown/Code.svelte';
-	export { default as hr } from './markdown/Divider.svelte';
-	export { default as h1 } from './markdown/H1.svelte';
-	export { default as h2 } from './markdown/H2.svelte';
-	export { default as h3 } from './markdown/H3.svelte';
-	export { default as h4 } from './markdown/H4.svelte';
-	export { default as a } from './markdown/Link.svelte';
-	export { default as li } from './markdown/ListItem.svelte';
-	export { default as ol } from './markdown/OrderedList.svelte';
-	export { default as p } from './markdown/Paragraph.svelte';
-	export { default as pre } from './markdown/Pre.svelte';
-	export { default as strong } from './markdown/Strong.svelte';
-	export { default as MarkdownPre } from './markdown/MarkdownPre.svelte';
-	export { default as table } from './markdown/Table.svelte';
-	export { default as tbody } from './markdown/Tbody.svelte';
-	export { default as td } from './markdown/Td.svelte';
-	export { default as th } from './markdown/Th.svelte';
-	export { default as thead } from './markdown/Thead.svelte';
-	export { default as tr } from './markdown/Tr.svelte';
-	export { default as ul } from './markdown/UnorderedList.svelte';
-	export { default as Steps } from './markdown/Steps.svelte';
-	export { default as Step } from './markdown/Step.svelte';
+	export {
+		Blockquote as blockquote,
+		Code as code,
+		Divider as hr,
+		H1 as h1,
+		H2 as h2,
+		H3 as h3,
+		H4 as h4,
+		Link as a,
+		ListItem as li,
+		OrderedList as ol,
+		Paragraph as p,
+		Pre as pre,
+		Strong as strong,
+		MarkdownPre,
+		Table as table,
+		Tbody as tbody,
+		Td as td,
+		Th as th,
+		Thead as thead,
+		Tr as tr,
+		UnorderedList as ul,
+		Steps,
+		Step
+	};
 </script>
 
 <script lang="ts">

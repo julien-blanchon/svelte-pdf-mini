@@ -194,10 +194,6 @@ export function getContentSectionTocHeadings(
 	return extractTocHeadings(body, selector);
 }
 
-export function getContentSectionItemBySlug(sectionId: ContentSectionId, slug: string) {
-	return getItemBySlug(contentManifests[sectionId], slug);
-}
-
 export function getContentSectionAdjacentItems(sectionId: ContentSectionId, slug: string) {
 	return getAdjacentItems(contentManifests[sectionId], slug);
 }

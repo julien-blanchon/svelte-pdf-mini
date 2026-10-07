@@ -8,7 +8,7 @@ export interface ApiProp {
 	required: boolean;
 	bindable: boolean;
 }
-export interface ApiPart {
+interface ApiPart {
 	name: string;
 	component: string;
 	file: string;

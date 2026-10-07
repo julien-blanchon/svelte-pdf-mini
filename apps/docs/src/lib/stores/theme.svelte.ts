@@ -1,8 +1,8 @@
 import { browser } from '$app/env';
 import { contentUiDefaults } from '#lib/config/content-ui.ts';
 
-export const themes = ['light', 'dark'] as const;
-export type Theme = (typeof themes)[number];
+const themes = ['light', 'dark'] as const;
+type Theme = (typeof themes)[number];
 
 const storageKey = contentUiDefaults.theme.storageKey;
 

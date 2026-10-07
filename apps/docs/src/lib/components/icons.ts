@@ -1,4 +1,3 @@
-export { default as AppAssemblyIcon } from './app-icons/AppAssemblyIcon.svelte';
 export { default as AppBookIcon } from './app-icons/AppBookIcon.svelte';
 export { default as AppCheckIcon } from './app-icons/AppCheckIcon.svelte';
 export { default as AppChevronRightIcon } from './app-icons/AppChevronRightIcon.svelte';
