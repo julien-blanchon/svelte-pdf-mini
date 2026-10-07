@@ -22,10 +22,18 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: package.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
 
       - name: Lint (ESLint + Prettier, library)
         run: bun run lint
+
+      - name: Unused files, exports and dependencies (knip)
+        run: bunx knip
 
       - name: Type check (library + docs)
         run: bun run check
@@ -40,27 +48,31 @@ jobs:
           key: fixtures-${{ hashFiles('fixtures/papers.json') }}
       - run: bun run fixtures
 
-      - name: Install Chromium (vitest browser project)
+      # Chromium for the vitest browser project and the e2e smoke tests: one install,
+      # cached per Playwright version (the system libraries it needs are not cached).
+      # Run from apps/docs so `bunx` uses the locked Playwright, not the latest.
+      - name: Playwright version
+        id: playwright
+        working-directory: apps/docs
+        run: echo "version=$(bunx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        id: chromium
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium
+        if: steps.chromium.outputs.cache-hit != 'true'
+        working-directory: apps/docs
         run: bunx playwright install --with-deps chromium
+      - name: Install Chromium's system dependencies
+        if: steps.chromium.outputs.cache-hit == 'true'
+        working-directory: apps/docs
+        run: bunx playwright install-deps chromium
+
       - name: Unit tests (fast + slow)
         run: bun run test:full
 
-      - name: Build the docs (GitHub Pages base path)
-        run: bun --filter docs build
-        env:
-          BASE_PATH: /svelte-pdf-mini
-
-  e2e:
-    name: End-to-end (smoke)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
-      - name: Smoke tests against the dev server
+      - name: End-to-end smoke tests (against the dev server)
         run: bun run test:e2e
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
@@ -70,6 +82,11 @@ jobs:
             apps/docs/test-results
             apps/docs/playwright-report
           retention-days: 7
+
+      - name: Build the docs (GitHub Pages base path)
+        run: bun --filter docs build
+        env:
+          BASE_PATH: /svelte-pdf-mini
 
   changeset:
     name: Changeset
@@ -87,6 +104,11 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: package.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - name: Library changes have a changeset
         run: bunx changeset status --since=origin/${{ github.base_ref }}

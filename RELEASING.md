@@ -15,7 +15,7 @@ A release publishes `packages/svelte-pdf-mini` to npm as [`svelte-pdf-mini`](htt
 
 | Workflow | Trigger | Does |
 | --- | --- | --- |
-| `ci.yml` | pull requests, pushes to `main` | lint, type check, build, unit tests, e2e smoke tests, changeset reminder |
+| `ci.yml` | pull requests, pushes to `main` | lint, knip, type check, build, unit tests, e2e smoke tests, changeset reminder |
 | `version.yml` | pushes to `main` | Changesets: opens/updates the "chore: version packages" PR (bumps `package.json`, writes `CHANGELOG.md`). Never publishes. |
 | `release.yml` | tag `vX.Y.Z`, or manual run with a tag | verify → publish to npm → GitHub release |
 | `pages.yml` | pushes to `main` | deploys the docs to GitHub Pages |
