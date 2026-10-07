@@ -136,6 +136,8 @@
 			top: var(--pdf-hotspot-top);
 			width: var(--pdf-hotspot-width);
 			height: var(--pdf-hotspot-height);
+			/* WebKit leaves an anchor over an absolutely positioned layer at `auto`. */
+			cursor: pointer;
 		}
 	}
 </style>
