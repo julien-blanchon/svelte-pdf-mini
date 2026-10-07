@@ -1,5 +1,20 @@
 # svelte-pdf-mini
 
+## 0.7.0
+
+### Minor Changes
+
+- Emoji notes. A note can show an emoji instead of the speech-bubble icon.
+  
+  - **Model:** `NoteAnnotation.emoji` (one grapheme). The PDF keeps it exactly in svelte-pdf-mini's private data. `/Name` gets the closest standard icon (💬 Comment, 🤔 Help, 💡 Key, 📌 Note, anything else Comment, see `noteIconFor`), so Preview and Acrobat show a sensible icon. The appearance stream is still the colored speech bubble, because a color emoji can't be drawn with the standard PDF fonts.
+  - **Store:** the `noteEmojis` option (`Annotations.Root` prop) enables it, e.g. `noteEmojis={defaultNoteEmojis}` (💬 🤔 💡 🤯 🧐 🤨 😍 📌). When the note tool is active, or the selected (or just created) annotations are notes, keys 1–8 pick an emoji instead of a color, and `store.pickingNoteEmoji` is true. `store.noteEmoji` (bindable `noteEmoji`, `onNoteEmojiChange`) is the emoji new notes get, `store.pickNoteEmoji(emoji)` picks one, and `store.setNoteEmoji(ids, emoji)` changes notes. Without `noteEmojis`, nothing changes.
+  - **UI:** `Annotations.NoteEmoji` is a toolbar button for one emoji. The emoji shows on the page marker (scaled with the zoom), in `Annotations.Margin` notes and markers, and in the default hover card and list. Snippets get it as `emoji`. `toMarkdown` writes it in place of the color. `isSingleEmoji(value)` validates user input.
+
+- [`a9351e1`](https://github.com/julien-blanchon/svelte-pdf-mini/commit/a9351e11d094f4c9d0b43c56a364b77e4a6bb404) Thanks [@julien-blanchon](https://github.com/julien-blanchon)! - Colored text reads on every page theme.
+  
+  - **Text boxes** draw their text in an ink shade of their color (same hue and chroma, lightness at most 0.5 by day and at least 0.75 by night) instead of the pastel fill, so all eight palette colors reach 4.5:1 on light, tinted and dark pages. Text boxes now set `--annotation-ink` (not `--annotation-color`) for their text.
+  - **`inkCss(color, dark)`** returns that shade for any CSS color. `PaletteColor` and `PaperColor` take optional `ink` / `inkDark` overrides; `paletteInk(entry, dark)` and `paperInk(color, dark)` resolve them, for example to pass a paper accent as `--pdf-accent`.
+
 ## 0.6.0
 
 ### Minor Changes
