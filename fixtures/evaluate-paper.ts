@@ -10,7 +10,7 @@ import { mkdir } from 'node:fs/promises';
 import { getDocument } from '../packages/svelte-pdf-mini/node_modules/pdfjs-dist/legacy/build/pdf.mjs';
 import { createCanvas } from '../packages/svelte-pdf-mini/node_modules/@napi-rs/canvas';
 import { analyzePaper, flattenSections, pageLines, pdfjsPaperSource } from '../packages/svelte-pdf-mini/src/lib/core/paper/index.ts';
-import { pageGraphics } from '../packages/svelte-pdf-mini/src/lib/core/image-boxes.ts';
+import { pageGraphics } from '../packages/svelte-pdf-mini/src/lib/core/document/image-boxes.ts';
 import corpus from './corpus.json';
 
 const args = process.argv.slice(2);

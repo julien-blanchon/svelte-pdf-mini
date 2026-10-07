@@ -1,6 +1,6 @@
 // bun fixtures/tools/lines.ts <pdf> <page> [ymin] [ymax] — text lines with geometry (debugging analysis).
 import { getDocument } from '../../packages/svelte-pdf-mini/node_modules/pdfjs-dist/legacy/build/pdf.mjs';
-import { PageText } from '../../packages/svelte-pdf-mini/src/lib/core/text-index.ts';
+import { PageText } from '../../packages/svelte-pdf-mini/src/lib/core/text/text-index.ts';
 import { pageLines } from '../../packages/svelte-pdf-mini/src/lib/core/paper/lines.ts';
 const [file, pg, ymin = '0', ymax = '9999'] = process.argv.slice(2);
 const data = new Uint8Array(await Bun.file(file).arrayBuffer());
