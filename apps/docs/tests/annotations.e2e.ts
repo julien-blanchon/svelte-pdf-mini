@@ -115,6 +115,58 @@ test('select → highlight → note in the margin → undo @smoke', async ({ pag
 	await expect(page.locator('[data-pdf-annotation][data-kind=highlight]')).toHaveCount(0);
 });
 
+test('the selection menu and the popover move with the pages, and hide once scrolled out @smoke', async ({ page }) => {
+	await page.goto('/demo/annotations-markup');
+	await ready(page);
+	await selectText(page, { min: 400 });
+	const viewport = page.locator('[data-pdf-viewport]');
+	const scroll = (by: number) =>
+		viewport.evaluate(
+			(el, by) =>
+				new Promise<void>((done) => {
+					el.scrollTop += by;
+					requestAnimationFrame(() => requestAnimationFrame(() => done()));
+				}),
+			by
+		);
+	/** Distance between a floating part and `target` (the text selection when null), once settled. */
+	const gap = (part: string, target: string | null) =>
+		page.evaluate(
+			async ([part, target]) => {
+				const el = document.querySelector(part)!;
+				await Promise.all(el.getAnimations().map((a) => a.finished));
+				const box = target
+					? document.querySelector(target)!.getBoundingClientRect()
+					: getSelection()!.getRangeAt(0).getBoundingClientRect();
+				const r = el.getBoundingClientRect();
+				return Math.round(r.bottom <= box.top ? box.top - r.bottom : r.top - box.bottom);
+			},
+			[part, target] as const
+		);
+	const menu = page.locator('[data-pdf-selection-menu]');
+	await expect(menu).toBeVisible();
+	const before = await gap('[data-pdf-selection-menu]', null);
+	await scroll(60);
+	expect(await gap('[data-pdf-selection-menu]', null)).toBe(before);
+	await scroll(900);
+	await expect(menu).toBeHidden();
+	await scroll(-960);
+	await expect(menu).toBeVisible();
+
+	await menu.locator('[data-color=yellow]').click();
+	const popover = page.locator('[data-pdf-annotation-popover]');
+	await expect(popover).toBeVisible();
+	const highlight = '[data-pdf-annotation][data-kind=highlight]';
+	const at = await gap('[data-pdf-annotation-popover]', highlight);
+	await scroll(60);
+	expect(await gap('[data-pdf-annotation-popover]', highlight)).toBe(at);
+	// Being typed in, it stays while scrolled out; it hides once it lets go of the focus.
+	await scroll(900);
+	await expect(popover).toBeVisible();
+	await popover.locator('textarea').blur();
+	await expect(popover).toBeHidden();
+});
+
 test('export → re-open: annotations come back from the PDF file @smoke', async ({ page }) => {
 	await page.goto('/demo/export-import');
 	await ready(page);
