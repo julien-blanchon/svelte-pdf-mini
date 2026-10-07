@@ -11,7 +11,7 @@ description: Add svelte-pdf-mini to a SvelteKit or Vite app and configure the pd
 
 <InstallationTabs pkg="svelte-pdf-mini" />
 
-`svelte-pdf-mini` targets **Svelte 5.57+** (runes, attachments) and the latest evergreen browsers. It depends on `pdfjs-dist` 6, `runed`, `svelte-toolbelt` and `@floating-ui/dom`. `@cantoo/pdf-lib` (PDF export) and KaTeX / marked (Markdown notes) are loaded lazily on first use. See [Bundlers & deployment](/docs/deployment) for exact requirements, non-Vite bundlers, CORS and CSP.
+`svelte-pdf-mini` targets **Svelte 5.57+** (runes, attachments) and the latest evergreen browsers. It depends on `pdfjs-dist` 6, `runed` and `svelte-toolbelt`. `@cantoo/pdf-lib` (PDF export) and KaTeX / marked (Markdown notes) are loaded lazily on first use. See [Bundlers & deployment](/docs/deployment) for exact requirements, non-Vite bundlers, CORS and CSP.
 
 ## Configure Vite
 
