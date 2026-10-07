@@ -210,6 +210,10 @@ export interface PaperColor {
 	dark: string;
 	/** A stronger accent for chips, dots and borders. */
 	accent: string;
+	/** `accent` as text (labels, links) in light UI. Default: `inkCss(accent)`. */
+	ink?: string;
+	/** `accent` as text in dark UI. Default: `inkCss(accent, true)`. */
+	inkDark?: string;
 }
 
 /** Matte category palette inspired by un.ms/research (soft, low chroma). */
@@ -260,6 +264,19 @@ export function paperTheme(color: PaperColor, dark = false, strength = 0.6): Pag
 		dark,
 		strength: dark ? strength : strength + 0.25
 	});
+}
+
+/**
+ * A text shade of a color, same hue and chroma: lightness at most 0.5 for light
+ * UI, at least 0.75 for dark UI, so pastel fills and accents read as text (4.5:1).
+ */
+export function inkCss(color: string, dark = false): string {
+	return `oklch(from ${color} ${dark ? 'max(l, 0.75)' : 'min(l, 0.5)'} c h)`;
+}
+
+/** A paper color's accent as text, by day or by night. */
+export function paperInk(color: PaperColor, dark = false): string {
+	return dark ? (color.inkDark ?? inkCss(color.accent, true)) : (color.ink ?? inkCss(color.accent));
 }
 
 /** Mix two #rrggbb colors: t = 0 → a, 1 → b. */

@@ -9,12 +9,13 @@
 	let {
 		annotation: a,
 		box,
-		color,
+		ink,
 		selected
 	}: {
 		annotation: FreeTextAnnotation;
 		box: PercentBox;
-		color: string;
+		/** Text color: the ink shade of the annotation's color. */
+		ink: string;
 		selected: boolean;
 	} = $props();
 	const store = AnnotationsContext.get();
@@ -60,7 +61,7 @@
 	style:--pdf-width="{box.width}%"
 	style:--pdf-height="{box.height}%"
 	style:--pdf-font-size="{a.font.size}px"
-	style:--annotation-color={color}
+	style:--annotation-ink={ink}
 >
 	{#if editing}
 		<textarea
@@ -94,7 +95,7 @@
 			font-weight: 400;
 			font-style: normal;
 			line-height: 1.25;
-			color: var(--annotation-color);
+			color: var(--annotation-ink);
 			pointer-events: none;
 			z-index: 0;
 		}

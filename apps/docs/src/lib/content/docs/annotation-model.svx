@@ -54,3 +54,5 @@ Persist the list, or apply `ops` to a server for collaborative or incremental sa
 ## Palette
 
 `defaultPalette` has eight entries (yellow, green, blue, pink, purple, orange, red, gray), each with `rgb` (stored on the annotation), `light` and `dark` CSS colours. Pass your own with the `palette` prop; `nearestPaletteKey(rgb)` recovers a key for annotations imported from other apps.
+
+Text boxes draw their text in an ink shade of their color, so pastel fills still read as text: `paletteInk(entry, dark)` gives the entry's optional `ink` (light) or `inkDark` (dark) value, by default `inkCss(color, dark)`, which keeps the hue and chroma and sets the lightness to at most 0.5 by day and at least 0.75 by night.

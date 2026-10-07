@@ -16,7 +16,7 @@
 	import AnnotationFreetext from './annotation-freetext.svelte';
 	import AnnotationHandles from './annotation-handles.svelte';
 	import AnnotationShape from './annotation-shape.svelte';
-	import { annotationCss } from './color.js';
+	import { annotationCss, annotationInk } from './color.js';
 	import {
 		movePoint,
 		rectFromPoints,
@@ -512,7 +512,7 @@
 					<AnnotationFreetext
 						annotation={a}
 						{box}
-						color={colorOf(a)}
+						ink={annotationInk(a, store.palette, dark)}
 						selected={store.isSelected(a.id)}
 					/>
 				{:else if a.kind === 'area' && (a.label || areaLabel)}

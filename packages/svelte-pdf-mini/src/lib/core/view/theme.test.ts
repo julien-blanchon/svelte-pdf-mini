@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+	inkCss,
 	invertLightness,
 	mixHex,
 	pageThemes,
 	paperColors,
 	paperHex,
+	paperInk,
 	paperSwatches,
 	paperTheme,
 	resolvePageTheme
@@ -51,6 +53,14 @@ describe('paper theme', () => {
 		expect(paperHex('white', true)).toBe('#9ca3af');
 		expect(paperHex('#123456', true)).toBe('#123456');
 		expect(paperHex('unknown')).toBe('#efe4cf');
+	});
+
+	it('derives ink shades for text', () => {
+		expect(inkCss('#7fa36a')).toBe('oklch(from #7fa36a min(l, 0.5) c h)');
+		expect(inkCss('#7fa36a', true)).toBe('oklch(from #7fa36a max(l, 0.75) c h)');
+		const sage = paperColors.find((c) => c.name === 'sage')!;
+		expect(paperInk(sage)).toBe(inkCss(sage.accent));
+		expect(paperInk({ ...sage, inkDark: '#fff' }, true)).toBe('#fff');
 	});
 
 	it('mixes colors and recolors ink', () => {

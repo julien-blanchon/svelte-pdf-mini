@@ -12,9 +12,9 @@ description: Framework-agnostic TypeScript — text index, search, geometry, pag
 | Geometry | `pdfRectToViewport`, `quadToSvgPoints`, `pdfRectToPercent`, `clamp` |
 | Destinations | `resolveDestination`, `listNamedDestinations`, `classifyDest` |
 | Zoom | `fitZoom`, `nextZoomStep`, `ZOOM_STEPS` |
-| Page themes | `pageThemes`, `paperColors`, `paperSwatches`, `paperHex`, `paperTheme`, `mixHex`, `invertLightness` |
+| Page themes | `pageThemes`, `paperColors`, `paperSwatches`, `paperHex`, `paperInk`, `paperTheme`, `inkCss`, `mixHex`, `invertLightness` |
 | Rendering | `RenderScheduler`, `renderPageToCanvas`, `renderRegionToCanvas`, `releaseCanvas` |
-| Annotations | the `Annotation` model, `defaultPalette`, `hitTest`, `reanchorAll`, `defaultKeymap`, `comboLabel` |
+| Annotations | the `Annotation` model, `defaultPalette`, `paletteInk`, `hitTest`, `reanchorAll`, `defaultKeymap`, `comboLabel` |
 | PDF codec | `exportPdf`, `importAnnotations`, `annotationsToMarkdown`, `annotationsToJSON` |
 | Papers | `analyzePaper`, `pdfjsPaperSource`, `parseReference`, `sectionAt` |
 | Providers | `defaultCitationProvider`, `openAlex`, `semanticScholar`, `crossref`, `arxiv`, `chainProviders` |

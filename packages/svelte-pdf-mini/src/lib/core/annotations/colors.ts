@@ -1,3 +1,4 @@
+import { inkCss } from '../view/theme.js';
 import type { Rgb } from './model.js';
 
 export interface PaletteColor {
@@ -9,6 +10,15 @@ export interface PaletteColor {
 	light: string;
 	/** CSS color in dark UI (night pages). */
 	dark: string;
+	/** Text color (text boxes) in light UI. Default: `inkCss(light)`. */
+	ink?: string;
+	/** Text color in dark UI. Default: `inkCss(dark, true)`. */
+	inkDark?: string;
+}
+
+/** A palette entry's text color, by day or by night. */
+export function paletteInk(color: PaletteColor, dark = false): string {
+	return dark ? (color.inkDark ?? inkCss(color.dark, true)) : (color.ink ?? inkCss(color.light));
 }
 
 const hex = (h: string): Rgb => {
