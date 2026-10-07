@@ -73,7 +73,9 @@ jobs:
           path: fixtures/cache
           key: fixtures-${{ hashFiles('fixtures/papers.json') }}
       - run: bun run fixtures
+      # From apps/docs, so `bunx` uses the locked Playwright (the one the tests run), not the latest.
       - name: Install Chromium (vitest browser project)
+        working-directory: apps/docs
         run: bunx playwright install --with-deps chromium
       - name: Unit tests (fast + slow)
         run: bun run test:full
