@@ -166,7 +166,6 @@ export default defineConfig({
 				mdsvex({
 					extensions: ['.svx'],
 					layout: { _: markdownLayout },
-					// @ts-expect-error - plugin type is structurally compatible at runtime.
 					rehypePlugins: [tableCellFormatter, rehypeSlug, rehypeBasePath],
 					highlight: {
 						highlighter: (code: string, lang: string | null = 'text') => {
