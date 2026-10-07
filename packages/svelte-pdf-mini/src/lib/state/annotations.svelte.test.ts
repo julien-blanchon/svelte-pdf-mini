@@ -6,13 +6,14 @@ import { renderMarkdown } from '../internal/markdown.js';
 import { defaultKeymap } from '../core/i18n/keymap.js';
 import { importAnnotations } from '../core/pdf-codec/index.js';
 import { foreignPdf } from '../core/pdf-codec/foreign.test.helper.js';
-import { AnnotationStore } from './annotations.svelte.js';
+import { defaultNoteEmojis } from '../core/annotations/emoji.js';
+import { AnnotationStore, type AnnotationStoreOptions } from './annotations.svelte.js';
 import type { ViewerState } from './viewer.svelte.js';
 
 /** Just enough of a viewer for the store (`pdf`: a loaded document with these bytes). */
-function fakeViewer(pdf?: Uint8Array) {
+function fakeViewer(pdf?: Uint8Array, scrollEl: HTMLElement | null = null) {
 	return {
-		scrollEl: null,
+		scrollEl,
 		selection: { selecting: false, isEmpty: true, ranges: [], clear() {} },
 		document: {
 			proxy: pdf ? {} : null,
@@ -27,10 +28,14 @@ function fakeViewer(pdf?: Uint8Array) {
 	} as unknown as ViewerState;
 }
 
-function setup(pdf?: Uint8Array) {
+function setup(
+	pdf?: Uint8Array,
+	opts: Omit<AnnotationStoreOptions, 'viewer'> = {},
+	scrollEl: HTMLElement | null = null
+) {
 	let store!: AnnotationStore;
 	const cleanup = $effect.root(() => {
-		store = new AnnotationStore({ viewer: fakeViewer(pdf) });
+		store = new AnnotationStore({ viewer: fakeViewer(pdf, scrollEl), ...opts });
 	});
 	flushSync();
 	return { store, cleanup };
@@ -122,6 +127,73 @@ describe('AnnotationStore workflow', () => {
 		expect(store.visible).toHaveLength(1);
 		store.annotationsVisible = false;
 		expect(store.visible).toHaveLength(0);
+		cleanup();
+	});
+});
+
+describe('note emoji', () => {
+	/** A store offering the default emoji, with keys dispatched on a real viewport element. */
+	function emojiSetup() {
+		const scroller = document.createElement('div');
+		const { store, cleanup } = setup(undefined, { noteEmojis: defaultNoteEmojis }, scroller);
+		const press = (k: string) => {
+			scroller.dispatchEvent(key(k, `Digit${k}`));
+			flushSync();
+		};
+		return { store, cleanup, press };
+	}
+
+	it('keys 1–8 pick the emoji of new notes while the note tool is active', () => {
+		const { store, cleanup, press } = emojiSetup();
+		expect(store.noteEmoji).toBe('💬');
+		expect(store.pickingNoteEmoji).toBe(false);
+		store.tool = 'note';
+		expect(store.pickingNoteEmoji).toBe(true);
+		press('4');
+		expect(store.noteEmoji).toBe('🤯');
+		expect(store.color).toBe('yellow'); // not a color pick
+		const a = store.create('note', { page: 1, rect: [0, 0, 20, 20] })!;
+		expect(a.emoji).toBe('🤯');
+		press('9'); // no ninth emoji: nothing, and no recolor either
+		expect(store.byId.get(a.id)).toMatchObject({ emoji: '🤯', paletteKey: 'yellow' });
+		cleanup();
+	});
+
+	it('digits give the pending or selected note an emoji; other kinds keep colors', () => {
+		const { store, cleanup, press } = emojiSetup();
+		const a = store.create('note', { page: 1, rect: [0, 0, 20, 20] })!;
+		expect(store.handleNoteKey(key('2', 'Digit2'), a)).toBe(true);
+		expect(store.byId.get(a.id)).toMatchObject({ emoji: '🤔', paletteKey: 'yellow' });
+		store.commit();
+		store.select(a.id);
+		press('3');
+		expect(store.byId.get(a.id)).toMatchObject({ emoji: '💡' });
+		const box = store.create('area', { page: 1, rect: [0, 0, 50, 50] })!;
+		expect(store.pickingNoteEmoji).toBe(false);
+		press('2');
+		expect(store.byId.get(box.id)!.paletteKey).toBe(store.palette[1].key);
+		expect(store.noteEmoji).toBe('💡');
+		cleanup();
+	});
+
+	it('without noteEmojis notes use the icon and digits recolor them', () => {
+		const { store, cleanup } = setup();
+		store.tool = 'note';
+		expect(store.pickingNoteEmoji).toBe(false);
+		const a = store.create('note', { page: 1, rect: [0, 0, 20, 20] })!;
+		expect(a.emoji).toBeUndefined();
+		expect(store.handleNoteKey(key('2', 'Digit2'), a)).toBe(true);
+		expect(store.byId.get(a.id)!.paletteKey).toBe(store.palette[1].key);
+		cleanup();
+	});
+
+	it('an active emoji no longer in the set falls back to the first', () => {
+		const emojis = $state(['💬', '🔥']);
+		const { store, cleanup } = setup(undefined, { noteEmojis: () => emojis });
+		store.noteEmoji = '🔥';
+		expect(store.noteEmoji).toBe('🔥');
+		emojis[1] = '🧪';
+		expect(store.noteEmoji).toBe('💬');
 		cleanup();
 	});
 });

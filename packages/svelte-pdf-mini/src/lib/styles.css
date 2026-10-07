@@ -995,4 +995,30 @@
 	[data-pdf-margin-marker]:is([data-hovered], [data-selected], :focus-visible) {
 		box-shadow: 0 0 0 2px var(--annotation-color);
 	}
+	/* Note emoji beside the page, in hover cards and lists: the system's color emoji font. */
+	:is(
+			[data-pdf-margin-marker],
+			[data-pdf-margin-note],
+			[data-pdf-annotation-hover-card],
+			[data-pdf-annotation-list-item]
+		)
+		[data-part='emoji'] {
+		font-family: var(
+			--pdf-emoji-font,
+			'Apple Color Emoji',
+			'Segoe UI Emoji',
+			'Noto Color Emoji',
+			sans-serif
+		);
+		font-style: normal;
+		line-height: 1;
+	}
+	[data-pdf-margin-marker] [data-part='emoji'] {
+		font-size: 14px;
+	}
+	:is([data-pdf-margin-note], [data-pdf-annotation-hover-card]) [data-part='emoji'] {
+		float: left;
+		font-size: 16px;
+		margin: 1px 6px 0 0;
+	}
 }

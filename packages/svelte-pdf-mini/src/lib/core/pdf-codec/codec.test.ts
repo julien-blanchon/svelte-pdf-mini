@@ -8,8 +8,14 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import type { Annotation } from '../annotations/model.js';
-import { exportPdf, importAnnotations, PdfSaveError, saveSupport } from './index.js';
+import type { Annotation, NoteAnnotation } from '../annotations/model.js';
+import {
+	annotationsToMarkdown,
+	exportPdf,
+	importAnnotations,
+	PdfSaveError,
+	saveSupport
+} from './index.js';
 import { lastStartXref, lastXrefIsStream, trimBeforeHeader } from './open.js';
 import { foreignPdf } from './foreign.test.helper.js';
 
@@ -77,6 +83,48 @@ describe('exportPdf / importAnnotations (fast)', () => {
 		});
 	});
 
+	it('round-trips note emoji, with the closest standard icon as /Name', async () => {
+		const emojiNote = (emoji: string | undefined, i: number, icon = 'Comment'): NoteAnnotation => ({
+			...(note as NoteAnnotation),
+			id: `emoji-${i}`,
+			rect: [20 + i * 30, 20, 40 + i * 30, 40],
+			icon,
+			...(emoji ? { emoji } : {})
+		});
+		const notes = [
+			emojiNote('💬', 0),
+			emojiNote('🤔', 1),
+			emojiNote('💡', 2),
+			emojiNote('📌', 3),
+			emojiNote('🤯', 4),
+			emojiNote('😵‍💫', 5),
+			emojiNote(undefined, 6, 'Insert')
+		];
+		const out = await exportPdf(await foreignPdf(), notes);
+		const { annotations } = await importAnnotations(out);
+		for (const n of notes) expect(annotations.find((a) => a.id === n.id)).toEqual(n);
+
+		// pdf.js reports "NoIcon" when there is an appearance stream: read /Name itself.
+		const { PDFDocument, PDFDict, PDFName } = await import('@cantoo/pdf-lib');
+		const doc = await PDFDocument.load(out);
+		const names = doc
+			.getPage(0)
+			.node.Annots()!
+			.asArray()
+			.map((ref) => doc.context.lookup(ref, PDFDict))
+			.filter((d) => d.get(PDFName.of('Subtype')) === PDFName.of('Text'))
+			.map((d) => d.get(PDFName.of('Name'))?.toString());
+		expect(names).toEqual([
+			'/Comment',
+			'/Help',
+			'/Key',
+			'/Note',
+			'/Comment',
+			'/Comment',
+			'/Insert'
+		]);
+	});
+
 	it('keeps foreign annotations it is not told to remove (read-only policy)', async () => {
 		const original = await foreignPdf();
 		const imported = (await importAnnotations(original)).annotations;
@@ -109,6 +157,19 @@ describe('exportPdf / importAnnotations (fast)', () => {
 		const { annotations } = await importAnnotations(original);
 		const out = await exportPdf(original, annotations, { remove: ['preview-hl'] });
 		expect((await importAnnotations(out)).annotations.map((a) => a.id)).toEqual(['preview-hl']);
+	});
+});
+
+describe('annotationsToMarkdown', () => {
+	it('shows a note emoji in place of its color', () => {
+		const md = annotationsToMarkdown([
+			{ ...note, kind: 'note', emoji: '🤯', paletteKey: 'yellow' }
+		]);
+		expect(md).toContain('- p. 1 · 🤯 Note');
+		expect(md).not.toContain('yellow');
+		expect(annotationsToMarkdown([{ ...note, paletteKey: 'yellow' }])).toContain(
+			'- p. 1 · Note · yellow'
+		);
 	});
 });
 

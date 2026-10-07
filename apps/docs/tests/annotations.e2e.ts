@@ -76,6 +76,26 @@ test('text boxes are typed on the page; the pen draws freehand strokes', async (
 	await expect(page.locator('[data-pdf-annotation][data-kind=ink] path[data-part=ink]')).toHaveCount(1);
 });
 
+test('note emoji: keys 1–8 pick the emoji with the note tool, the pending note takes digits @smoke', async ({ page }) => {
+	await page.goto('/demo/annotations-draw');
+	await ready(page);
+	await expect(page.locator('[data-pdf-page="3"] [data-pdf-canvas][data-rendered]')).toBeAttached();
+	const pg = (await page.locator('[data-pdf-page="3"]').boundingBox())!;
+	await page.locator('[data-pdf-viewport]').focus();
+	await page.keyboard.press('n');
+	await expect(page.locator('[data-pdf-annotation-note-emoji]')).toHaveCount(8);
+	await page.keyboard.press('4');
+	await expect(page.locator('[data-pdf-annotation-note-emoji="🤯"]')).toHaveAttribute('data-active', '');
+	await page.mouse.click(pg.x + 200, Math.max(pg.y, 160) + 200);
+	const marker = page.locator('[data-pdf-annotation-note] [data-part=emoji]');
+	await expect(marker).toHaveText('🤯');
+	await page.keyboard.press('2'); // pristine pending note: digits pick its emoji
+	await expect(marker).toHaveText('🤔');
+	await page.keyboard.type('Why?');
+	await page.keyboard.press('Enter');
+	await expect(page.locator('[data-pdf-margin-note] [data-part=emoji]')).toHaveText('🤔');
+});
+
 test('annotations are reachable with the keyboard', async ({ page }) => {
 	await page.goto('/demo/annotations-readonly');
 	await ready(page);

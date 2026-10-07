@@ -1,5 +1,6 @@
 export * from './model.js';
 export * from './colors.js';
+export * from './emoji.js';
 export * from './create.js';
 export * from './geometry.js';
 export * from './anchor.js';

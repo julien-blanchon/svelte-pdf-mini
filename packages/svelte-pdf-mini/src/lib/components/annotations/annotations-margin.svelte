@@ -177,7 +177,9 @@
 					onpointerenter={(e) => hoverAnnotation(store, a.id, e.currentTarget)}
 					onfocus={(e) => hoverAnnotation(store, a.id, e.currentTarget)}
 					onpointerleave={() => unhoverAnnotation(store, a.id)}
-					onclick={() => store.select(a.id)}><Icon name="comment" size={12} /></button
+					onclick={() => store.select(a.id)}
+					>{#if props.emoji}<span data-part="emoji" aria-hidden="true">{props.emoji}</span
+						>{:else}<Icon name="comment" size={12} />{/if}</button
 				>
 			{/each}
 		{:else}
@@ -209,6 +211,7 @@
 					{#if note}
 						{@render note(props)}
 					{:else}
+						{#if props.emoji}<span data-part="emoji" aria-hidden="true">{props.emoji}</span>{/if}
 						{#if a.label}<strong data-part="label">{a.label}</strong>{/if}
 						<Comment annotation={a} autofocus={props.editing && a.kind !== 'freetext'} />
 					{/if}

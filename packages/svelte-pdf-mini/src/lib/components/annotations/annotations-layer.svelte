@@ -495,9 +495,14 @@
 						style:--pdf-top="{box.top}%"
 						style:--pdf-width="{box.width}%"
 						style:--pdf-height="{box.height}%"
+						data-emoji={dataAttr(!!a.emoji && !noteIcon)}
 						style:--annotation-color={colorOf(a)}
 					>
-						{#if noteIcon}{@render noteIcon(snippetPropsFor(store, a, colorOf(a)))}{:else}
+						{#if noteIcon}{@render noteIcon(
+								snippetPropsFor(store, a, colorOf(a))
+							)}{:else if a.emoji}
+							<span data-part="emoji" aria-hidden="true">{a.emoji}</span>
+						{:else}
 							<svg viewBox="0 0 20 20" aria-hidden="true"
 								><path
 									d="M3 3h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3v-3H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"
@@ -634,6 +639,24 @@
 		[data-pdf-annotation-note] > svg {
 			width: 100%;
 			height: 100%;
+			filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3));
+		}
+		/* An emoji fills the note's box at every zoom (the box scales with the page). */
+		[data-pdf-annotation-note][data-emoji] {
+			container-type: size;
+			display: grid;
+			place-items: center;
+		}
+		[data-pdf-annotation-note] > [data-part='emoji'] {
+			font-family: var(
+				--pdf-emoji-font,
+				'Apple Color Emoji',
+				'Segoe UI Emoji',
+				'Noto Color Emoji',
+				sans-serif
+			);
+			font-size: 90cqmin;
+			line-height: 1;
 			filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3));
 		}
 		[data-pdf-annotation-label] {

@@ -32,7 +32,7 @@ Annotations are plain, JSON-serialisable objects in PDF user space. The store ho
 | --- | --- |
 | `highlight` · `underline` · `strikeout` · `squiggly` | `quads` (8 numbers per line: TL, TR, BL, BR) and `quote` (`exact`, `prefix`, `suffix`, offsets) |
 | `area` | `fill`, `fillOpacity`, `width`, optional `quote` — a box around a figure, equation or table |
-| `note` | `icon` (Comment, Note, Key…) |
+| `note` | `icon` (Comment, Note, Key…), `emoji` (shown instead of the icon; written as the closest `icon`, kept exactly in svelte-pdf-mini's private data) |
 | `freetext` | `text`, `font` (`family`, `size`, `bold`, `italic`), `align`, `textColor`, `fill` |
 | `ink` | `paths` (`points`, optional `pressure`), `width` |
 | `rect` · `ellipse` · `line` · `arrow` · `polygon` · `polyline` | `width`, `fill`, `fillOpacity`, `dash`, `points`, `lineEndings` |

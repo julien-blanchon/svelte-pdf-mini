@@ -11,6 +11,7 @@ export { default as Comment } from './annotations-comment.svelte';
 export { default as Markdown } from './annotations-markdown.svelte';
 export { default as Tool } from './annotations-tool.svelte';
 export { default as Color } from './annotations-color.svelte';
+export { default as NoteEmoji } from './annotations-note-emoji.svelte';
 export { default as Undo } from './annotations-undo.svelte';
 export { default as Redo } from './annotations-redo.svelte';
 export type {
@@ -26,6 +27,7 @@ export type {
 	AnnotationsCommentProps as CommentProps,
 	AnnotationsToolProps as ToolProps,
 	AnnotationsColorProps as ColorProps,
+	AnnotationsNoteEmojiProps as NoteEmojiProps,
 	AnnotationsHistoryButtonProps as UndoProps,
 	AnnotationsHistoryButtonProps as RedoProps,
 	AnnotationSnippetProps,

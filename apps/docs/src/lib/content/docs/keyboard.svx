@@ -42,4 +42,4 @@ Remap any action through the `keymap` prop (merged over the defaults):
 
 Combos are written `mod+z` (Ctrl on Windows and Linux, ⌘ on macOS), `shift+mod+z`, `alt+1` or plain keys (`h`, `Delete`, `ArrowLeft`). `comboLabel(store.keymap, 'tool.area')` prints one for tooltips (`B`, `⌘Z`, `Ctrl+Z`).
 
-<Callout>While typing in a note, plain digits type; use <kbd>Alt</kbd> + 1–9 to recolour. Enter keeps a new annotation (Shift + Enter adds a line), Esc discards it.</Callout>
+<Callout>While typing in a note, plain digits type; use <kbd>Alt</kbd> + 1–9 to recolour. With `noteEmojis` set, the digits pick a note emoji instead of a color while the note tool is active or notes are selected. Enter keeps a new annotation (Shift + Enter adds a line), Esc discards it.</Callout>

@@ -79,6 +79,15 @@ export interface AnnotationStoreOptions {
 	/** Getter → controlled. Custom colors picked by the user are appended (see `addColor`). */
 	palette?: PaletteColor[] | Getter<PaletteColor[]>;
 	onPaletteChange?: (palette: PaletteColor[]) => void;
+	/**
+	 * Emoji new notes can show instead of the icon (e.g. `defaultNoteEmojis`).
+	 * With the note tool active, or notes selected, keys 1–8 pick one of them
+	 * instead of a color. Default: none (notes show the icon, keys pick colors).
+	 */
+	noteEmojis?: MaybeGetter<readonly string[] | undefined>;
+	/** The active note emoji, one of `noteEmojis` (default the first). Getter → controlled. */
+	noteEmoji?: string | Getter<string | undefined>;
+	onNoteEmojiChange?: (emoji: string | undefined) => void;
 	author?: MaybeGetter<Author | undefined>;
 	/** Disable every edit. */
 	readonly?: MaybeGetter<boolean | undefined>;
@@ -155,6 +164,7 @@ export class AnnotationStore {
 	#tool: Synced<AnnotationTool>;
 	#color: Synced<string>;
 	#palette: Synced<PaletteColor[]>;
+	#noteEmoji: Synced<string | undefined>;
 	#opts: AnnotationStoreOptions;
 	#undo = $state.raw<AnnotationOp[][]>([]);
 	#redo = $state.raw<AnnotationOp[][]>([]);
@@ -167,6 +177,8 @@ export class AnnotationStore {
 	readonly foreign: ForeignPolicy = $derived(this.#opt('foreign') ?? 'editable');
 	readonly selectOn: 'click' | 'dblclick' = $derived(this.#opt('selectOn') ?? 'click');
 	readonly inkSmoothing: InkSmoothing = $derived(this.#opt('inkSmoothing') ?? 'smooth');
+	/** Emoji notes can show (the `noteEmojis` option); empty when notes only use the icon. */
+	readonly noteEmojis: readonly string[] = $derived(this.#opt('noteEmojis') ?? []);
 
 	readonly canUndo = $derived(this.#undo.length > 0 && !this.readonly);
 	readonly canRedo = $derived(this.#redo.length > 0 && !this.readonly);
@@ -212,6 +224,17 @@ export class AnnotationStore {
 	readonly activeColor = $derived(
 		this.palette.find((p) => p.key === this.color) ?? this.palette[0]
 	);
+	/**
+	 * Keys 1–8 (and `pickNoteEmoji`) pick a note emoji rather than a color: emoji
+	 * are offered and the note tool is active, or the selection (else the pending
+	 * annotation) is all notes. Toolbars show the emoji instead of colors then.
+	 */
+	readonly pickingNoteEmoji = $derived.by(() => {
+		if (!this.noteEmojis.length) return false;
+		const ids = this.#recolorTargets();
+		if (ids.length) return ids.every((id) => this.byId.get(id)?.kind === 'note');
+		return this.tool === 'note';
+	});
 	/** Replies grouped by parent id. */
 	readonly replies = $derived.by(() => {
 		const map = new Map<string, Annotation[]>();
@@ -243,6 +266,7 @@ export class AnnotationStore {
 			value: opts.palette ?? defaultPalette,
 			onChange: opts.onPaletteChange
 		});
+		this.#noteEmoji = new Synced({ value: opts.noteEmoji, onChange: opts.onNoteEmojiChange });
 
 		// Keyboard shortcuts on the viewport.
 		$effect(() => {
@@ -375,6 +399,14 @@ export class AnnotationStore {
 	}
 	set palette(p: PaletteColor[]) {
 		this.#palette.current = p;
+	}
+	/** The emoji new notes get: the chosen one if it is in `noteEmojis`, else the first. */
+	get noteEmoji(): string | undefined {
+		const emoji = this.#noteEmoji.current;
+		return emoji && this.noteEmojis.includes(emoji) ? emoji : this.noteEmojis[0];
+	}
+	set noteEmoji(emoji: string | undefined) {
+		this.#noteEmoji.current = emoji;
 	}
 
 	/**
@@ -515,6 +547,20 @@ export class AnnotationStore {
 		const c = this.palette.find((p) => p.key === key);
 		if (!c) return;
 		this.batch(() => ids.forEach((id) => this.update(id, { color: c.rgb, paletteKey: c.key })));
+	}
+
+	/** Set the emoji of notes (other kinds are skipped; undefined = back to the icon). */
+	setNoteEmoji(ids: string[], emoji: string | undefined) {
+		this.batch(() =>
+			ids.forEach((id) => this.byId.get(id)?.kind === 'note' && this.update(id, { emoji }))
+		);
+	}
+
+	/** Make `emoji` the active note emoji, and give it to the selected (else pending) notes. */
+	pickNoteEmoji(emoji: string) {
+		this.noteEmoji = emoji;
+		const ids = this.#recolorTargets();
+		if (ids.length) this.setNoteEmoji(ids, emoji);
 	}
 
 	/** Add a reply to an annotation's thread. */
@@ -732,8 +778,9 @@ export class AnnotationStore {
 	 * Keyboard handling for a note editor (popover / margin textarea) so the
 	 * pending flow works while it has focus:
 	 * - Enter keeps (Shift+Enter = new line), Esc discards a pending one / stops editing;
-	 * - before anything is typed: digits 1–9 recolor, Backspace/Delete discard;
-	 * - Alt+1–9 always recolor.
+	 * - before anything is typed: digits 1–9 recolor (pick an emoji for an emoji
+	 *   note), Backspace/Delete discard;
+	 * - Alt+1–9 always recolor (or pick).
 	 * Returns true when the key was handled.
 	 */
 	handleNoteKey(e: KeyboardEvent, annotation: Annotation): boolean {
@@ -741,7 +788,15 @@ export class AnnotationStore {
 		const pristine = pending && !this.pendingTyped;
 		const digit = colorDigit(e);
 		if (digit && (e.altKey || (pristine && !e.ctrlKey && !e.metaKey && !e.shiftKey))) {
-			const c = this.palette[Number(digit) - 1];
+			const emojiNote = annotation.kind === 'note' && this.noteEmojis.length > 0;
+			const emoji = emojiNote ? this.noteEmojis[Number(digit) - 1] : undefined;
+			if (emoji) {
+				e.preventDefault();
+				this.noteEmoji = emoji;
+				this.setNoteEmoji([annotation.id], emoji);
+				return true;
+			}
+			const c = emojiNote ? undefined : this.palette[Number(digit) - 1];
 			if (c) {
 				e.preventDefault();
 				this.color = c.key;
@@ -843,6 +898,7 @@ export class AnnotationStore {
 				author: this.author
 			}),
 			...createDefaults(kind),
+			...(kind === 'note' && this.noteEmoji ? { emoji: this.noteEmoji } : {}),
 			kind,
 			...fields
 		} as Annotation;
@@ -918,7 +974,16 @@ export class AnnotationStore {
 		const colorAction = matchAction(e, km, COLOR_ACTIONS);
 		// Colors with Alt work even while typing a note.
 		if (colorAction && (!typing || e.altKey)) {
-			const c = this.palette[COLOR_ACTIONS.indexOf(colorAction)];
+			const index = COLOR_ACTIONS.indexOf(colorAction);
+			if (this.pickingNoteEmoji) {
+				const emoji = this.noteEmojis[index];
+				if (emoji) {
+					e.preventDefault();
+					this.pickNoteEmoji(emoji);
+				}
+				return;
+			}
+			const c = this.palette[index];
 			if (c) {
 				e.preventDefault();
 				this.color = c.key;
