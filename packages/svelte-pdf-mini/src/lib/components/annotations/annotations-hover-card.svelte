@@ -100,6 +100,9 @@
 			{#if children}
 				{@render children(snippetProps)}
 			{:else}
+				{#if snippetProps.emoji}<span data-part="emoji" aria-hidden="true"
+						>{snippetProps.emoji}</span
+					>{/if}
 				{#if annotation.label}<strong data-part="label">{annotation.label}</strong>{/if}
 				{#if annotation.contents}<div data-part="contents">
 						<Markdown source={annotation.contents} />

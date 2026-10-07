@@ -14,6 +14,9 @@
 		onColorChange,
 		palette = $bindable(defaultPalette),
 		onPaletteChange,
+		noteEmojis,
+		noteEmoji = $bindable(),
+		onNoteEmojiChange,
 		annotationsVisible,
 		notesVisible,
 		colorFilter,
@@ -53,6 +56,12 @@
 			onPaletteChange: (p) => {
 				palette = p;
 				onPaletteChange?.(p);
+			},
+			noteEmojis: () => noteEmojis,
+			noteEmoji: () => noteEmoji,
+			onNoteEmojiChange: (e) => {
+				noteEmoji = e;
+				onNoteEmojiChange?.(e);
 			},
 			author: () => author,
 			readonly: () => readonly,

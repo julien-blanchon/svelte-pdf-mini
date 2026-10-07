@@ -33,6 +33,7 @@ description: Highlights, boxes, notes, ink, shapes and free text — with side n
 ## Usage
 
 - **Workflow:** text selection opens the menu; every creation is pending (Enter keeps, Esc discards); tools are one-shot; editing needs a double-click. See [Annotation workflow](/docs/annotation-workflow).
+- **Note emoji:** pass `noteEmojis` (e.g. `defaultNoteEmojis`: 💬 🤔 💡 🤯 🧐 🤨 😍 📌) and notes show an emoji instead of the icon. While the note tool is active, or notes are selected, keys 1–8 pick one (`store.pickingNoteEmoji`); `bind:noteEmoji` holds the active one and `Annotations.NoteEmoji` is its toolbar button.
 - **Read-only:** `readonly`, per-annotation `locked`, and `foreign` (`'editable'` · `'readonly'` · `'hidden'`) for annotations found in the PDF.
 - **Export:** `store.exportPdf()`, `toMarkdown()`, `toJSON()`; `importFromPdf` loads annotations stored in the file. See [PDF export & import](/docs/pdf-export-import).
 - **Model:** see [Annotation model](/docs/annotation-model).

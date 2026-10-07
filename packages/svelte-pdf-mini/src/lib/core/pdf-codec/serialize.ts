@@ -124,8 +124,13 @@ export function annotationsToMarkdown(list: Annotation[], opts: MarkdownOptions 
 			group = g;
 			lines.push(`## ${g}`, '');
 		}
-		const meta = [`p. ${pageLabel(a.page)}`, KIND_LABEL[a.kind]];
-		const color = a.paletteKey ? palette.get(a.paletteKey) : undefined;
+		const emoji = a.kind === 'note' ? a.emoji : undefined;
+		// A note's emoji stands in for its color.
+		const meta = [
+			`p. ${pageLabel(a.page)}`,
+			emoji ? `${emoji} ${KIND_LABEL[a.kind]}` : KIND_LABEL[a.kind]
+		];
+		const color = a.paletteKey && !emoji ? palette.get(a.paletteKey) : undefined;
 		if (color) meta.push(color.toLowerCase());
 		if (a.label) meta.push(`*${a.label}*`);
 		if (a.author?.name) meta.push(a.author.name);

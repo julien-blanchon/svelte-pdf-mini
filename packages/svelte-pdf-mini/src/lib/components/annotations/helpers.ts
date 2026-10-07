@@ -15,6 +15,11 @@ export function hasNote(a: Annotation): boolean {
 	return !!(a.contents?.trim() || (a.label && a.kind !== 'area'));
 }
 
+/** A note's emoji, if it has one. */
+function noteEmojiOf(a: Annotation): string | undefined {
+	return a.kind === 'note' ? a.emoji : undefined;
+}
+
 /** The quoted text of a markup (or the text of a text box), '' otherwise. */
 export function quoteOf(a: Annotation): string {
 	if ('quote' in a && a.quote?.exact) return a.quote.exact;
@@ -68,7 +73,8 @@ export function snippetPropsFor(
 		selected: store.isSelected(a.id),
 		hovered: store.hoveredId === a.id,
 		editable: store.canEdit(a),
-		color
+		color,
+		emoji: noteEmojiOf(a)
 	};
 }
 

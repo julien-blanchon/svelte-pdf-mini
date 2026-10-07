@@ -77,6 +77,11 @@ export interface NoteAnnotation extends AnnotationBase {
 	kind: 'note';
 	/** Icon name (PDF /Name): Comment, Note, Key, Help, Insert, Paragraph… */
 	icon?: string;
+	/**
+	 * An emoji shown as the marker instead of the icon (one grapheme, e.g. "🤔").
+	 * Written to the PDF as the closest standard /Name (see `noteIconFor`).
+	 */
+	emoji?: string;
 }
 
 /** A box drawn around a region (figure, equation, table…), usually with a side note. */

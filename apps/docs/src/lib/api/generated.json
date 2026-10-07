@@ -1372,6 +1372,26 @@
 							"bindable": false
 						},
 						{
+							"name": "noteEmojis",
+							"type": "readonly string[]",
+							"description": "Emoji notes can show instead of the icon (e.g. `defaultNoteEmojis`): keys\n1–8 pick one while the note tool is active. Default: none.",
+							"required": false,
+							"bindable": false
+						},
+						{
+							"name": "noteEmoji",
+							"type": "string",
+							"description": "Active note emoji (one of `noteEmojis`; default the first). Bindable.",
+							"required": false,
+							"bindable": true
+						},
+						{
+							"name": "onNoteEmojiChange",
+							"type": "(emoji: string | undefined) => void",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "annotationsVisible",
 							"type": "boolean",
 							"description": "Show annotations (also `store.annotationsVisible`).",
@@ -1511,6 +1531,8 @@
 					"dataAttributes": [
 						"data-active",
 						"data-drawing",
+						"data-emoji",
+						"data-part",
 						"data-pdf-annotation-focus",
 						"data-pdf-annotation-label",
 						"data-pdf-annotation-layer",
@@ -1685,6 +1707,13 @@
 							"description": "CSS color for the current page theme.",
 							"required": true,
 							"bindable": false
+						},
+						{
+							"name": "emoji",
+							"type": "string | undefined",
+							"description": "A note's emoji (shown instead of its icon), if any.",
+							"required": true,
+							"bindable": false
 						}
 					],
 					"dataAttributes": [
@@ -1761,6 +1790,13 @@
 							"name": "color",
 							"type": "string",
 							"description": "CSS color for the current page theme.",
+							"required": true,
+							"bindable": false
+						},
+						{
+							"name": "emoji",
+							"type": "string | undefined",
+							"description": "A note's emoji (shown instead of its icon), if any.",
 							"required": true,
 							"bindable": false
 						},
@@ -2071,6 +2107,32 @@
 					"dataAttributes": [
 						"data-active",
 						"data-pdf-annotation-color"
+					]
+				},
+				{
+					"name": "NoteEmoji",
+					"component": "Annotations.NoteEmoji",
+					"file": "components/annotations/annotations-note-emoji.svelte",
+					"element": "button",
+					"props": [
+						{
+							"name": "emoji",
+							"type": "string",
+							"required": true,
+							"bindable": false
+						}
+					],
+					"snippetProps": [
+						{
+							"name": "active",
+							"type": "boolean",
+							"required": true,
+							"bindable": false
+						}
+					],
+					"dataAttributes": [
+						"data-active",
+						"data-pdf-annotation-note-emoji"
 					]
 				},
 				{

@@ -27,6 +27,7 @@ import type {
 	StampAnnotation
 } from '../annotations/model.js';
 import { ANNOTATION_SCHEMA_VERSION, isTextMarkup } from '../annotations/model.js';
+import { noteIconFor } from '../annotations/emoji.js';
 import { quadsBounds } from '../text/text-index.js';
 import { appearanceOps, lineEndingsOf, type GraphicsState } from './appearance.js';
 import { lastXrefIsStream, openForWrite } from './open.js';
@@ -565,7 +566,8 @@ async function buildAnnotDict(
 			entries.QuadPoints = a.quads.flat();
 			break;
 		case 'note':
-			entries.Name = a.icon ?? 'Comment';
+			// The emoji itself is in /SPM_Data; other viewers get the closest standard icon.
+			entries.Name = a.emoji ? noteIconFor(a.emoji) : (a.icon ?? 'Comment');
 			entries.Open = false;
 			break;
 		case 'area':

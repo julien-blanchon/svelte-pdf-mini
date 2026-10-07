@@ -41,6 +41,14 @@ export interface AnnotationsRootProps {
 	/** Palette (bindable): custom colors picked by users are appended to it. */
 	palette?: PaletteColor[];
 	onPaletteChange?: (palette: PaletteColor[]) => void;
+	/**
+	 * Emoji notes can show instead of the icon (e.g. `defaultNoteEmojis`): keys
+	 * 1–8 pick one while the note tool is active. Default: none.
+	 */
+	noteEmojis?: readonly string[];
+	/** Active note emoji (one of `noteEmojis`; default the first). Bindable. */
+	noteEmoji?: string;
+	onNoteEmojiChange?: (emoji: string | undefined) => void;
 	/** Show annotations (also `store.annotationsVisible`). */
 	annotationsVisible?: boolean;
 	/** Show side notes and gutter markers (also `store.notesVisible`). */
@@ -80,6 +88,8 @@ export interface AnnotationSnippetProps {
 	editable: boolean;
 	/** CSS color for the current page theme. */
 	color: string;
+	/** A note's emoji (shown instead of its icon), if any. */
+	emoji: string | undefined;
 }
 
 export type AnnotationsLayerProps = DivPartProps<{
@@ -176,6 +186,7 @@ export type AnnotationsColorProps = ButtonPartProps<
 	{ color: string },
 	{ active: boolean; swatch: PaletteColor | undefined }
 >;
+export type AnnotationsNoteEmojiProps = ButtonPartProps<{ emoji: string }, { active: boolean }>;
 export type AnnotationsHistoryButtonProps = ButtonPartProps<
 	Record<never, never>,
 	{ disabled: boolean }
