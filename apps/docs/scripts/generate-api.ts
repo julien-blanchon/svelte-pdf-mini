@@ -240,6 +240,6 @@ for (const m of css.matchAll(/(--pdf-[a-z0-9-]+)\s*:\s*([^;]+);/g)) if (!cssVars
 const cssVariables = [...cssVars].map(([name, fallback]) => ({ name, default: fallback })).sort((a, b) => a.name.localeCompare(b.name));
 
 mkdirSync(dirname(out), { recursive: true });
-writeFileSync(out, JSON.stringify({ generatedAt: new Date().toISOString().slice(0, 10), namespaces, cssVariables }, null, '\t') + '\n');
+writeFileSync(out, JSON.stringify({ namespaces, cssVariables }, null, '\t') + '\n');
 const count = namespaces.reduce((n, ns) => n + ns.parts.length, 0);
 console.log(`api: ${namespaces.length} namespaces, ${count} parts, ${cssVariables.length} CSS variables`);
