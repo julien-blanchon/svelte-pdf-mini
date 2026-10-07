@@ -112,7 +112,7 @@
 
 <style>
 	@layer svelte-pdf-mini {
-		/* Positioned by floating-ui (fixed strategy); never in the way of the pointer. */
+		/* Anchored to the annotation (see `float`); never in the way of the pointer. */
 		:global(:where([data-pdf-annotation-hover-card])) {
 			position: fixed;
 			left: 0;

@@ -101,7 +101,7 @@ No setup is needed in SvelteKit, including `adapter-static`. This site is fully 
 | `pdfjs-dist` worker | dynamic (`?url` asset) | first document load |
 | `@cantoo/pdf-lib` | dynamic `import()` | first `exportPdf` / `importAnnotations` call |
 | `marked`, `katex` (+ CSS), `dompurify` | dynamic `import()` | first annotation comment that contains Markdown or `$…$` maths |
-| `@floating-ui/dom`, `perfect-freehand`, `runed`, `svelte-toolbelt` | static | always (small) |
+| `perfect-freehand`, `runed`, `svelte-toolbelt` | static | always (small) |
 
 A plain viewer never downloads pdf-lib (~580 KB minified) or KaTeX (~260 KB minified). Your bundler splits them into their own chunks.
 

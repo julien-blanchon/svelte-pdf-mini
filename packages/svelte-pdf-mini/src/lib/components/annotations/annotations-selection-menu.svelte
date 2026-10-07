@@ -4,7 +4,7 @@
 	import type { TextMarkupKind } from '../../core/annotations/model.js';
 	import { copyText } from '../../core/document/clipboard.js';
 	import { on } from 'svelte/events';
-	import { float, virtualRef } from '../../internal/floating.js';
+	import { float } from '../../internal/floating.js';
 	import { handleRovingKey } from '../../internal/roving.js';
 	import Icon from '../../internal/Icon.svelte';
 	import type { IconName } from '../../internal/icons.js';
@@ -54,16 +54,10 @@
 		const floating = el;
 		const rect = sel.anchorRect;
 		if (!open || !floating || !rect) return;
-		// Placed once, when the selection is made: centered above the selected text, below
-		// it when there is no room above (within the pages' area, never over the app's
-		// toolbars); it then stays put while the pages scroll.
-		return float(
-			virtualRef(() => rect, store.viewer.scrollEl ?? undefined),
-			floating,
-			placement,
-			8,
-			{ clamp: true, boundary: store.viewer.scrollEl ?? undefined }
-		);
+		// Centered above the selected text, below it when there is no room above (within
+		// the pages' area, never over the app's toolbars); it moves with the text.
+		const scrollEl = store.viewer.scrollEl;
+		return float(rect, floating, placement, 8, { scroller: scrollEl, boundary: scrollEl });
 	});
 
 	const markup = (kind: TextMarkupKind = 'highlight', color?: string) => {
@@ -185,7 +179,7 @@
 
 <style>
 	@layer svelte-pdf-mini {
-		/* Positioned by floating-ui (fixed strategy). */
+		/* Anchored to the selected text (see `float`). */
 		:global(:where([data-pdf-selection-menu])) {
 			position: fixed;
 			left: 0;

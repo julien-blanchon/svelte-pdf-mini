@@ -48,7 +48,9 @@
 	const shown = $derived(open || forceMount ? (annotation ?? lastAnnotation) : null);
 
 	$effect(() => {
-		if (!open || !el || !reference) return;
+		if (!open || !el || !reference || !annotation) return;
+		// Re-anchored when the annotation moves or is reshaped.
+		void annotation.rect;
 		return float(reference, el, placement);
 	});
 
@@ -216,7 +218,7 @@
 
 <style>
 	@layer svelte-pdf-mini {
-		/* Positioned by floating-ui (fixed strategy). */
+		/* Anchored to the annotation (see `float`). */
 		:global(:where([data-pdf-annotation-popover])) {
 			position: fixed;
 			left: 0;
