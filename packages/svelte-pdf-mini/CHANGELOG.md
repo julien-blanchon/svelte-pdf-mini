@@ -1,5 +1,23 @@
 # svelte-pdf-mini
 
+## 0.9.0
+
+### Minor Changes
+
+- `Paper.Root` takes `cache` (a `KeyValueStore`, e.g. `indexedDbStore('my-app', 'papers')`: a paper opened again isn't analyzed again) and `isolate`. Files over 32 MB are analyzed on the rendering worker instead of a second copy (not parsed twice).
+
+- `PdfSource` accepts `{ data, transfer: true }`: the bytes are handed over to pdf.js's worker instead of copied (the caller's buffer is emptied), so a large PDF isn't held twice (a 92 MB paper: ~1.4 GB → ~1.0 GB in WKWebView).
+
+- Zoom gestures (pinch, Ctrl/⌘ + wheel, animated zooms) show as a CSS transform of the pages while they run, then lay out and draw once at the end, keeping the point under the gesture in place: 60 fps instead of ~35 on a 99-page paper in WKWebView. `transformZoom` (default true) turns it off.
+
+### Patch Changes
+
+- Free what pdf.js keeps for a page (operator list, decoded images) once it leaves the render range, after a thumbnail or minimap render, and after paper analysis: an image-heavy paper no longer stays in memory whole (a 92 MB paper: ~2 GB → ~1.1 GB in WKWebView). Pages near the viewport are pinned, so thumbnails never free them.
+
+- Importing a PDF's annotations skips pdf-lib when pdf.js finds none to import (no supported annotation, no embedded model, not encrypted): no copy of the whole file and no main-thread parse when opening most papers.
+
+- Figure, link, cross-reference and crop previews free their page after rendering, and render (like thumbnails) with the pages' annotation mode: a page shown in both is no longer parsed and decoded twice. Analysis on the shown document keeps the pages on screen. `PdfDocument.renderRegion` takes `{ signal, theme }`.
+
 ## 0.8.1
 
 ### Patch Changes
