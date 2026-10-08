@@ -41,7 +41,7 @@ export type ViewerRootProps = DivPartProps<
 		firstPageAlone?: boolean;
 		/** Ease zoom changes (wheel, buttons, fit modes, zoomTo). Default true. */
 		smoothZoom?: boolean;
-		/** Zoom gestures show as a transform, laid out and drawn once at the end. Default true. */
+		/** Zoom gestures show as a transform, laid out and drawn once at the end (smoother on long documents; fixed-size parts scale along until it lands). Default false. */
 		transformZoom?: boolean;
 		/** Render zoomed-out pages at up to 2× so quick zoom-ins stay sharp. Default true. */
 		oversampling?: boolean;

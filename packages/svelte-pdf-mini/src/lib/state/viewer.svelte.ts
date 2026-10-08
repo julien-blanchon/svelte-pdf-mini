@@ -95,7 +95,8 @@ export interface ViewerOptions {
 	smoothZoom?: MaybeGetter<boolean | undefined>;
 	/**
 	 * Zoom gestures (pinch, wheel, buttons) show as a CSS transform of the pages while they
-	 * run, laid out and drawn again once at the end: no relayout per frame. Default true.
+	 * run, laid out and drawn again once at the end: no relayout per frame. Fixed-size parts
+	 * (notes, handles, gaps) scale along until it lands. Default false.
 	 */
 	transformZoom?: MaybeGetter<boolean | undefined>;
 	/** Render zoomed-out pages at up to 2× so zooming in stays sharp. Default true. */
@@ -1045,7 +1046,7 @@ export class ViewerState {
 	#previewZoom(z: number, anchor: ClientPoint | null): boolean {
 		const scroller = this.scrollEl;
 		const content = this.contentEl;
-		if (!(this.#opt('transformZoom') ?? true) || !scroller || !content) return false;
+		if (!(this.#opt('transformZoom') ?? false) || !scroller || !content) return false;
 		const before = this.zoom;
 		this.#setZoom(z);
 		const f = this.zoom / before;
