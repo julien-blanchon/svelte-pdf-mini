@@ -4,6 +4,7 @@
  * by every viewer; evicted bitmaps are `close()`d.
  */
 import { getPdfConfig } from '../document/pdfjs.js';
+import { blendableContext } from '../document/render.js';
 import { LruCache } from './lru.js';
 
 export interface CachedBitmap {
@@ -50,6 +51,6 @@ export function canvasFromBitmap(bitmap: ImageBitmap): HTMLCanvasElement {
 	canvas.height = bitmap.height;
 	canvas.style.width = '100%';
 	canvas.style.height = '100%';
-	canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
+	blendableContext(canvas)?.drawImage(bitmap, 0, 0);
 	return canvas;
 }

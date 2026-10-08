@@ -16,6 +16,27 @@ export interface RenderPageOptions {
 }
 
 /**
+ * WebKitGTK (Linux: Epiphany, Tauri) composites GPU canvases on their own
+ * layer and ignores their `mix-blend-mode` there: a page bitmap blended over
+ * the highlight underlay (or the theme's page color) paints opaque instead.
+ * A canvas that reads back often stays in software and is painted with the
+ * page, where blending works. Chromium and Safari blend GPU canvases fine.
+ */
+const softwareCanvas =
+	typeof navigator !== 'undefined' &&
+	/AppleWebKit/.test(navigator.userAgent) &&
+	/Linux|X11/.test(navigator.userAgent) &&
+	!/Chrom(e|ium)|Android/.test(navigator.userAgent);
+
+/** The 2D context of a canvas that may be blended over the page (see `softwareCanvas`). */
+export function blendableContext(
+	canvas: HTMLCanvasElement,
+	opts: CanvasRenderingContext2DSettings = {}
+) {
+	return canvas.getContext('2d', softwareCanvas ? { ...opts, willReadFrequently: true } : opts);
+}
+
+/**
  * Render a page into a *new* canvas (double-buffering: the caller swaps it in
  * once complete, so the old bitmap stays visible while re-rendering).
  */
@@ -32,7 +53,7 @@ export async function renderPageToCanvas(opts: RenderPageOptions): Promise<HTMLC
 	canvas.style.height = '100%';
 	canvas.setAttribute('aria-hidden', 'true');
 
-	let ctx = canvas.getContext('2d', { alpha: false })!;
+	let ctx = blendableContext(canvas, { alpha: false })!;
 	if (theme.wrapContext) ctx = theme.wrapContext(ctx);
 
 	const task = page.render({
@@ -99,7 +120,7 @@ export async function renderRegionToCanvas(opts: {
 	canvas.style.width = `${cssWidth}px`;
 	canvas.style.height = `${(h / w) * cssWidth}px`;
 	opts.signal?.throwIfAborted();
-	let ctx = canvas.getContext('2d', { alpha: false })!;
+	let ctx = blendableContext(canvas, { alpha: false })!;
 	if (theme?.wrapContext) ctx = theme.wrapContext(ctx);
 	const task = page.render({
 		// pdf.js ignores `canvasContext` when `canvas` is set: pass only the (wrapped) context then.
