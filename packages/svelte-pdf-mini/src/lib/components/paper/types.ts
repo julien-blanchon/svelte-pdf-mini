@@ -1,4 +1,5 @@
 import type { Snippet } from 'svelte';
+import type { KeyValueStore } from '../../core/cache/kv.js';
 import type {
 	CrossRef,
 	Figure,
@@ -16,6 +17,10 @@ export interface PaperRootProps {
 	/** Analyze automatically on load. Default true. */
 	auto?: boolean;
 	onAnalyzed?: (model: PaperModel) => void;
+	/** Keep analyses across sessions, by document fingerprint (e.g. `indexedDbStore('my-app', 'papers')`): a paper opened again isn't analyzed again. */
+	cache?: KeyValueStore<PaperModel> | null;
+	/** Analyze on a second pdf.js worker, off the rendering one (not for very large files). Default true. */
+	isolate?: boolean;
 	paper?: PaperState;
 	children?: Snippet<[{ paper: PaperState }]>;
 }

@@ -336,6 +336,9 @@ function groupByPage<T extends { page: number }>(items: T[]) {
 	return map;
 }
 
+/** Above this size, a paper is analyzed on the rendering worker rather than a copy. */
+const ISOLATE_MAX_BYTES = 32 * 2 ** 20;
+
 /**
  * A second copy of the document on its own pdf.js worker (thread), for
  * analysis work that would otherwise sit in the rendering worker's queue.
@@ -343,6 +346,8 @@ function groupByPage<T extends { page: number }>(items: T[]) {
 async function openIsolated(doc: PDFDocumentProxy) {
 	// An app-provided `workerPort` is the only worker we may use: analyze on it.
 	if (typeof Worker === 'undefined' || getPdfConfig().workerPort) return null;
+	// A very large file (scans, image-heavy papers) isn't copied and parsed a second time.
+	if ((await doc.getDownloadInfo()).length > ISOLATE_MAX_BYTES) return null;
 	const pdfjs = await loadPdfJs();
 	const data = await doc.getData();
 	const worker = new pdfjs.PDFWorker();
