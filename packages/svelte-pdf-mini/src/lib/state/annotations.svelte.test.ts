@@ -329,6 +329,47 @@ describe('AnnotationStore and the PDF', () => {
 	});
 });
 
+describe('importing from the PDF', () => {
+	/** A store over a document pdf.js describes so (annotations, attachments, info); counts getData calls. */
+	async function importWith(answers: {
+		annotations?: unknown[];
+		attachments?: object | null;
+		info?: object;
+	}) {
+		const viewer = fakeViewer(await foreignPdf());
+		let reads = 0;
+		const doc = viewer.document as unknown as { proxy: object; getData: () => Promise<Uint8Array> };
+		const getData = doc.getData;
+		doc.getData = () => (reads++, getData());
+		doc.proxy = {
+			getMetadata: async () => ({ info: answers.info ?? {} }),
+			getAttachments: async () => answers.attachments ?? null,
+			getAnnotationsByType: async () => answers.annotations ?? []
+		};
+		let store!: AnnotationStore;
+		const cleanup = $effect.root(() => {
+			store = new AnnotationStore({ viewer });
+		});
+		flushSync();
+		await store.importFromPdf();
+		cleanup();
+		return { reads, store };
+	}
+
+	it('skips pdf-lib (and the copy of the file) when pdf.js finds nothing to import', async () => {
+		const { reads, store } = await importWith({});
+		expect(reads).toBe(0);
+		expect(store.annotations).toEqual([]);
+		expect(store.saveSupport).toEqual({ encrypted: false, canSave: true });
+	});
+
+	it('imports when there are annotations, our embedded model, or encryption', async () => {
+		expect((await importWith({ annotations: [{}] })).reads).toBe(1);
+		expect((await importWith({ attachments: { 'svelte-pdf-mini.json': {} } })).reads).toBe(1);
+		expect((await importWith({ info: { EncryptFilterName: 'Standard' } })).reads).toBe(1);
+	});
+});
+
 describe('note markdown', () => {
 	it('renders markdown and maths, and strips scripts', async () => {
 		const html = await renderMarkdown(

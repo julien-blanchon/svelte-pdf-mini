@@ -41,6 +41,8 @@ import {
 	type ImportResult,
 	type SaveSupport
 } from '../core/pdf-codec/index.js';
+import { EMBEDDED_FILE_NAME } from '../core/pdf-codec/shared.js';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { isMessageKey } from '../core/i18n/messages.js';
 import { Synced } from '../internal/synced.svelte.js';
 import { readOption, type Getter, type MaybeGetter, type Resolved } from '../internal/types.js';
@@ -607,10 +609,14 @@ export class AnnotationStore {
 		const doc = this.viewer.document;
 		const proxy = doc.proxy;
 		if (!proxy) return null;
-		const result = await importAnnotations(await doc.getData(), {
-			foreign: this.foreign !== 'hidden',
-			textOf: async (page, quads) => (await doc.getPageText(page)).textInQuads(quads)
-		});
+		// Most papers carry none: then pdf-lib (a copy of the whole file, parsed on the main
+		// thread) isn't needed, pdf.js (already open, on its worker) says so.
+		const result = (await nothingToImport(proxy))
+			? NOTHING_IMPORTED
+			: await importAnnotations(await doc.getData(), {
+					foreign: this.foreign !== 'hidden',
+					textOf: async (page, quads) => (await doc.getPageText(page)).textInQuads(quads)
+				});
 		// Another document opened meanwhile: these annotations belong to the old one.
 		if (doc.proxy !== proxy) return null;
 		this.load(result.annotations);
@@ -1196,4 +1202,36 @@ function attachPan(scroller: HTMLElement): () => void {
 		onUp();
 		delete scroller.dataset.pan;
 	};
+}
+
+/** pdf.js annotation types `importAnnotations` reads (TEXT, FREETEXT, LINE, SQUARE, CIRCLE, POLYGON, POLYLINE, HIGHLIGHT, UNDERLINE, SQUIGGLY, STRIKEOUT, STAMP, INK). */
+const IMPORTABLE_TYPES = new Set([1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]);
+
+const NOTHING_IMPORTED: ImportResult = {
+	annotations: [],
+	foreign: 0,
+	unsupported: 0,
+	warnings: [],
+	saveSupport: { encrypted: false, canSave: true }
+};
+
+/**
+ * Whether the PDF surely has nothing to import: no annotation of a type we read and no
+ * embedded model. Encrypted files go through pdf-lib anyway (it decides if they can be saved).
+ */
+async function nothingToImport(proxy: PDFDocumentProxy): Promise<boolean> {
+	try {
+		const [{ info }, attachments, annotations] = await Promise.all([
+			proxy.getMetadata(),
+			proxy.getAttachments() as Promise<Record<string, { filename?: string }> | null>,
+			proxy.getAnnotationsByType(IMPORTABLE_TYPES, new Set()) as Promise<unknown[] | null>
+		]);
+		if ((info as { EncryptFilterName?: string | null }).EncryptFilterName) return false;
+		const embedded = Object.entries(attachments ?? {}).some(
+			([name, file]) => name === EMBEDDED_FILE_NAME || file?.filename === EMBEDDED_FILE_NAME
+		);
+		return !embedded && Array.isArray(annotations) && annotations.length === 0;
+	} catch {
+		return false;
+	}
 }
