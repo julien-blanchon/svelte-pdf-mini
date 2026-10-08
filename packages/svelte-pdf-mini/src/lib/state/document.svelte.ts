@@ -420,6 +420,14 @@ async function toParams(
 	// pdf.js transfers (detaches) the buffer it receives, so pass a copy.
 	if (src instanceof ArrayBuffer) return { data: new Uint8Array(src.slice(0)) };
 	if (src instanceof Uint8Array) return { data: src.slice() };
+	if ('transfer' in src) {
+		// Handed over once: pdf.js detaches the buffer.
+		if (!src.data.byteLength)
+			throw new Error(
+				'svelte-pdf-mini: these bytes were already handed over (a `transfer` source loads once)'
+			);
+		return { data: src.data };
+	}
 	return {
 		url: String(src.url),
 		httpHeaders: src.httpHeaders,

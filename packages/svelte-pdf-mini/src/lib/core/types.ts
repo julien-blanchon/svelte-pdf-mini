@@ -10,7 +10,13 @@ export type PdfSource =
 	| Uint8Array
 	| Blob
 	| PDFDocumentProxy
-	| { url: string | URL; httpHeaders?: Record<string, string>; withCredentials?: boolean };
+	| { url: string | URL; httpHeaders?: Record<string, string>; withCredentials?: boolean }
+	/**
+	 * Bytes handed over to pdf.js's worker instead of copied: the caller's buffer is
+	 * emptied (detached), so only the worker holds the file (a large PDF isn't in memory
+	 * twice). Keep the object stable: loading it again needs the bytes again.
+	 */
+	| { data: Uint8Array; transfer: true };
 
 export type DocumentStatus = 'idle' | 'loading' | 'password' | 'ready' | 'error';
 
