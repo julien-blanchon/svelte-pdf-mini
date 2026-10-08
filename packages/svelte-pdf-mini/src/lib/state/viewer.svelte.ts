@@ -93,6 +93,11 @@ export interface ViewerOptions {
 	wheelZoom?: MaybeGetter<boolean | undefined>;
 	/** Ease zoom changes (wheel, buttons, keys, fit modes, zoomTo). Default true (off with reduced motion). */
 	smoothZoom?: MaybeGetter<boolean | undefined>;
+	/**
+	 * Zoom gestures (pinch, wheel, buttons) show as a CSS transform of the pages while they
+	 * run, laid out and drawn again once at the end: no relayout per frame. Default true.
+	 */
+	transformZoom?: MaybeGetter<boolean | undefined>;
 	/** Render zoomed-out pages at up to 2× so zooming in stays sharp. Default true. */
 	oversampling?: MaybeGetter<boolean | undefined>;
 	/**
@@ -240,7 +245,15 @@ export class ViewerState {
 	/** Browser text selection mapped to the text index. */
 	readonly selection: TextSelectionState;
 
-	readonly scale = $derived(this.zoom * PDF_TO_CSS);
+	/** Zoom the pages are laid out and drawn at while a zoom gesture shows as a transform (else null). */
+	#previewFrom = $state<number | null>(null);
+	/** The transform showing that gesture: visual = translate(tx, ty) scale(k) of the laid-out pages. */
+	#preview = $state.raw<{ k: number; tx: number; ty: number } | null>(null);
+	/** Where the gesture last zoomed around (client coordinates). */
+	#previewPoint: ClientPoint | null = null;
+	/** An anchor computed for the next scale change (instead of measuring one). */
+	#forcedAnchor: Anchor | null = null;
+	readonly scale = $derived((this.#previewFrom ?? this.zoom) * PDF_TO_CSS);
 	readonly pageTheme = $derived(resolvePageTheme(this.#opt('pageTheme')));
 	/** Id of the part of the theme drawn into page bitmaps ('none' for CSS-only themes). */
 	readonly renderThemeId = $derived.by(() => {
@@ -295,8 +308,10 @@ export class ViewerState {
 	#anim = new ZoomAnimator(
 		() => this.zoom,
 		(zoom, anchor) => {
-			this.#pendingAnchor = anchor;
 			this.#markZooming();
+			if (!this.#anim.keepMode && this.#previewZoom(zoom, anchor)) return;
+			this.#commitPreview();
+			this.#pendingAnchor = anchor;
 			this.#setZoom(zoom);
 		}
 	);
@@ -492,6 +507,7 @@ export class ViewerState {
 	set zoom(z: number) {
 		if (this.zoomLocked) return;
 		this.#stopZoomAnimation();
+		this.#commitPreview();
 		this.#zoomMode.current = 'manual';
 		this.#setZoom(z);
 	}
@@ -561,8 +577,9 @@ export class ViewerState {
 		this.#zoomMode.current = 'manual';
 		if (!smooth) {
 			this.#stopZoomAnimation();
-			this.#pendingAnchor = anchor ?? null;
 			this.#markZooming();
+			if (this.#previewZoom(target, anchor ?? null)) return;
+			this.#pendingAnchor = anchor ?? null;
 			this.#setZoom(target);
 			return;
 		}
@@ -881,6 +898,9 @@ export class ViewerState {
 			style:
 				`position:relative;${layout}gap:var(--pdf-page-gap,16px);padding:var(--pdf-pages-padding,16px);box-sizing:border-box;` +
 				`--pdf-scale:${this.scale};` +
+				(this.#preview
+					? `transform-origin:0 0;transform:translate(${this.#preview.tx}px,${this.#preview.ty}px) scale(${this.#preview.k});will-change:transform;`
+					: '') +
 				// Page box = themed page color, so rounded corners don't show a white rim.
 				(this.pageTheme.background ? `--pdf-page-bg:${this.pageTheme.background};` : ''),
 			[this.#contentKey]: this.#contentAttach
@@ -999,12 +1019,83 @@ export class ViewerState {
 		clearTimeout(this.#settleTimer);
 		this.#settleTimer = setTimeout(() => {
 			if (this.#anim.running) return this.#markZooming();
+			this.#commitPreview();
 			this.isZooming = false;
 			if (this.#measureDeferred) {
 				this.#measureDeferred = false;
 				this.#scheduleMeasure();
 			}
 		}, ZOOM_SETTLE);
+	}
+
+	/**
+	 * Show a zoom step as a transform of the pages (laid out at the zoom the gesture
+	 * started from), keeping the point under `anchor` fixed. False when it can't (then
+	 * the zoom is applied for real).
+	 */
+	#previewZoom(z: number, anchor: ClientPoint | null): boolean {
+		const scroller = this.scrollEl;
+		const content = this.contentEl;
+		if (!(this.#opt('transformZoom') ?? true) || !scroller || !content) return false;
+		const before = this.zoom;
+		this.#setZoom(z);
+		const f = this.zoom / before;
+		if (this.#previewFrom === null) {
+			if (Math.abs(f - 1) < 1e-6) return true;
+			this.#previewFrom = before;
+		}
+		const sr = scroller.getBoundingClientRect();
+		const point = anchor ?? { clientX: sr.left + sr.width / 2, clientY: sr.top + sr.height / 2 };
+		this.#previewPoint = point;
+		// The point in the pages container's own (untransformed) coordinates.
+		const px =
+			point.clientX - (sr.left + scroller.clientLeft + content.offsetLeft - scroller.scrollLeft);
+		const py =
+			point.clientY - (sr.top + scroller.clientTop + content.offsetTop - scroller.scrollTop);
+		const t = this.#preview ?? { k: 1, tx: 0, ty: 0 };
+		this.#preview = { k: t.k * f, tx: px * (1 - f) + f * t.tx, ty: py * (1 - f) + f * t.ty };
+		return true;
+	}
+
+	/**
+	 * End a transform zoom: lay the pages out at the new zoom (drawn again once) and keep
+	 * what was under the gesture's point there.
+	 */
+	#commitPreview() {
+		const from = this.#previewFrom;
+		if (from === null) return;
+		const scroller = this.scrollEl;
+		const point = this.#previewPoint;
+		let anchor: Anchor | null = null;
+		if (scroller && point) {
+			// The page under the point, as the transform shows it.
+			let bestDist = Infinity;
+			for (const [n, el] of this.#pageEls) {
+				const r = el.getBoundingClientRect();
+				if (!r.width || !r.height) continue;
+				const d =
+					distanceToRange(point.clientY, r.top, r.bottom) +
+					distanceToRange(point.clientX, r.left, r.right);
+				if (d < bestDist) {
+					bestDist = d;
+					anchor = {
+						page: n,
+						fx: (point.clientX - r.left) / r.width,
+						fy: (point.clientY - r.top) / r.height,
+						...point
+					};
+				}
+			}
+		}
+		this.#preview = null;
+		this.#previewFrom = null;
+		this.#previewPoint = null;
+		if (!anchor) return;
+		if (Math.abs(this.zoom - from) < 1e-6) {
+			// Same layout as before the gesture: put the point back by scrolling only.
+			const a = anchor;
+			void tick().then(() => this.#restoreAnchor(a));
+		} else this.#forcedAnchor = anchor;
 	}
 
 	// Geometry ------------------------------------------------------------------
@@ -1040,6 +1131,12 @@ export class ViewerState {
 	}
 
 	#captureAnchor(): Anchor | null {
+		if (this.#forcedAnchor) {
+			const a = this.#forcedAnchor;
+			this.#forcedAnchor = null;
+			this.#pendingAnchor = null;
+			return a;
+		}
 		const scroller = this.scrollEl;
 		if (!scroller || !this.#pageEls.size) return null;
 		const sr = scroller.getBoundingClientRect();
