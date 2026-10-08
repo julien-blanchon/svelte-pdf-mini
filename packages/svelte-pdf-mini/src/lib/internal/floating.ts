@@ -123,7 +123,17 @@ export function float(
 	}
 
 	return () => {
+		// Still on screen (fading out as it closes): it stays where it is, pinned at its last
+		// place; without its anchor it would jump to the window's corner for those frames.
+		const last = floating.isConnected ? floating.getBoundingClientRect() : null;
 		for (const fn of cleanups.reverse()) fn();
+		if (last?.width) {
+			style.setProperty('top', `${last.top}px`);
+			style.setProperty('left', `${last.left}px`);
+			style.setProperty('right', 'auto');
+			style.setProperty('bottom', 'auto');
+			style.setProperty('margin', '0');
+		}
 	};
 }
 
