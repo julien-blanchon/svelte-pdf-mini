@@ -1,5 +1,13 @@
 # svelte-pdf-mini
 
+## 0.8.1
+
+### Patch Changes
+
+- The selected color's ring in the selection menu and annotation popover is concentric on 1x screens: there it uses whole pixels (1px halo + 2px ring, same outer size) instead of a 1.5px spread, which WebKitGTK drew lopsided. 2x screens are unchanged.
+
+- Highlights show on Linux (WebKitGTK: Tauri, Epiphany). WebKitGTK ignores `mix-blend-mode` on GPU-composited canvases, so the page bitmap painted opaque over the highlight underlay (and the page tint). There, page, cached and preview canvases are now created with `willReadFrequently`, which keeps them in software where blending works. Other browsers are unchanged.
+
 ## 0.8.0
 
 ### Minor Changes
