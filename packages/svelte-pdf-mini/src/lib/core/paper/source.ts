@@ -32,6 +32,17 @@ export function pdfjsPaperSource(
 		return page;
 	};
 
+	const graphics = async (n: number) => {
+		const page = await getPage(n);
+		try {
+			return await pageGraphics(page);
+		} finally {
+			// The operator list (and the images it decoded) was only needed for this
+			// analysis: free it, or an image-heavy paper stays in memory whole.
+			page.cleanup();
+		}
+	};
+
 	return {
 		numPages: doc.numPages,
 		getPageText(n) {
@@ -76,11 +87,9 @@ export function pdfjsPaperSource(
 			return p;
 		},
 		async getImageBoxes(n) {
-			return (await pageGraphics(await getPage(n))).images;
+			return (await graphics(n)).images;
 		},
-		async getGraphics(n) {
-			return pageGraphics(await getPage(n));
-		},
+		getGraphics: graphics,
 		pageSize(n) {
 			return sizes.get(n) ?? { width: 612, height: 792 };
 		}

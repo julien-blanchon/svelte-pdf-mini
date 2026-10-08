@@ -112,6 +112,8 @@ export class PageCanvasState {
 	#job = 0;
 	#cacheKey = '';
 	#progressive = false;
+	/** The page pinned in the document while near (its pdf.js resources stay). */
+	#pinned = 0;
 	#key = createAttachmentKey();
 	#attach = (node: HTMLElement) => {
 		this.el = node;
@@ -140,6 +142,11 @@ export class PageCanvasState {
 			if (!near) {
 				this.#release();
 				return;
+			}
+			if (this.#pinned !== n) {
+				if (this.#pinned) viewer.document.unpinPage(this.#pinned);
+				viewer.document.pinPage(n);
+				this.#pinned = n;
 			}
 			// Render strategies (pageColors / wrapContext / postProcess) are part of the bitmap; CSS ones are not.
 			const renderTheme =
@@ -267,6 +274,8 @@ export class PageCanvasState {
 		this.#canvas = null;
 		this.hasBitmap = false;
 		this.rendered = false;
+		if (this.#pinned) this.page.viewer.document.unpinPage(this.#pinned);
+		this.#pinned = 0;
 	}
 }
 

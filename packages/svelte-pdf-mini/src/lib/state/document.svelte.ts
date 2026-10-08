@@ -97,6 +97,36 @@ export class PdfDocument {
 		return p;
 	}
 
+	/** Pages shown near the viewport (count per viewer): `releasePage` leaves them be. */
+	#pinned = new Map<number, number>();
+
+	/** A viewer shows this page (until `unpinPage`): thumbnails drawn meanwhile don't free it. */
+	pinPage(pageNumber: number) {
+		this.#pinned.set(pageNumber, (this.#pinned.get(pageNumber) ?? 0) + 1);
+	}
+
+	/** The viewer is done with the page: free it unless another one still shows it. */
+	unpinPage(pageNumber: number) {
+		const n = (this.#pinned.get(pageNumber) ?? 1) - 1;
+		if (n > 0) return void this.#pinned.set(pageNumber, n);
+		this.#pinned.delete(pageNumber);
+		this.releasePage(pageNumber);
+	}
+
+	/**
+	 * Free what pdf.js keeps for a page once drawn (operator list, decoded images):
+	 * without it every page ever rendered stays in memory, a lot for image-heavy
+	 * papers. Deferred by pdf.js until the page's renders finish; drawing it again
+	 * just asks the worker again.
+	 */
+	releasePage(pageNumber: number) {
+		if (this.#pinned.has(pageNumber)) return;
+		void this.#pages
+			.get(pageNumber)
+			?.then((page) => page.cleanup())
+			.catch(() => {});
+	}
+
 	/** Text content of a page (cached; shared by the text layer, find, aids). */
 	getTextContent(pageNumber: number): Promise<TextContent> {
 		let p = this.#text.get(pageNumber);

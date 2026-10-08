@@ -60,6 +60,8 @@ export class ThumbnailCache {
 							});
 							const bitmap = await createImageBitmap(canvas);
 							canvas.width = canvas.height = 0;
+							// Drawn small once: free the page's decoded images (unless the viewer shows it).
+							this.#doc.releasePage(pageNumber);
 							this.#bitmaps.set(key, bitmap, bitmap.width * bitmap.height * 4);
 							resolve(bitmap);
 						} catch (e) {
