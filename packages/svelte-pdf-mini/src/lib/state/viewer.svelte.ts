@@ -257,6 +257,12 @@ export class ViewerState {
 	/** An anchor computed for the next scale change (instead of measuring one). */
 	#forcedAnchor: Anchor | null = null;
 	readonly scale = $derived((this.#previewFrom ?? this.zoom) * PDF_TO_CSS);
+	/**
+	 * CSS px per PDF point as seen: `scale`, or during a transform zoom the zoom shown.
+	 * Page bitmaps are drawn at this, so they stay sharp while the gesture runs and need
+	 * no redraw when it lands.
+	 */
+	readonly visualScale = $derived(this.zoom * PDF_TO_CSS);
 	readonly pageTheme = $derived(resolvePageTheme(this.#opt('pageTheme')));
 	/** Id of the part of the theme drawn into page bitmaps ('none' for CSS-only themes). */
 	readonly renderThemeId = $derived.by(() => {
@@ -902,7 +908,7 @@ export class ViewerState {
 				`position:relative;${layout}gap:var(--pdf-page-gap,16px);padding:var(--pdf-pages-padding,16px);box-sizing:border-box;` +
 				`--pdf-scale:${this.scale};` +
 				(this.#preview
-					? `transform-origin:0 0;transform:translate(${this.#preview.tx}px,${this.#preview.ty}px) scale(${this.#preview.k});will-change:transform;`
+					? `transform-origin:0 0;transform:translate(${this.#preview.tx}px,${this.#preview.ty}px) scale(${this.#preview.k});`
 					: '') +
 				// Page box = themed page color, so rounded corners don't show a white rim.
 				(this.pageTheme.background ? `--pdf-page-bg:${this.pageTheme.background};` : ''),

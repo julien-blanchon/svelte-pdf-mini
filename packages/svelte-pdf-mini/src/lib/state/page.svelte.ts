@@ -131,7 +131,8 @@ export class PageCanvasState {
 			const doc = viewer.document.proxy;
 			const near = page.isNear;
 			const n = page.pageNumber;
-			const scale = viewer.scale;
+			// As seen (a transform zoom shows a zoom the pages aren't laid out at yet).
+			const scale = viewer.visualScale;
 			const rotation = viewer.rotation;
 			// Only themes drawn into the bitmap re-render: CSS ones (tint, filter) are applied below.
 			void viewer.renderThemeId;
