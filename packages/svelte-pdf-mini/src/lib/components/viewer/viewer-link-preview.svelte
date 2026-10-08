@@ -8,7 +8,6 @@
 		type ResolvedDestination
 	} from '../../core/document/destinations.js';
 	import { classifyDest, previewHeight } from '../../core/document/links.js';
-	import { renderRegionToCanvas } from '../../core/document/render.js';
 	import type { LinkKind } from '../../core/paper/types.js';
 	import type { PdfRect } from '../../core/types.js';
 	import { float } from '../../internal/floating.js';
@@ -89,13 +88,7 @@
 			setTarget({ page: dest.page, kind });
 			const page = await viewer.document.getPage(dest.page);
 			const rect = regionOf(page, dest, kind);
-			const canvas = await renderRegionToCanvas({
-				page,
-				rect,
-				cssWidth: width,
-				signal,
-				theme
-			});
+			const canvas = await viewer.document.renderRegion(dest.page, rect, width, { signal, theme });
 			if (!signal.aborted) canvasHost?.replaceChildren(canvas);
 		})()
 			.catch(() => {})

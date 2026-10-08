@@ -32,7 +32,8 @@ export class ThumbnailCache {
 			this.clear();
 			this.#fingerprint = this.#doc.fingerprint;
 		}
-		const key = `${this.#doc.fingerprint}:${pageNumber}:${Math.round(cssWidth * dpr)}`;
+		const annotationMode = this.#doc.annotationMode;
+		const key = `${this.#doc.fingerprint}:${pageNumber}:${Math.round(cssWidth * dpr)}:${annotationMode}`;
 		const hit = this.#bitmaps.get(key);
 		if (hit) return Promise.resolve(hit);
 		let p = this.#pending.get(key);
@@ -56,7 +57,7 @@ export class ThumbnailCache {
 								theme: { id: 'none' },
 								maxCanvasPixels: 4_000_000,
 								signal,
-								annotationMode: 1
+								annotationMode
 							});
 							const bitmap = await createImageBitmap(canvas);
 							canvas.width = canvas.height = 0;

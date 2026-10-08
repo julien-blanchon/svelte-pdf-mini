@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import type { Attachment } from 'svelte/attachments';
-	import { renderRegionToCanvas } from '../../core/document/render.js';
 	import { PaperContext } from '../../state/context.js';
 	import type { Figure } from '../../core/paper/types.js';
 	import type { PaperFiguresProps } from './types.js';
@@ -28,8 +27,7 @@
 		(node) => {
 			let alive = true;
 			const render = async () => {
-				const page = await paper.viewer.document.getPage(f.page);
-				const canvas = await renderRegionToCanvas({ page, rect: f.rect, cssWidth: thumbnailWidth });
+				const canvas = await paper.viewer.document.renderRegion(f.page, f.rect, thumbnailWidth);
 				if (alive) node.replaceChildren(canvas);
 			};
 			const io = new IntersectionObserver(

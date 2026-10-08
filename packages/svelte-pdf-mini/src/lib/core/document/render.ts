@@ -100,6 +100,8 @@ export async function renderRegionToCanvas(opts: {
 	signal?: AbortSignal;
 	/** The reading theme (night recoloring, tint), as the pages get it. */
 	theme?: PageThemeStrategy;
+	/** pdf.js annotation mode, as the pages get it (pdf.js caches a page's drawing per mode). */
+	annotationMode?: number;
 }): Promise<HTMLCanvasElement> {
 	const { page, rect, cssWidth, theme } = opts;
 	const base = page.getViewport({ scale: 1 });
@@ -127,6 +129,7 @@ export async function renderRegionToCanvas(opts: {
 		canvas: theme?.wrapContext ? null : canvas,
 		canvasContext: ctx,
 		viewport,
+		annotationMode: opts.annotationMode ?? 1,
 		pageColors: theme?.pageColors
 	});
 	const onAbort = () => task.cancel();

@@ -231,7 +231,11 @@ export class PaperState {
 				// Page text comes from the shared cache (also used by find / selection);
 				// operator lists, links and destinations from the isolated copy.
 				model = await analyzePaper(
-					pdfjsPaperSource(isolated?.doc ?? doc, { getPageText: (n) => document.getPageText(n) }),
+					pdfjsPaperSource(isolated?.doc ?? doc, {
+						getPageText: (n) => document.getPageText(n),
+						// On the shown document, pages on screen keep their resources.
+						release: isolated ? undefined : (n) => document.releasePage(n)
+					}),
 					{
 						signal,
 						onProgress: (f, stage) => {

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
-	import { renderRegionToCanvas } from '../../core/document/render.js';
 	import type { PdfRect } from '../../core/types.js';
 	import { AnnotationsContext } from '../../state/context.js';
 	import type { CssVars } from './helpers.js';
@@ -57,8 +56,7 @@
 		const controller = new AbortController();
 		const { signal } = controller;
 		doc
-			.getPage(pageNumber)
-			.then((page) => renderRegionToCanvas({ page, rect, cssWidth, signal }))
+			.renderRegion(pageNumber, rect, cssWidth, { signal })
 			.then((canvas) => {
 				if (!signal.aborted) target.replaceChildren(canvas);
 			})

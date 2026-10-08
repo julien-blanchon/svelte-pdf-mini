@@ -13,6 +13,11 @@ export interface PdfjsPaperSourceOptions {
 	/** Use an existing PageText cache (e.g. PdfDocument's). */
 	getPageText?: (page: number) => Promise<PageText>;
 	measure?: TextMeasurer;
+	/**
+	 * Free a page once analyzed (default: `page.cleanup()`). On a document that's also
+	 * shown, route it to the viewer (`PdfDocument.releasePage`), which keeps shown pages.
+	 */
+	release?: (page: number) => void;
 }
 
 export function pdfjsPaperSource(
@@ -39,7 +44,8 @@ export function pdfjsPaperSource(
 		} finally {
 			// The operator list (and the images it decoded) was only needed for this
 			// analysis: free it, or an image-heavy paper stays in memory whole.
-			page.cleanup();
+			if (opts.release) opts.release(n);
+			else page.cleanup();
 		}
 	};
 

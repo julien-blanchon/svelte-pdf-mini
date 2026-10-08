@@ -5,6 +5,7 @@ import { fontStyleFromName, richTextOf, type RichText } from '../core/text/rich-
 import { renderRegionToCanvas } from '../core/document/render.js';
 import { assetUrls, getPdfConfig, getSharedWorker, loadPdfJs } from '../core/document/pdfjs.js';
 import type { DocumentStatus, PageSize, PdfSource } from '../core/types.js';
+import type { PageThemeStrategy } from '../core/view/theme.js';
 import type { Getter } from '../internal/types.js';
 
 export interface PdfDocumentOptions {
@@ -123,7 +124,8 @@ export class PdfDocument {
 		if (this.#pinned.has(pageNumber)) return;
 		void this.#pages
 			.get(pageNumber)
-			?.then((page) => page.cleanup())
+			// Pinned meanwhile (scrolled back to it): keep it.
+			?.then((page) => this.#pinned.has(pageNumber) || page.cleanup())
 			.catch(() => {});
 	}
 
@@ -168,13 +170,34 @@ export class PdfDocument {
 		return richTextOf(text, start, end, styleOf);
 	}
 
-	/** Render a PDF-space region of a page into a new canvas (figures, crops, copy as image). */
+	/**
+	 * pdf.js annotation mode the pages render with (the viewer keeps it in sync): thumbnails
+	 * and previews use the same, or pdf.js parses and decodes a page shown in both twice.
+	 */
+	annotationMode = $state(1);
+
+	/**
+	 * Render a PDF-space region of a page into a new canvas (figures, previews, crops, copy
+	 * as image). The page's pdf.js resources are freed after, unless a viewer shows it.
+	 */
 	async renderRegion(
 		pageNumber: number,
 		rect: [number, number, number, number],
-		cssWidth: number
+		cssWidth: number,
+		opts: { signal?: AbortSignal; theme?: PageThemeStrategy } = {}
 	): Promise<HTMLCanvasElement> {
-		return renderRegionToCanvas({ page: await this.getPage(pageNumber), rect, cssWidth });
+		const page = await this.getPage(pageNumber);
+		try {
+			return await renderRegionToCanvas({
+				page,
+				rect,
+				cssWidth,
+				annotationMode: this.annotationMode,
+				...opts
+			});
+		} finally {
+			this.releasePage(pageNumber);
+		}
 	}
 
 	/** The original PDF bytes (for export / download). */

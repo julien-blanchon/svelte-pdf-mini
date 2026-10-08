@@ -2,7 +2,6 @@
 	import { watch } from 'runed';
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import { createAttachmentKey } from 'svelte/attachments';
-	import { renderRegionToCanvas } from '../../core/document/render.js';
 	import type { CrossRef, ResolvedTarget } from '../../core/paper/types.js';
 	import type { PdfRect } from '../../core/types.js';
 	import { float } from '../../internal/floating.js';
@@ -59,14 +58,17 @@
 		const theme = paper.viewer.pageTheme;
 		const controller = new AbortController();
 		(async () => {
-			const page = await paper.viewer.document.getPage(target.page);
-			const canvas = await renderRegionToCanvas({
-				page,
-				rect: regionOf(page.view as PdfRect, target, x.kind),
-				cssWidth: width,
-				signal: controller.signal,
-				theme
-			});
+			const doc = paper.viewer.document;
+			const page = await doc.getPage(target.page);
+			const canvas = await doc.renderRegion(
+				target.page,
+				regionOf(page.view as PdfRect, target, x.kind),
+				width,
+				{
+					signal: controller.signal,
+					theme
+				}
+			);
 			if (!controller.signal.aborted) host.replaceChildren(canvas);
 		})().catch(() => {});
 		return () => controller.abort();

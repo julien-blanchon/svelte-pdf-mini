@@ -341,6 +341,10 @@ export class ViewerState {
 		});
 		this.#columns = new Synced({ value: opts.columns ?? 1, onChange: opts.onColumnsChange });
 		this.selection = new TextSelectionState(this);
+		// Thumbnails and previews render a page as the pages do (one pdf.js drawing per page).
+		$effect(() => {
+			this.document.annotationMode = this.hideNativeAnnotations ? 0 : 1;
+		});
 		$effect(() => {
 			if (this.keyboard !== 'document') return;
 			const onKey = (e: KeyboardEvent) => this.isStrayKey(e) && this.#onKeydown(e);
