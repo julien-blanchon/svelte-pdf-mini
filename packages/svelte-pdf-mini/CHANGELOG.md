@@ -1,5 +1,13 @@
 # svelte-pdf-mini
 
+## 0.9.1
+
+### Patch Changes
+
+- Previews, cards and popovers fade out where they were: closing one no longer flashes it at the window's top-left corner for a few frames.
+
+- The transform zoom (0.9.0) is now opt-in (`transformZoom`, default false): zoom gestures lay the pages out at every step again, as before 0.9.0, where fixed-size parts (notes, handles, page gaps) never scale and snap back. With `transformZoom` on, a gesture now lands exactly where it shows (pages narrower than the view stay centered, never scrolled past the first or last page) and stays sharp while it runs (pages drawn at the zoom shown, text and annotations redrawn crisply).
+
 ## 0.9.0
 
 ### Minor Changes

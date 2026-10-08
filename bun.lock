@@ -46,7 +46,7 @@
     },
     "packages/svelte-pdf-mini": {
       "name": "svelte-pdf-mini",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "dependencies": {
         "@cantoo/pdf-lib": "^2.11.1",
         "dompurify": "^3.4.16",
