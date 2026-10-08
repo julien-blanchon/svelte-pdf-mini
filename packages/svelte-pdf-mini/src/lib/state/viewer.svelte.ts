@@ -251,6 +251,9 @@ export class ViewerState {
 	#preview = $state.raw<{ k: number; tx: number; ty: number } | null>(null);
 	/** Where the gesture last zoomed around (client coordinates). */
 	#previewPoint: ClientPoint | null = null;
+	/** The pages' extent in their container (laid out at the gesture's start) and its padding. */
+	#previewBox: { left: number; right: number; top: number; bottom: number; pad: number } | null =
+		null;
 	/** An anchor computed for the next scale change (instead of measuring one). */
 	#forcedAnchor: Anchor | null = null;
 	readonly scale = $derived((this.#previewFrom ?? this.zoom) * PDF_TO_CSS);
@@ -1043,18 +1046,48 @@ export class ViewerState {
 		if (this.#previewFrom === null) {
 			if (Math.abs(f - 1) < 1e-6) return true;
 			this.#previewFrom = before;
+			this.#previewBox = this.#pagesBox(content);
 		}
 		const sr = scroller.getBoundingClientRect();
 		const point = anchor ?? { clientX: sr.left + sr.width / 2, clientY: sr.top + sr.height / 2 };
 		this.#previewPoint = point;
-		// The point in the pages container's own (untransformed) coordinates.
-		const px =
-			point.clientX - (sr.left + scroller.clientLeft + content.offsetLeft - scroller.scrollLeft);
-		const py =
-			point.clientY - (sr.top + scroller.clientTop + content.offsetTop - scroller.scrollTop);
+		// The view and the point in the pages container's own (untransformed) coordinates.
+		const vx = scroller.scrollLeft - content.offsetLeft;
+		const vy = scroller.scrollTop - content.offsetTop;
+		const px = point.clientX - (sr.left + scroller.clientLeft) + vx;
+		const py = point.clientY - (sr.top + scroller.clientTop) + vy;
 		const t = this.#preview ?? { k: 1, tx: 0, ty: 0 };
-		this.#preview = { k: t.k * f, tx: px * (1 - f) + f * t.tx, ty: py * (1 - f) + f * t.ty };
+		const next = { k: t.k * f, tx: px * (1 - f) + f * t.tx, ty: py * (1 - f) + f * t.ty };
+		// Shown where the zoom will land once laid out: pages narrower than the view
+		// centered, never scrolled past their first or last edge. Letting go moves nothing.
+		const box = this.#previewBox;
+		if (box) {
+			const { k } = next;
+			const w = scroller.clientWidth;
+			const h = scroller.clientHeight;
+			if (k * (box.right - box.left) <= w - 2 * box.pad)
+				next.tx = vx + w / 2 - (k * (box.left + box.right)) / 2;
+			else next.tx = clamp(next.tx, vx + w - box.pad - k * box.right, vx + box.pad - k * box.left);
+			if (k * (box.bottom - box.top) <= h - 2 * box.pad) next.ty = vy + box.pad - k * box.top;
+			else next.ty = clamp(next.ty, vy + h - box.pad - k * box.bottom, vy + box.pad - k * box.top);
+		}
+		this.#preview = next;
 		return true;
+	}
+
+	/** The pages' extent in their container: across the pages laid out, down its whole height. */
+	#pagesBox(content: HTMLElement) {
+		const cs = getComputedStyle(content);
+		const top = parseFloat(cs.paddingTop) || 0;
+		const bottom = content.offsetHeight - (parseFloat(cs.paddingBottom) || 0);
+		let left = Infinity;
+		let right = -Infinity;
+		for (const el of this.#pageEls.values()) {
+			left = Math.min(left, el.offsetLeft);
+			right = Math.max(right, el.offsetLeft + el.offsetWidth);
+		}
+		if (!Number.isFinite(left)) return null;
+		return { left, right, top, bottom, pad: parseFloat(cs.paddingLeft) || 0 };
 	}
 
 	/**
@@ -1090,6 +1123,7 @@ export class ViewerState {
 		this.#preview = null;
 		this.#previewFrom = null;
 		this.#previewPoint = null;
+		this.#previewBox = null;
 		if (!anchor) return;
 		if (Math.abs(this.zoom - from) < 1e-6) {
 			// Same layout as before the gesture: put the point back by scrolling only.
