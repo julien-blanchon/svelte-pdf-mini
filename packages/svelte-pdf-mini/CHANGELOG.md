@@ -1,5 +1,19 @@
 # svelte-pdf-mini
 
+## 0.10.0
+
+### Minor Changes
+
+- `drawingTools` (e.g. `['ink', 'arrow']`): those tools keep each drawing as drawn, with no popover or pending step, and stay on for the next stroke. Select a drawing (`selectOn`) to edit it.
+
+- New text boxes follow their text (`autosize`): they grow and shrink as you type, one line per Enter. Resizing one by hand keeps that size, and its text wraps.
+
+### Patch Changes
+
+- Backspace or Delete discards a new annotation only as the very first key in its popover. Once you touch it (any other key, a click into a field, or a note or box label already written), Backspace edits the text as usual: erasing a box label, or pressing Backspace once more than there are letters, no longer deletes the annotation.
+
+- Notes, box labels, text boxes and the find field turn off spell check, autocorrect and automatic capitals: macOS no longer rewrites what you type.
+
 ## 0.9.1
 
 ### Patch Changes
