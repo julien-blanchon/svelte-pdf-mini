@@ -3,6 +3,7 @@
 	import type { Attachment } from 'svelte/attachments';
 	import Markdown from '../../internal/Markdown.svelte';
 	import { isActivationKey } from '../../internal/roving.js';
+	import { verbatimInput } from '../../internal/types.js';
 	import { AnnotationsContext } from '../../state/context.js';
 	import type { AnnotationsCommentProps } from './types.js';
 
@@ -67,10 +68,12 @@
 				{@attach focusOnMount}
 				rows="1"
 				data-part="input"
+				{...verbatimInput}
 				placeholder={placeholder ?? store.viewer.t('addNote')}
 				aria-label={store.viewer.t('addNote')}
 				value={annotation.contents ?? ''}
 				onfocus={() => (focused = true)}
+				onpointerdown={() => store.markTyped(annotation.id)}
 				onblur={() => (focused = false)}
 				oninput={(e) => {
 					store.markTyped(annotation.id);

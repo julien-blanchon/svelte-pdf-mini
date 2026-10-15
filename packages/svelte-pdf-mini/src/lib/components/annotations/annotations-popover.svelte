@@ -6,7 +6,7 @@
 	import { float } from '../../internal/floating.js';
 	import Icon from '../../internal/Icon.svelte';
 	import { handleRovingKey } from '../../internal/roving.js';
-	import { dataAttr } from '../../internal/types.js';
+	import { dataAttr, verbatimInput } from '../../internal/types.js';
 	import { AnnotationsContext } from '../../state/context.js';
 	import Comment from './annotations-comment.svelte';
 	import ColorRadio from './color-radio.svelte';
@@ -179,7 +179,12 @@
 						aria-label={store.viewer.t('label')}
 						placeholder={store.viewer.t('label')}
 						value={a.label ?? ''}
-						oninput={(e) => store.update(a.id, { label: e.currentTarget.value || undefined })}
+						{...verbatimInput}
+						onpointerdown={() => store.markTyped(a.id)}
+						oninput={(e) => {
+							store.markTyped(a.id);
+							store.update(a.id, { label: e.currentTarget.value || undefined });
+						}}
 						onkeydown={(e) => {
 							e.stopPropagation();
 							store.handleNoteKey(e, a);

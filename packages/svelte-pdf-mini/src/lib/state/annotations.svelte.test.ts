@@ -31,6 +31,7 @@ function fakeViewer(pdf?: Uint8Array, scrollEl: HTMLElement | null = null) {
 		hideNativeAnnotations: false,
 		keymap: defaultKeymap,
 		addContextResolver: () => () => {},
+		scale: 1,
 		t: (k: string) => k
 	} as unknown as ViewerState;
 }
@@ -103,6 +104,54 @@ describe('AnnotationStore workflow', () => {
 		cleanup();
 	});
 
+	it('once touched, Backspace edits: any other key first, or something already written', () => {
+		const { store, cleanup } = setup();
+		// Typed then erased (more Backspaces than letters): still kept.
+		const a = store.create('note', { page: 1, rect: [0, 0, 20, 20] })!;
+		expect(store.handleNoteKey(key('Shift', 'ShiftLeft'), a)).toBe(false); // a modifier alone isn't a touch
+		expect(store.pendingTyped).toBe(false);
+		expect(store.handleNoteKey(key('a', 'KeyA'), a)).toBe(false);
+		for (let i = 0; i < 3; i++)
+			expect(store.handleNoteKey(key('Backspace', 'Backspace'), a)).toBe(false);
+		expect(store.annotations).toHaveLength(1);
+		store.commit();
+		// A box's label being edited (empty note): Backspace edits the label.
+		const box = store.create('area', { page: 1, rect: [0, 0, 50, 50], label: 'Fig' })!;
+		expect(store.handleNoteKey(key('Backspace', 'Backspace'), box)).toBe(false);
+		expect(store.byId.has(box.id)).toBe(true);
+		cleanup();
+	});
+
+	it('drawing tools keep each drawing as drawn and stay on', () => {
+		const { store, cleanup } = setup(undefined, { drawingTools: ['ink', 'arrow'] });
+		store.tool = 'ink';
+		const ink = store.create('ink', {
+			page: 1,
+			rect: [0, 0, 10, 10],
+			paths: [
+				{
+					points: [
+						[0, 0],
+						[10, 10]
+					]
+				}
+			]
+		})!;
+		expect(store.pendingId).toBeNull();
+		expect(store.editingId).toBeNull();
+		expect(store.selectedIds).toEqual([]);
+		expect(store.tool).toBe('ink');
+		expect(store.byId.has(ink.id)).toBe(true);
+		store.undo();
+		expect(store.annotations).toHaveLength(0);
+		// Other tools still open what they make.
+		store.tool = 'area';
+		const a = store.create('area', { page: 1, rect: [0, 0, 10, 10] })!;
+		expect(store.pendingId).toBe(a.id);
+		expect(store.tool).toBe('select');
+		cleanup();
+	});
+
 	it('clicking the same spot cycles through overlapping annotations, innermost first', () => {
 		const { store, cleanup } = setup();
 		const outer = store.create('area', { page: 1, rect: [0, 0, 300, 300] })!;
@@ -140,6 +189,45 @@ describe('AnnotationStore workflow', () => {
 
 describe('text box fonts', () => {
 	const rect = [10, 10, 200, 60] as [number, number, number, number];
+
+	it('a new box follows its text (one line per Enter) until resized by hand', () => {
+		const { store, cleanup } = setup();
+		const box = store.create('freetext', { page: 1, rect, text: '' })!;
+		expect(box.autosize).toBe(true);
+		const target = document.createElement('div');
+		document.body.append(target);
+		const props = $state({
+			annotation: box as FreeTextAnnotation,
+			box: { left: 0, top: 0, width: 50, height: 10 },
+			ink: 'rgb(0 0 0)',
+			selected: true
+		});
+		const cmp = mount(FreeText, {
+			target,
+			props,
+			context: new Map([[AnnotationsContext.key, store]])
+		});
+		const type = (text: string) => {
+			const ta = target.querySelector('textarea')!;
+			ta.value = text;
+			ta.dispatchEvent(new Event('input', { bubbles: true }));
+			props.annotation = store.byId.get(box.id) as FreeTextAnnotation;
+			flushSync();
+			return props.annotation.rect;
+		};
+		flushSync();
+		const short = type('Hi');
+		expect(short[0]).toBe(rect[0]); // top left stays
+		expect(short[3]).toBe(rect[3]);
+		const long = type('Hi there, a longer line');
+		expect(long[2] - long[0]).toBeGreaterThan(short[2] - short[0]);
+		const two = type('Hi there, a longer line\nand another');
+		expect(two[2] - two[0]).toBeCloseTo(long[2] - long[0]);
+		expect(two[3] - two[1]).toBeCloseTo(long[3] - long[1] + 12 * 1.25);
+		unmount(cmp);
+		target.remove();
+		cleanup();
+	});
 
 	it('new text boxes get the freetextFont option; existing ones keep theirs', () => {
 		let family = $state<'Handwritten' | 'Times'>('Handwritten');

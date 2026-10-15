@@ -21,3 +21,15 @@ export function readOption<O extends object, K extends keyof O>(opts: O, key: K)
 	const v = opts[key] as unknown;
 	return (typeof v === 'function' ? (v as () => unknown)() : v) as Resolved<O[K]>;
 }
+
+/**
+ * Attributes of a field typed into verbatim (notes, labels, text boxes): no
+ * spell check, autocorrect or auto-capitals (macOS applies them to web fields
+ * when its keyboard settings say so).
+ */
+export const verbatimInput = {
+	spellcheck: false,
+	autocorrect: 'off',
+	autocapitalize: 'off',
+	autocomplete: 'off'
+} as const;

@@ -165,6 +165,11 @@ export interface FreeTextAnnotation extends AnnotationBase {
 		italic?: boolean;
 	};
 	align?: 'left' | 'center' | 'right';
+	/**
+	 * The box follows its text (one line per Enter, no wrapping): it grows and
+	 * shrinks as you type. New boxes start so; resizing one by hand stops it.
+	 */
+	autosize?: boolean;
 	/** Text color (`color` is the border). */
 	textColor?: Rgb;
 	fill?: Rgb;

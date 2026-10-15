@@ -229,6 +229,13 @@
 							"bindable": false
 						},
 						{
+							"name": "transformZoom",
+							"type": "boolean",
+							"description": "Zoom gestures show as a transform, laid out and drawn once at the end (smoother on long documents; fixed-size parts scale along until it lands). Default false.",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "oversampling",
 							"type": "boolean",
 							"description": "Render zoomed-out pages at up to 2× so quick zoom-ins stay sharp. Default true.",
@@ -1460,6 +1467,13 @@
 							"bindable": false
 						},
 						{
+							"name": "drawingTools",
+							"type": "readonly AnnotationTool[]",
+							"description": "Tools that keep each drawing as drawn (no popover) and stay on for the next one, e.g. `['ink', 'arrow']`. Default: none.",
+							"required": false,
+							"bindable": false
+						},
+						{
 							"name": "inkSmoothing",
 							"type": "InkSmoothing",
 							"description": "Pen stroke smoothing: 'smooth' (default), 'steady', 'pen' (variable width) or 'raw'.",
@@ -2201,6 +2215,20 @@
 						{
 							"name": "onAnalyzed",
 							"type": "(model: PaperModel) => void",
+							"required": false,
+							"bindable": false
+						},
+						{
+							"name": "cache",
+							"type": "KeyValueStore<PaperModel> | null",
+							"description": "Keep analyses across sessions, by document fingerprint (e.g. `indexedDbStore('my-app', 'papers')`): a paper opened again isn't analyzed again.",
+							"required": false,
+							"bindable": false
+						},
+						{
+							"name": "isolate",
+							"type": "boolean",
+							"description": "Analyze on a second pdf.js worker, off the rendering one (not for very large files). Default true.",
 							"required": false,
 							"bindable": false
 						},

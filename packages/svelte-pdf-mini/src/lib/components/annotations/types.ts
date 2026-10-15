@@ -68,6 +68,8 @@ export interface AnnotationsRootProps {
 	selectOn?: SelectOn;
 	/** Open the note of a new annotation for typing (Enter keeps, Esc discards). Default true. */
 	editOnCreate?: boolean;
+	/** Tools that keep each drawing as drawn (no popover) and stay on for the next one, e.g. `['ink', 'arrow']`. Default: none. */
+	drawingTools?: readonly AnnotationTool[];
 	/** Pen stroke smoothing: 'smooth' (default), 'steady', 'pen' (variable width) or 'raw'. */
 	inkSmoothing?: InkSmoothing;
 	/** Font family of new text boxes: 'Handwritten', 'Helvetica' (sans, default), 'Times' (serif) or 'Courier' (mono). */

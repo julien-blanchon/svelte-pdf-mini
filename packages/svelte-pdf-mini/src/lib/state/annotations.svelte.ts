@@ -113,6 +113,12 @@ export interface AnnotationStoreOptions {
 	freetextFont?: MaybeGetter<FreeTextFontFamily | undefined>;
 	/** New annotations open their note for typing (Enter keeps, Esc discards). Default true. */
 	editOnCreate?: MaybeGetter<boolean | undefined>;
+	/**
+	 * Tools that draw without opening anything (e.g. `['ink', 'arrow']`): each
+	 * stroke is kept right away (no popover, no pending step) and the tool stays
+	 * on for the next one. Select a drawing (`selectOn`) to edit it. Default: none.
+	 */
+	drawingTools?: MaybeGetter<readonly AnnotationTool[] | undefined>;
 	/** Override keyboard shortcuts (merged over the defaults). */
 	keymap?: MaybeGetter<Partial<Keymap> | undefined>;
 	/** Read the annotations stored in the PDF when it loads (and stop pdf.js painting them). Default false. */
@@ -150,11 +156,14 @@ export class AnnotationStore {
 	kindFilter = $state.raw<AnnotationKind[] | null>(null);
 	/**
 	 * The annotation just created and awaiting confirmation: Enter (or clicking
-	 * elsewhere) keeps it; Esc — or Backspace/Delete before anything was typed —
+	 * elsewhere) keeps it; Esc — or Backspace/Delete as the very first key —
 	 * discards it without leaving an undo step.
 	 */
 	pendingId = $state<string | null>(null);
-	/** The user has typed in the pending annotation's note (digits then type, Backspace edits). */
+	/**
+	 * The user has touched the pending annotation's fields (typed, clicked into
+	 * one, any other key): from then on digits type and Backspace edits.
+	 */
 	pendingTyped = $state(false);
 	/** Last message for screen readers (Annotations.Root renders it in a live region). */
 	announcement = $state('');
@@ -757,6 +766,12 @@ export class AnnotationStore {
 	/** After creating: it becomes the pending annotation (note open); the tool goes back to select unless sticky. */
 	#afterCreate(a: Annotation) {
 		if (this.pendingId && this.pendingId !== a.id) this.commit();
+		if (this.#opt('drawingTools')?.includes(a.kind as AnnotationTool)) {
+			// A drawing is kept as drawn, and the pen stays down for the next stroke.
+			this.selectedIds = [];
+			this.announce(this.viewer.t('announceCreated', { kind: this.#kindLabel(a.kind) }));
+			return;
+		}
 		this.pendingId = a.id;
 		this.pendingTyped = false;
 		this.announce(this.viewer.t('announceCreated', { kind: this.#kindLabel(a.kind) }));
@@ -800,14 +815,19 @@ export class AnnotationStore {
 	 * Keyboard handling for a note editor (popover / margin textarea) so the
 	 * pending flow works while it has focus:
 	 * - Enter keeps (Shift+Enter = new line), Esc discards a pending one / stops editing;
-	 * - before anything is typed: digits 1–9 recolor (pick an emoji for an emoji
-	 *   note), Backspace/Delete discard;
+	 * - before the fields are touched: digits 1–9 recolor (pick an emoji for an
+	 *   emoji note), Backspace/Delete discard; any other key counts as a touch;
 	 * - Alt+1–9 always recolor (or pick).
 	 * Returns true when the key was handled.
 	 */
 	handleNoteKey(e: KeyboardEvent, annotation: Annotation): boolean {
 		const pending = this.pendingId === annotation.id;
-		const pristine = pending && !this.pendingTyped;
+		// Anything already written (note, box label, text) is edited, never discarded.
+		const written =
+			!!annotation.contents ||
+			('label' in annotation && !!annotation.label) ||
+			('text' in annotation && !!annotation.text);
+		const pristine = pending && !this.pendingTyped && !written;
 		const digit = colorDigit(e);
 		if (digit && (e.altKey || (pristine && !e.ctrlKey && !e.metaKey && !e.shiftKey))) {
 			const emojiNote = annotation.kind === 'note' && this.noteEmojis.length > 0;
@@ -843,6 +863,7 @@ export class AnnotationStore {
 			else this.#stopEditing();
 			return true;
 		}
+		if (!MODIFIER_KEYS.has(e.key)) this.markTyped(annotation.id);
 		return false;
 	}
 
@@ -852,7 +873,7 @@ export class AnnotationStore {
 		this.viewer.scrollEl?.focus({ preventScroll: true });
 	}
 
-	/** Mark the pending annotation's note as typed in (digits type, Backspace edits from now on). */
+	/** Mark the pending annotation's fields as touched (digits type, Backspace edits from now on). */
 	markTyped(id: string) {
 		if (this.pendingId === id) this.pendingTyped = true;
 	}
@@ -1121,7 +1142,7 @@ function createDefaults(kind: AnnotationKind): object {
 		case 'note':
 			return { icon: 'Comment' };
 		case 'freetext':
-			return { text: '' };
+			return { text: '', autosize: true };
 		default:
 			return {};
 	}
@@ -1136,6 +1157,19 @@ function colorDigit(e: KeyboardEvent): string | undefined {
 	if (e.altKey) return /^Digit([1-9])$/.exec(e.code)?.[1];
 	return /^[1-9]$/.test(e.key) ? e.key : undefined;
 }
+
+/** Keys pressed on their own that don't touch a pending note (Shift before a capital, etc.). */
+const MODIFIER_KEYS = new Set([
+	'Shift',
+	'Control',
+	'Alt',
+	'Meta',
+	'CapsLock',
+	'Fn',
+	'Dead',
+	'Process',
+	'Unidentified'
+]);
 
 /** Id of the annotation an op adds, updates or removes. */
 function opTargetId(op: AnnotationOp): string {

@@ -321,13 +321,14 @@
 				break;
 			}
 			case 'freetext': {
-				// A click (no drag) opens a default-sized box.
-				const r: PdfRect = big ? rect : [d.start[0], d.start[1] - 28, d.start[0] + 200, d.start[1]];
+				// Placed where clicked (or the drag's top left), about the placeholder's size: it then follows its text.
+				const top: PdfPoint = big ? [rect[0], rect[3]] : d.start;
+				const r: PdfRect = [top[0], top[1] - 24, top[0] + 96, top[1]];
 				store.create('freetext', { page: pageNumber, rect: r, text: '' });
 				break;
 			}
 		}
-		// store.create made it the pending annotation (note / text open, tool back to select).
+		// store.create made it the pending annotation (note / text open, tool back to select), unless a drawing tool.
 	}
 
 	function erase(pt: PdfPoint) {
@@ -404,7 +405,9 @@
 					rect: resizeRect(o.rect, pdfHandle(mode, vp?.rotation ?? 0), dx, dy, {
 						keepRatio: e.shiftKey,
 						fromCenter: e.altKey
-					})
+					}),
+					// Sized by hand: a text box keeps that size and wraps from now on.
+					...(o.kind === 'freetext' && o.autosize && { autosize: false })
 				});
 		}
 	}

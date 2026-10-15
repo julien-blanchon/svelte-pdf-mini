@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { attachRef, mergeProps } from 'svelte-toolbelt';
 	import type { FormEventHandler, KeyboardEventHandler } from 'svelte/elements';
+	import { verbatimInput } from '../../internal/types.js';
 	import { FindContext } from '../../state/context.js';
 	import type { FindInputProps } from './types.js';
 
@@ -55,8 +56,7 @@
 			type: 'search',
 			'data-pdf-find-input': '',
 			'aria-label': find.viewer.t('find'),
-			autocomplete: 'off',
-			spellcheck: false,
+			...verbatimInput,
 			value: find.query,
 			oninput,
 			onkeydown,
