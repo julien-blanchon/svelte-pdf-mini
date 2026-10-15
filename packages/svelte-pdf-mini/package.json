@@ -79,7 +79,7 @@
 		"./styles.css": "./dist/styles.css"
 	},
 	"peerDependencies": {
-		"svelte": "^5.57.0"
+		"svelte": "^5.57.2"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -96,7 +96,7 @@
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^4.1.0",
 		"publint": "^0.3.21",
-		"svelte": "^5.57.0",
+		"svelte": "^5.57.2",
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.71.0",
