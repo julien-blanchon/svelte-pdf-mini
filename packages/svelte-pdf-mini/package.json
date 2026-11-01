@@ -110,7 +110,7 @@
 		"marked": "^18.0.14",
 		"pdfjs-dist": "^6.4.299",
 		"perfect-freehand": "^1.2.3",
-		"runed": "^0.37.1",
+		"runed": "^0.38.0",
 		"svelte-toolbelt": "^0.10.6"
 	},
 	"publishConfig": {
